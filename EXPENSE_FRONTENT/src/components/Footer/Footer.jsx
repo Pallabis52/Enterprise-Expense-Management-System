@@ -1,9 +1,8 @@
-
 "use client";
 
 import { Footer } from "flowbite-react";
 
-export function Footer() {
+export default function Component() {
   return (
     <Footer container>
       <div className="w-full text-center">
