@@ -1,17 +1,16 @@
-import { useState } from 'react'
 import './App.css'
-// import { Home } from "../Home/Home";
-import { Home } from "@/Home/Home";
-
+import Home from './components/Home/Home';
+import Header from './components/Header/Header';
+import { Footer } from 'flowbite-react'; 
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
+      <Header />
       <Home />
+      <Footer />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
