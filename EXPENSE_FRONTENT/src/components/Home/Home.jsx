@@ -4,6 +4,8 @@
 import { Button, Card, Footer } from "flowbite-react";
 import Header from "../Header/Header";
 
+
+
 export default function Home() {
   return (
     <Card className="max-w-sm">
@@ -26,3 +28,4 @@ export default function Home() {
     </Card>
   );
 }
+
