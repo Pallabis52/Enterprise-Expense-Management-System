@@ -1,14 +1,14 @@
 import './App.css'
 import Home from './components/Home/Home';
 import Header from './components/Header/Header';
-import { Footer } from 'flowbite-react'; 
+import FooterComponent from "./components/Footer/Footer";
 
 function App() {
   return (
     <>
       <Header />
       <Home />
-      <Footer />
+      <FooterComponent />
     </>
   );
 }
