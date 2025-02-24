@@ -6,9 +6,7 @@ import { Footer } from 'flowbite-react';
 function App() {
   return (
     <>
-      <Header />
       <Home />
-      <Footer />
     </>
   );
 }
