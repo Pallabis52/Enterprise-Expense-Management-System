@@ -13,7 +13,7 @@ export default function Dashboard() {
           <Table.HeadCell>Category</Table.HeadCell>
           <Table.HeadCell>Price</Table.HeadCell>
           <Table.HeadCell>
-            <span className="sr-only">Edit</span>
+            Action
           </Table.HeadCell>
         </Table.Head>
         <Table.Body className="divide-y">
@@ -28,6 +28,9 @@ export default function Dashboard() {
               <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
                 Edit
               </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
             </Table.Cell>
           </Table.Row>
           <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -41,6 +44,9 @@ export default function Dashboard() {
               <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
                 Edit
               </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
             </Table.Cell>
           </Table.Row>
           <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -51,6 +57,9 @@ export default function Dashboard() {
             <Table.Cell>
               <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
                 Edit
+              </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
               </a>
             </Table.Cell>
           </Table.Row>
@@ -65,6 +74,9 @@ export default function Dashboard() {
               <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
                 Edit
               </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
             </Table.Cell>
           </Table.Row>
           <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -75,6 +87,57 @@ export default function Dashboard() {
             <Table.Cell>
               <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
                 Edit
+              </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
+            </Table.Cell>
+          </Table.Row>
+          <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
+              Google Pixel Phone
+            </Table.Cell>
+            <Table.Cell>Gray</Table.Cell>
+            <Table.Cell>Phone</Table.Cell>
+            <Table.Cell>$799</Table.Cell>
+            <Table.Cell>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
+                Edit
+              </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
+            </Table.Cell>
+          </Table.Row>
+          <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
+              Google Pixel Phone
+            </Table.Cell>
+            <Table.Cell>Gray</Table.Cell>
+            <Table.Cell>Phone</Table.Cell>
+            <Table.Cell>$799</Table.Cell>
+            <Table.Cell>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
+                Edit
+              </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
+              </a>
+            </Table.Cell>
+          </Table.Row>
+          <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
+              Google Pixel Phone
+            </Table.Cell>
+            <Table.Cell>Gray</Table.Cell>
+            <Table.Cell>Phone</Table.Cell>
+            <Table.Cell>$799</Table.Cell>
+            <Table.Cell>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500">
+                Edit
+              </a>
+              <a href="#" className="font-medium text-cyan-600 hover:underline dark:text-cyan-500 p-4">
+                Delete
               </a>
             </Table.Cell>
           </Table.Row>

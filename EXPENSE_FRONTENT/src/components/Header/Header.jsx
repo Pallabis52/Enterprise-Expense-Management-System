@@ -2,21 +2,28 @@
 "use client";
 
 import { Avatar, Dropdown, Navbar } from "flowbite-react";
-import img from "../../assets/p1.svg";
 
 export default function Header() {
   return (
     <Navbar fluid rounded>
       <Navbar.Brand href="https://flowbite-react.com">
-        <img src={img} className="mr-3 h-6 sm:h-9" alt="npm run dev" />
+        <img src="https://cdn-icons-png.flaticon.com/512/6289/6289296.png" className="mr-3 h-6 sm:h-9" alt="npm run dev" />
         <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Expenese Management</span>
       </Navbar.Brand>
+      
+      <Navbar.Collapse>
+        <Navbar.Link href="#">Home</Navbar.Link>
+        <Navbar.Link href="#">About</Navbar.Link>
+        <Navbar.Link href="#">Services</Navbar.Link>
+        <Navbar.Link href="#">Pricing</Navbar.Link>
+        <Navbar.Link href="#">Contact</Navbar.Link>
+      </Navbar.Collapse>
       <div className="flex md:order-2">
         <Dropdown
           arrowIcon={false}
           inline
           label={
-            <Avatar alt="User settings" img="https://flowbite.com/docs/images/people/profile-picture-5.jpg" rounded />
+            <Avatar alt="User settings" img="https://static.vecteezy.com/system/resources/previews/030/504/836/non_2x/avatar-account-flat-isolated-on-transparent-background-for-graphic-and-web-design-default-social-media-profile-photo-symbol-profile-and-people-silhouette-user-icon-vector.jpg" rounded />
           }
         >
           <Dropdown.Header>
@@ -31,15 +38,6 @@ export default function Header() {
         </Dropdown>
         <Navbar.Toggle />
       </div>
-      <Navbar.Collapse>
-        <Navbar.Link href="#" active>
-          Home
-        </Navbar.Link>
-        <Navbar.Link href="#">About</Navbar.Link>
-        <Navbar.Link href="#">Services</Navbar.Link>
-        <Navbar.Link href="#">Pricing</Navbar.Link>
-        <Navbar.Link href="#">Contact</Navbar.Link>
-      </Navbar.Collapse>
     </Navbar>
   );
 }
