@@ -157,10 +157,10 @@ const Register = () => {
         </form>
         <div className="mt-4 flex flex-col gap-3">
           <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center border p-2.5 rounded-lg bg-white dark:bg-gray-700 dark:text-white">
-            <FcGoogle className="mr-2" /> Sign up with Google
+            <FcGoogle className="mr-2"/> Sign up with Google
           </button>
           <button onClick={handleLinkedInLogin} className="w-full flex items-center justify-center border p-2.5 rounded-lg bg-blue-700 text-white">
-            <FaLinkedin className="mr-2" /> Sign up with LinkedIn
+            <FaLinkedin className="mr-2"/> Sign up with LinkedIn
           </button>
         </div>
       </div>
