@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Box from "./Boxes";
+import SidebarLayout from "../Sidebar/Sidebar";
 
 const Dashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -50,6 +51,7 @@ const Dashboard = () => {
 
   return (
     <>
+    <SidebarLayout />
     <Box />
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
         <div className="flex items-center justify-between flex-wrap md:flex-row space-y-4 md:space-y-0 pb-4 bg-white dark:bg-gray-900">
