@@ -1,18 +1,4 @@
-// "use client";
 
-// import FooterComponent from "../Footer/Footer";
-// import Header from "../Header/Header";
-
-
-
-
-// export default function Expense() {
-//   return (
-//     <>
-//       <h1>Expense Page</h1>
-//     </>
-//   );
-// }
 
 const Expense = () => {
   return (

@@ -1,15 +1,4 @@
-// "use client";
 
-// import FooterComponent from "../Footer/Footer";
-// import Header from "../Header/Header";
-
-// export default function Income() {
-//   return (
-//     <>
-//       <h1>Income Page</h1>
-//     </>
-//   );
-// }
 
 const Income = () => {
     return (
