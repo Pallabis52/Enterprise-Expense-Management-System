@@ -10,7 +10,6 @@ import { Button } from "flowbite-react";
 export default function Home() {
   return (
    <>
-     <Header />
      <div className="flex h-screen">
       <div className="w-1/2 flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-screen gap-4">
@@ -33,8 +32,7 @@ export default function Home() {
         />
       </div>
     </div>
-<Dashboard/>
-        <FooterComponent />
+
    </>
   );
 }

@@ -7,3 +7,4 @@ const flowbite = require("flowbite-react/tailwind");
 },
 plugins: [flowbite.plugin()],
 };
+
