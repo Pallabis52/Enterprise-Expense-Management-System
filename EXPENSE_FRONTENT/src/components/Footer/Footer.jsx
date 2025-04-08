@@ -16,9 +16,9 @@ export default function FooterComponent() {
           />
           <Footer.LinkGroup>
             <Footer.Link href="#">About</Footer.Link>
-            <Footer.Link href="#">Privacy Policy</Footer.Link>
-            <Footer.Link href="#">Licensing</Footer.Link>
-            <Footer.Link href="#">Contact</Footer.Link>
+            <Footer.Link href="/expense">Expense</Footer.Link>
+            <Footer.Link href="/income">Income</Footer.Link>
+            <Footer.Link href="/contact">Contact</Footer.Link>
           </Footer.LinkGroup>
         </div>
         <Footer.Divider />

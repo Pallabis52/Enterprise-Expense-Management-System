@@ -6,10 +6,12 @@ import Header from "../Header/Header";
 import Dashboard from "../Admin/Dashboard/Dashboard";
 import FooterComponent from "../Footer/Footer";
 import { Button } from "flowbite-react";
+import { SidebarComponent } from "../Admin/Sidebar/Sidebar";
 
 export default function Home() {
   return (
    <>
+   <SidebarComponent />
      <div className="flex h-screen">
       <div className="w-1/2 flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-screen gap-4">
