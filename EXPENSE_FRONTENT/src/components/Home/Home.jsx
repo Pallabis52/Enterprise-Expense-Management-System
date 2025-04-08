@@ -1,16 +1,12 @@
 
 "use client";
 
-// import { Button, Card, Footer } from "flowbite-react";
-import Header from "../Header/Header";
-import Dashboard from "../Admin/Dashboard/Dashboard";
 import FooterComponent from "../Footer/Footer";
 import { Button } from "flowbite-react";
 
 export default function Home() {
   return (
    <>
-     <Header />
      <div className="flex h-screen">
       <div className="w-1/2 flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-screen gap-4">

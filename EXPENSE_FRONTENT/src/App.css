@@ -4,6 +4,11 @@ height: 100vh;
 border: 1px solid black;
 display: flex;
 padding: 15px 10px;
+img{
+
+    width: 50px;
+    height: 150px;
+}
 
 }
 /* .sidebar{

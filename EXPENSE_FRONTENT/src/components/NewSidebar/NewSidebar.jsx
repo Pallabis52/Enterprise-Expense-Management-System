@@ -7,6 +7,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import NotInterestedIcon from '@mui/icons-material/NotInterested';
+import CheckIcon from '@mui/icons-material/Check';
+import ClearIcon from '@mui/icons-material/Clear';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
@@ -98,13 +100,13 @@ const columns = [
               style={{ backgroundColor: "green", color: "white", padding: "5px 10px", borderRadius: "5px", border: "none", cursor: "pointer" }}
               onClick={() => handleAction(tableMeta.rowIndex, "Approved")}
             >
-              Approve
+             <CheckIcon/>
             </button>
             <button
               style={{ backgroundColor: "red", color: "white", padding: "5px 10px", borderRadius: "5px", border: "none", cursor: "pointer" }}
               onClick={() => handleAction(tableMeta.rowIndex, "Reject")}
             >
-              Reject
+              <ClearIcon/>
             </button>
           </div>
         );
@@ -161,7 +163,7 @@ function DashboardLayoutBranding(props) {
   return (
     <AppProvider
       navigation={NAVIGATION}
-      branding={{ logo: <img src="https://zidio.in/assets/img/logo/logo.png" alt="MUI logo" />, title: 'Expense Management' }}
+      branding={{ logo: <img src="img/zidio_development_logo.jpg" alt="MUI logo"  height={100}  />, title: 'Expense Management' }}
       router={router}
       theme={demoTheme}
       window={window ? window() : undefined}
