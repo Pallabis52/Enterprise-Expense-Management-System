@@ -12,9 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FileService {
 
-    private final String file_path = "uploads/";
-
     public String saveFile(MultipartFile Mfile) throws IOException {
+        String file_path = "uploads/";
         File file = new File(file_path);
         if (!file.exists()) {
             file.mkdir();

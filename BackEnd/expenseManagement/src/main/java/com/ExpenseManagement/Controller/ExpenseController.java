@@ -3,6 +3,7 @@ package com.ExpenseManagement.Controller;
 import java.io.IOException;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -19,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ExpenseManagement.Entities.Expense;
 import com.ExpenseManagement.Entities.Expense_Category;
-import com.ExpenseManagement.Services.ApprovalService;
+//import com.ExpenseManagement.Services.ApprovalService;
 import com.ExpenseManagement.Services.ExpenseService;
 import com.ExpenseManagement.Services.FileService;
 
@@ -30,13 +31,10 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/expense")
-@CrossOrigin("*")
-@Tag(name = "ExpenseController", description = "for testing apis")
 public class ExpenseController {
 
     private final ExpenseService expenseService;
     private final FileService fileService;
-    private final ApprovalService approvalService;
 
     // localhost:8080/expense/getbymonthandyear/1/2021
     @Operation()
@@ -51,16 +49,16 @@ public class ExpenseController {
     }
 
     // localhost:8080/expense/approve/1/ROLE
-    @Operation()
-    @PutMapping("/approve/{id}/{role}")
-    public ResponseEntity<?> approveExpense(@PathVariable long id, @PathVariable String role) {
-        Expense approveExpense = approvalService.approveExpense(id, role);
-        if (approveExpense != null) {
-            return ResponseEntity.ok(approveExpense);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Expense not approved");
-        }
-    }
+//    @Operation()
+//    @PutMapping("/approve/{id}/{role}")
+//    public ResponseEntity<?> approveExpense(@PathVariable long id, @PathVariable String role) {
+//        Expense approveExpense = approvalService.approveExpense(id, role);
+//        if (approveExpense != null) {
+//            return ResponseEntity.ok(approveExpense);
+//        } else {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Expense not approved");
+//        }
+//    }
 
     // localhost:8080/expense/category/FOOD
     @Operation()
@@ -151,5 +149,6 @@ public class ExpenseController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Expense not deleted");
         }
     }
+
 
 }
