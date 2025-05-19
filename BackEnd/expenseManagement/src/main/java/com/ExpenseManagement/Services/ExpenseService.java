@@ -6,11 +6,13 @@ import com.ExpenseManagement.Entities.Expense;
 import com.ExpenseManagement.Entities.Expense_Category;
 
 public interface ExpenseService {
-    public List<Expense> getallExpenses();
+//    public List<Expense> getallExpenses();
+    List<Expense> getAllExpenses(String username);
 
     public Expense getById(long id);
 
-    public Expense saveExpense(Expense expense);
+//    public Expense saveExpense(Expense expense);
+    Expense saveExpense(Expense expense,String username);
 
     public boolean deleteExpense(long id);
 

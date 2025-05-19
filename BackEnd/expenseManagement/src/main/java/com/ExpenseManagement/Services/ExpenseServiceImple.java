@@ -3,6 +3,9 @@ package com.ExpenseManagement.Services;
 import java.util.List;
 import java.util.Optional;
 
+import com.ExpenseManagement.Entities.Role_Name;
+import com.ExpenseManagement.Entities.Users;
+import com.ExpenseManagement.Repository.UserRepo;
 import org.springframework.stereotype.Service;
 
 import com.ExpenseManagement.Entities.Expense;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ExpenseServiceImple implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final UserRepo userRepo;
 
     public List<Expense> getbymonthandyear(int month, int year) {
         return expenseRepository.findByMonthAndYear(month, year);
@@ -26,15 +30,27 @@ public class ExpenseServiceImple implements ExpenseService {
         return expenseRepository.findByCategory(category);
     }
 
-    public List<Expense> getallExpenses() {
-        return expenseRepository.findAll();
+//    public List<Expense> getallExpenses() {
+//        return expenseRepository.findAll();
+//    }
+public List<Expense> getAllExpenses(String username) {
+    Optional<Users> users = userRepo.findByUsername(username);
+    Users user = users.get();
+    if (user.getRoles().contains(Role_Name.ROLE_ADMIN)) {
+        return expenseRepository.findAll(); // Admin can see all
+    } else {
+        return expenseRepository.findByUser(user); // User can see only their own
     }
+}
 
     public Expense getById(long id) {
         return expenseRepository.findById(id).orElse(null);
     }
 
-    public Expense saveExpense(Expense expense) {
+    public Expense saveExpense(Expense expense,String username) {
+        Optional<Users> users = userRepo.findByUsername(username);
+        Users user = users.get();
+        expense.setUser(user);
         return expenseRepository.save(expense);
     }
 

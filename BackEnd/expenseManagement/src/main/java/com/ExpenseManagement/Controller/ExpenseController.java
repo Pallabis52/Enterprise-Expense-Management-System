@@ -3,9 +3,12 @@ package com.ExpenseManagement.Controller;
 import java.io.IOException;
 import java.util.List;
 
+import com.ExpenseManagement.DTO.ExpenseDTO;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,6 +66,7 @@ public class ExpenseController {
     // localhost:8080/expense/category/FOOD
     @Operation()
     @GetMapping("/category/{category}")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> getbycategory(@PathVariable String category) {
         Expense_Category ecategory = Expense_Category.valueOf(category.toUpperCase());
         List<Expense> expensesByCategory = expenseService.getExpensesByCategory(ecategory);
@@ -77,23 +81,27 @@ public class ExpenseController {
     // localhost:8080/expense/id/fileupload
     @Operation()
     @PostMapping("/{id}/fileupload")
-    public ResponseEntity<?> uploadfile(@PathVariable long id, @RequestParam MultipartFile file) throws IOException {
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> uploadfile(Authentication auth, @PathVariable long id, @RequestParam MultipartFile file) throws IOException {
+        String username = auth.getName();
         Expense element = expenseService.getById(id);
+
         if (element == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
         } else {
             String filepath = fileService.saveFile(file);
             element.setRecipturl(filepath);
-            return ResponseEntity.ok(expenseService.saveExpense(element));
+            return ResponseEntity.ok(expenseService.saveExpense(element,username));
         }
     }
 
     // localhost:8080/expense/add
     @Operation()
     @PostMapping("/add")
-    public ResponseEntity<?> addExpense(@RequestBody Expense expense) {
-
-        Expense saveExpense = expenseService.saveExpense(expense);
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> addExpense(@RequestBody Expense expense,Authentication authentication) {
+        String username = authentication.getName();
+        Expense saveExpense = expenseService.saveExpense(expense,username);
         if (saveExpense != null) {
             return ResponseEntity.ok(saveExpense);
         } else {
@@ -104,8 +112,10 @@ public class ExpenseController {
     // localhost:8080/expense/get
     @Operation()
     @GetMapping("/get")
-    public ResponseEntity<?> findAll() {
-        List<Expense> expenses = expenseService.getallExpenses();
+    @PreAuthorize( "hasRole('USER')")
+    public ResponseEntity<?> findAll(Authentication authentication) {
+        String username = authentication.getName();
+        List<Expense> expenses = expenseService.getAllExpenses(username);
         if (expenses != null) {
             return ResponseEntity.ok(expenses);
         } else {
@@ -117,6 +127,7 @@ public class ExpenseController {
     // localhost:8080/expense/getbyid/1
     @Operation
     @GetMapping("/getbyid/{id}")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> findById(@PathVariable long id) {
         Expense expense = expenseService.getById(id);
         if (expense != null) {
@@ -129,6 +140,7 @@ public class ExpenseController {
     // localhost:8080/expense/update/1
     @Operation()
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> updateExpense(@PathVariable long id, @RequestBody Expense expense) {
         Expense updateExpense = expenseService.updateById(id, expense);
         if (updateExpense != null) {
@@ -140,6 +152,7 @@ public class ExpenseController {
 
     // localhost:8080/expense/delete/1
     @Operation()
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteExpense(@PathVariable long id) {
         boolean deleteExpense = expenseService.deleteExpense(id);

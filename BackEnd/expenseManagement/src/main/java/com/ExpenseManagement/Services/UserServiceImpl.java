@@ -1,6 +1,9 @@
 package com.ExpenseManagement.Services;
 
+import com.ExpenseManagement.Entities.Role_Name;
+import com.ExpenseManagement.Entities.Roles;
 import com.ExpenseManagement.Entities.Users;
+import com.ExpenseManagement.Repository.RolesRepo;
 import com.ExpenseManagement.Repository.UserRepo;
 import com.ExpenseManagement.Utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +17,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final UserRepo userRepo;
     private final PasswordEncoder encoder;
+    private final RolesRepo rolesRepo;
 
     @Override
     public String login(String username, String password) {
@@ -41,11 +44,20 @@ public class UserServiceImpl implements UserService {
         if(userfound.isPresent()){
             throw new RuntimeException("Username Exist");
         }
+
+
         Users user = Users.builder()
                 .username(username)
                 .password(encoder.encode(password))
                 .name(name)
                 .build();
+        Roles role = rolesRepo.findByName(Role_Name.ROLE_USER);
+        if(role==null){
+            throw new RuntimeException("Role Not Found");
+        }
+        Set<Roles> roleSet = new HashSet<>();
+        roleSet.add(role);
+        user.setRoles(roleSet);
         userRepo.save(user);
         return JwtUtils.generateToken(username);
     }

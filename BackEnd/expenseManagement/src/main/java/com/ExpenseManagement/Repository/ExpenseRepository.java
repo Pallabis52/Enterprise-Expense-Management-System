@@ -3,6 +3,7 @@ package com.ExpenseManagement.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.ExpenseManagement.Entities.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,5 +22,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT e.category, SUM(e.amount) FROM Expense e GROUP BY e.category")
     Expense getbreakdown(@Param("category") Expense_Category category);
+
+    @Query("SELECT e FROM Expense e WHERE e.user.Id = :userId")
+    List<Expense> findAllByUserId(@Param("userId") Long userId);
+
+    List<Expense> findByUser(Users user);
 
 }
