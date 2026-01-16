@@ -1,55 +1,70 @@
-import "./App.css";
-import Home from "./components/Home/Home";
-import Header from "./components/Header/Header";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Dashboard from "./components/Admin/Dashboard/Dashboard";
-import Income from "./components/Income/Income";
-import Contact from "./components/Contact/Contact";
-import Expense from "./components/Expense/Expense";
-import FooterComponent from "./components/Footer/Footer";
-import Register from "./components/Regpage/Reg";
-import Login from "./components/Regpage/login";
+import React from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import MainLayout from './components/layout/MainLayout';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
+import Dashboard from './pages/Dashboard/Dashboard';
+import ExpenseList from './pages/admin/expenses/ExpenseList';
+import CategoryList from './pages/admin/categories/CategoryList';
+import Reports from './pages/admin/reports/Reports';
+import AdminProfile from './pages/admin/profile/AdminProfile';
+import './index.css';
 
+// Protected Route Wrapper (Simple check for now)
+const ProtectedRoute = ({ children }) => {
+  // In a real app, check auth token validity
+  // const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  // if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
+
+const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
+  },
+  {
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <MainLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <Dashboard />,
+      },
+      {
+        path: 'admin/expenses',
+        element: <ExpenseList />,
+      },
+      {
+        path: 'admin/categories',
+        element: <CategoryList />,
+      },
+      {
+        path: 'admin/reports',
+        element: <Reports />,
+      },
+      {
+        path: 'admin/profile',
+        element: <AdminProfile />,
+      },
+    ],
+  },
+]);
 
 function App() {
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Home />,
-    },
-    {
-      path: "/dashboard",
-      element: <Dashboard />,
-    },
-    {
-      path: "/income",
-      element: <Income />,
-    },
-    {
-      path: "/expense",
-      element: <Expense />,
-    },
-    {
-      path: "/contact",
-      element: <Contact />,
-    },
-    {
-      path:"/register",
-      element:<Register />
-    },
-    {
-      path:"/login",
-      element:<Login/>
-    }
-  ]);
-
-  return (
-    <>
-      <Header />
-      <RouterProvider router={router} />
-      <FooterComponent/>
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
