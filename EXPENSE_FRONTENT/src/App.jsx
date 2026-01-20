@@ -1,20 +1,48 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import MainLayout from './components/layout/MainLayout';
+import AdminLayout from './layouts/AdminLayout'; // Revised Layout
+import ManagerLayout from './layouts/ManagerLayout'; // New Layout
+import UserLayout from './components/layout/UserLayout'; // User Layout
+
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
-import Dashboard from './pages/Dashboard/Dashboard';
+import NotFound from './pages/NotFound';
+import AccessDenied from './pages/AccessDenied';
+
+// User Pages
+import UserDashboard from './pages/user/dashboard/UserDashboard';
+import UserExpenseList from './pages/user/expenses/UserExpenseList';
+import UserReports from './pages/user/reports/UserReports';
+import UserProfile from './pages/user/profile/UserProfile';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/dashboard/AdminDashboard';
 import ExpenseList from './pages/admin/expenses/ExpenseList';
 import CategoryList from './pages/admin/categories/CategoryList';
 import Reports from './pages/admin/reports/Reports';
 import AdminProfile from './pages/admin/profile/AdminProfile';
-import './index.css';
 
-// Protected Route Wrapper (Simple check for now)
-const ProtectedRoute = ({ children }) => {
-  // In a real app, check auth token validity
-  // const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  // if (!isAuthenticated) return <Navigate to="/login" replace />;
+// Manager Pages
+import ManagerDashboard from './pages/manager/dashboard/ManagerDashboard';
+import ManagerExpenseList from './pages/manager/expenses/ManagerExpenseList';
+import TeamList from './pages/manager/team/TeamList';
+import ManagerReports from './pages/manager/reports/ManagerReports';
+import ManagerProfile from './pages/manager/profile/ManagerProfile';
+
+import './index.css';
+import useAuthStore from './store/authStore';
+
+// Protected Route with Role Check
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    // Return Access Denied page instead of redirecting
+    return <Navigate to="/access-denied" replace />;
+  }
+
   return children;
 };
 
@@ -27,40 +55,70 @@ const router = createBrowserRouter([
     path: '/register',
     element: <Register />,
   },
+  // Admin Routes
   {
-    path: '/',
+    path: '/admin',
     element: (
-      <ProtectedRoute>
-        <MainLayout />
+      <ProtectedRoute allowedRoles={['ADMIN']}>
+        <AdminLayout />
       </ProtectedRoute>
     ),
     children: [
-      {
-        index: true,
-        element: <Navigate to="/dashboard" replace />,
-      },
-      {
-        path: 'dashboard',
-        element: <Dashboard />,
-      },
-      {
-        path: 'admin/expenses',
-        element: <ExpenseList />,
-      },
-      {
-        path: 'admin/categories',
-        element: <CategoryList />,
-      },
-      {
-        path: 'admin/reports',
-        element: <Reports />,
-      },
-      {
-        path: 'admin/profile',
-        element: <AdminProfile />,
-      },
-    ],
+      { index: true, element: <Navigate to="/admin/dashboard" replace /> }, // Default to dashboard
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'expenses', element: <ExpenseList /> },
+      { path: 'categories', element: <CategoryList /> },
+      { path: 'reports', element: <Reports /> },
+      { path: 'profile', element: <AdminProfile /> },
+    ]
   },
+  // Manager Routes
+  {
+    path: '/manager',
+    element: (
+      <ProtectedRoute allowedRoles={['MANAGER']}>
+        <ManagerLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="/manager/dashboard" replace /> },
+      { path: 'dashboard', element: <ManagerDashboard /> },
+      { path: 'expenses', element: <ManagerExpenseList /> },
+      { path: 'team', element: <TeamList /> },
+      { path: 'reports', element: <ManagerReports /> },
+      { path: 'profile', element: <ManagerProfile /> },
+    ]
+  },
+  // User Routes
+  {
+    path: '/user',
+    element: (
+      <ProtectedRoute allowedRoles={['USER']}>
+        <UserLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="/user/dashboard" replace /> },
+      { path: 'dashboard', element: <UserDashboard /> },
+      { path: 'expenses', element: <UserExpenseList /> },
+      { path: 'reports', element: <UserReports /> },
+      { path: 'profile', element: <UserProfile /> },
+    ]
+  },
+  // Default Redirect
+  {
+    path: '/',
+    element: <ProtectedRoute><Navigate to="/user/dashboard" /></ProtectedRoute> // ProtectedRoute will handle role-based redirect
+  },
+  // 404 Route
+  {
+    path: '*',
+    element: <NotFound />
+  },
+  {
+    path: '/access-denied',
+    element: <AccessDenied />
+  }
 ]);
 
 function App() {

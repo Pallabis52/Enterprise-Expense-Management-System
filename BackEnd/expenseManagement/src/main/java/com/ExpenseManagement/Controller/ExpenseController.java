@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ExpenseManagement.Entities.Expense;
-import com.ExpenseManagement.Entities.Expense_Category;
 import com.ExpenseManagement.Services.ApprovalService;
 import com.ExpenseManagement.Services.ExpenseService;
 import com.ExpenseManagement.Services.FileService;
@@ -29,8 +27,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/expense")
-@CrossOrigin("*")
+@RequestMapping("/api/expenses")
 @Tag(name = "ExpenseController", description = "for testing apis")
 public class ExpenseController {
 
@@ -66,8 +63,8 @@ public class ExpenseController {
     @Operation()
     @GetMapping("/category/{category}")
     public ResponseEntity<?> getbycategory(@PathVariable String category) {
-        Expense_Category ecategory = Expense_Category.valueOf(category.toUpperCase());
-        List<Expense> expensesByCategory = expenseService.getExpensesByCategory(ecategory);
+        // Updated to pass String directly, allowing dynamic categories
+        List<Expense> expensesByCategory = expenseService.getExpensesByCategory(category);
         if (expensesByCategory != null) {
             return ResponseEntity.ok(expensesByCategory);
         } else {

@@ -1,41 +1,42 @@
 import api from './api';
 
 const adminExpenseService = {
-    // Get all expenses with pagination, sorting, and filtering
+    // Get all expenses 
     getAllExpenses: async (params) => {
-        // params: { page, limit, sort, order, status, search, startDate, endDate }
-        const response = await api.get('/admin/expenses', { params });
+        // Backend now at /api/expenses/get
+        // BaseURL is /api, so relative path is /expenses/get
+        const response = await api.get('/expenses/get');
         return response.data;
     },
 
     // Get single expense details
     getExpenseById: async (id) => {
-        const response = await api.get(`/admin/expenses/${id}`);
+        const response = await api.get(`/expenses/getbyid/${id}`);
         return response.data;
     },
 
-    // Approve expense
+    // Approve expense from Admin
     approveExpense: async (id) => {
-        const response = await api.put(`/admin/expenses/${id}/approve`);
+        const response = await api.put(`/expenses/approve/${id}/ADMIN`);
         return response.data;
     },
 
     // Reject expense
     rejectExpense: async (id, reason) => {
-        const response = await api.put(`/admin/expenses/${id}/reject`, { reason });
+        // Fallback to Manager endpoint or implementing specific admin reject
+        const response = await api.put(`/manager/expenses/${id}/reject`, { reason });
         return response.data;
     },
 
     // Delete expense
     deleteExpense: async (id) => {
-        const response = await api.delete(`/admin/expenses/${id}`);
+        const response = await api.delete(`/expenses/delete/${id}`);
         return response.data;
     },
 
     // Bulk actions
     bulkApprove: async (ids) => {
-        const response = await api.put('/admin/expenses/bulk-approve', { ids });
-        return response.data;
+        throw new Error("Bulk actions not supported by backend yet");
     }
 };
 

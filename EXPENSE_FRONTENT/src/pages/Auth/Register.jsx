@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import Button from '../../components/ui/Button';
@@ -23,7 +24,7 @@ const Register = () => {
     const register = useAuthStore((state) => state.register);
     const isLoading = useAuthStore((state) => state.isLoading);
 
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'USER' });
     const [error, setError] = useState(null);
 
     const handleSubmit = async (e) => {
@@ -31,16 +32,35 @@ const Register = () => {
         setError(null);
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Password Mismatch',
+                text: 'Passwords do not match',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
 
         try {
-            await register({ name: formData.name, email: formData.email, password: formData.password });
-            // In a real app we might redirect to login or dashboard
-            navigate('/login');
+            await register({ name: formData.name, email: formData.email, password: formData.password, role: formData.role });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Registration Successful!',
+                text: 'Your account has been created.',
+                confirmButtonText: 'Login Now'
+            }).then(() => {
+                navigate('/login');
+            });
+
         } catch (err) {
-            setError('Registration failed. Please try again.');
+            const msg = err.response?.data?.message || 'Something went wrong during registration. Please try again.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                text: msg,
+                confirmButtonColor: '#d33',
+            });
         }
     };
 
@@ -83,6 +103,21 @@ const Register = () => {
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             required
                         />
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Select Role
+                            </label>
+                            <select
+                                value={formData.role}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                            >
+                                <option value="USER">Employee (User)</option>
+                                <option value="MANAGER">Team Lead (Manager)</option>
+                                <option value="ADMIN">Administrator</option>
+                            </select>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input

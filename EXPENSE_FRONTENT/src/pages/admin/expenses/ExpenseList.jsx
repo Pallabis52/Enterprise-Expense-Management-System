@@ -10,7 +10,7 @@ import { EyeIcon } from '@heroicons/react/24/outline';
 
 const ExpenseList = () => {
     const {
-        expenses,
+        expenses = [], // Default to empty array
         isLoading,
         filters,
         setFilters,
@@ -43,11 +43,11 @@ const ExpenseList = () => {
             render: (row) => (
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
-                        {row.userName?.[0] || 'U'}
+                        {row.user?.name?.[0] || 'U'}
                     </div>
                     <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{row.userName}</p>
-                        <p className="text-xs text-gray-500">{row.userEmail}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{row.user?.name || 'Unknown User'}</p>
+                        <p className="text-xs text-gray-500">{row.user?.email || 'No Email'}</p>
                     </div>
                 </div>
             )

@@ -2,29 +2,29 @@ import api from './api';
 
 const categoryService = {
     getAllCategories: async () => {
-        const response = await api.get('/admin/categories');
+        const response = await api.get('/categories');
         return response.data;
     },
 
     createCategory: async (data) => {
         // data: { name, color, icon, description }
-        const response = await api.post('/admin/categories', data);
+        const response = await api.post('/categories', data);
         return response.data;
     },
 
     updateCategory: async (id, data) => {
-        const response = await api.put(`/admin/categories/${id}`, data);
+        const response = await api.put(`/categories/${id}`, data);
         return response.data;
     },
 
     deleteCategory: async (id) => {
-        const response = await api.delete(`/admin/categories/${id}`);
+        const response = await api.delete(`/categories/${id}`);
         return response.data;
     },
 
     toggleCategoryStatus: async (id, isActive) => {
-        const response = await api.patch(`/admin/categories/${id}/status`, { isActive });
-        return response.data;
+        // Backend doesn't support patch status yet, implementing as full update or skipping
+        throw new Error("Toggle status not supported by backend");
     }
 };
 

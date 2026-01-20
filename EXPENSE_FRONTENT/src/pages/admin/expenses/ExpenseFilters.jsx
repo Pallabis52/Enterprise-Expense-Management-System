@@ -1,5 +1,5 @@
 import React from 'react';
-import Input from '../../components/ui/Input';
+import Input from '../../../components/ui/Input';
 import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const ExpenseFilters = ({ filters, onChange }) => {

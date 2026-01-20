@@ -26,10 +26,11 @@ const CategoryModal = ({ isOpen, onClose, initialData }) => {
             setFormData({
                 name: initialData.name || '',
                 color: initialData.color || '#3B82F6',
-                description: initialData.description || ''
+                description: initialData.description || '',
+                allowedRole: initialData.allowedRole || 'USER'
             });
         } else {
-            setFormData({ name: '', color: '#3B82F6', description: '' });
+            setFormData({ name: '', color: '#3B82F6', description: '', allowedRole: 'USER' });
         }
     }, [initialData, isOpen]);
 
@@ -57,6 +58,22 @@ const CategoryModal = ({ isOpen, onClose, initialData }) => {
                     placeholder="e.g. Travel, Office Supplies"
                     required
                 />
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Allowed Role
+                    </label>
+                    <select
+                        className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-primary-500 p-2.5"
+                        value={formData.allowedRole || ''}
+                        onChange={(e) => setFormData({ ...formData, allowedRole: e.target.value || null })}
+                    >
+                        <option value="">All Roles (Global)</option>
+                        <option value="USER">User</option>
+                        <option value="MANAGER">Manager</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

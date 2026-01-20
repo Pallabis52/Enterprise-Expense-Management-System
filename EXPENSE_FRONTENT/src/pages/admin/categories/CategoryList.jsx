@@ -90,6 +90,15 @@ const CategoryList = () => {
                                 {category.description || "No description."}
                             </p>
 
+                            <div className="mt-2">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${category.allowedRole === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
+                                        category.allowedRole === 'MANAGER' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-green-100 text-green-700'
+                                    }`}>
+                                    For: {category.allowedRole || 'USER'}
+                                </span>
+                            </div>
+
                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
                                 <span className="text-xs font-medium text-gray-400 uppercase">Status</span>
                                 {/* Placeholder toggle action - could be real later */}

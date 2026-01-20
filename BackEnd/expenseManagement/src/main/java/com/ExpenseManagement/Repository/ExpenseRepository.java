@@ -1,23 +1,74 @@
 package com.ExpenseManagement.Repository;
 
-import java.util.List;
-
+import com.ExpenseManagement.Entities.Approval_Status;
+import com.ExpenseManagement.Entities.Expense;
+import com.ExpenseManagement.Entities.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.ExpenseManagement.Entities.Expense;
-import com.ExpenseManagement.Entities.Expense_Category;
+import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
-    List<Expense> findByCategory(Expense_Category category);
 
+    // Find by User
+    Page<Expense> findByUser(User user, Pageable pageable);
+
+    List<Expense> findByUser(User user);
+
+    // Find by Team (Users managed by Manager)
+    // Assuming we pass the list of team member users
+    Page<Expense> findByUserIn(List<User> users, Pageable pageable);
+
+    // Find by Team and Status (Common filter)
+    Page<Expense> findByUserInAndStatus(List<User> users, Approval_Status status, Pageable pageable);
+
+    // Stats queries
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.user IN :users AND e.status = 'APPROVED'")
+    Double sumApprovedAmountByUserIn(@Param("users") List<User> users);
+
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.user IN :users AND e.status = 'PENDING'")
+    Double sumPendingAmountByUserIn(@Param("users") List<User> users);
+
+    // Admin: All expenses
+    Page<Expense> findByStatus(Approval_Status status, Pageable pageable);
+
+    // Missing methods for Service Impl
     @Query("SELECT e FROM Expense e WHERE MONTH(e.date) = :month AND YEAR(e.date) = :year")
     List<Expense> findByMonthAndYear(@Param("month") int month, @Param("year") int year);
 
-    @Query("SELECT e.category, SUM(e.amount) FROM Expense e GROUP BY e.category")
-    Expense getbreakdown(@Param("category") Expense_Category category);
+    // Stats: Single User
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.user = :user")
+    Double sumTotalAmountByUser(@Param("user") User user);
 
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.user = :user AND e.status = :status")
+    Double sumAmountByUserAndStatus(@Param("user") User user, @Param("status") Approval_Status status);
+
+    @Query("SELECT COUNT(e) FROM Expense e WHERE e.user = :user AND e.status = :status")
+    Long countByUserAndStatus(@Param("user") User user, @Param("status") Approval_Status status);
+
+    List<Expense> findByCategory(String category);
+
+    // --- Performance Analytics Queries ---
+
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.user IN :users")
+    Double sumTotalAmountByUserIn(@Param("users") List<User> users);
+
+    @Query("SELECT COUNT(e) FROM Expense e WHERE e.user IN :users AND e.status = :status")
+    Long countByUserInAndStatus(@Param("users") List<User> users, @Param("status") Approval_Status status);
+
+    @Query("SELECT e.category, SUM(e.amount) FROM Expense e WHERE e.user IN :users GROUP BY e.category")
+    List<Object[]> sumAmountByCategoryByUserIn(@Param("users") List<User> users);
+
+    // Native query might be easier for month grouping or JPQL with function
+    @Query("SELECT FUNCTION('TO_CHAR', e.date, 'YYYY-MM'), SUM(e.amount) FROM Expense e WHERE e.user IN :users GROUP BY FUNCTION('TO_CHAR', e.date, 'YYYY-MM')")
+    List<Object[]> sumAmountByMonthByUserIn(@Param("users") List<User> users);
+
+    @Query("SELECT e.user, SUM(e.amount) as total FROM Expense e WHERE e.user IN :users GROUP BY e.user ORDER BY total DESC")
+    List<Object[]> findTopSpenders(@Param("users") List<User> users);
 }

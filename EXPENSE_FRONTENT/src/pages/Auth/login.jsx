@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import Button from '../../components/ui/Button';
@@ -25,15 +26,43 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
+
         if (!formData.email || !formData.password) {
-            setError('Please fill in all fields');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Fields',
+                text: 'Please fill in all fields',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
         try {
-            await login(formData.email, formData.password);
-            navigate('/dashboard');
+            const user = await login(formData.email, formData.password);
+            Swal.fire({
+                icon: 'success',
+                title: 'Welcome Back!',
+                text: `Successfully logged in as ${user.name}`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // Role-based redirect
+            if (user.role === 'ADMIN') {
+                navigate('/admin/expenses');
+            } else if (user.role === 'MANAGER') {
+                navigate('/manager/dashboard');
+            } else {
+                navigate('/user/dashboard');
+            }
         } catch (err) {
-            setError('Invalid credentials');
+            const msg = useAuthStore.getState().error || 'Invalid credentials';
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: msg,
+                confirmButtonColor: '#d33',
+            });
         }
     };
 
