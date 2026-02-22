@@ -3,6 +3,9 @@ package com.expensemanagement.Controller;
 import java.util.List;
 import java.util.Map;
 
+import com.expensemanagement.AI.AIResponse;
+import com.expensemanagement.AI.AIService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +34,7 @@ public class ManagerController {
     private final UserRepository userRepository;
     private final ManagerService managerService;
     private final PerformanceService performanceService;
+    private final AIService aiService;
 
     // ── team info ─────────────────────────────────────────────────────────────
 
@@ -109,5 +113,59 @@ public class ManagerController {
     public ResponseEntity<Map<String, Object>> getManagerDashboard(Authentication authentication) {
         User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
         return ResponseEntity.ok(managerService.getManagerDashboard(manager.getId()));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // AI FEATURES (Manager Role)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Feature 5: AI Approval Recommendation
+     * GET /api/manager/ai/recommend/{expenseId}
+     */
+    @GetMapping("/ai/recommend/{expenseId}")
+    public ResponseEntity<AIResponse> approvalRecommendation(
+            @PathVariable Long expenseId, Authentication auth) {
+        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+        Expense expense = managerService.getExpenseById(expenseId, manager);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        User owner = expense.getUser();
+        return ResponseEntity.ok(aiService.approvalRecommendation(expense, owner));
+    }
+
+    /**
+     * Feature 6: Risk Scoring
+     * GET /api/manager/ai/risk/{expenseId}
+     */
+    @GetMapping("/ai/risk/{expenseId}")
+    public ResponseEntity<AIResponse> riskScore(
+            @PathVariable Long expenseId, Authentication auth) {
+        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+        Expense expense = managerService.getExpenseById(expenseId, manager);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(aiService.riskScore(expense, expense.getUser()));
+    }
+
+    /**
+     * Feature 7: Team Spending Summary
+     * GET /api/manager/ai/team-summary
+     */
+    @GetMapping("/ai/team-summary")
+    public ResponseEntity<AIResponse> teamSummary(Authentication auth) {
+        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+        com.expensemanagement.Entities.Team team = manager.getTeam();
+        if (team == null)
+            return ResponseEntity.badRequest().build();
+        List<User> members = team.getMembers();
+        java.time.LocalDate now = java.time.LocalDate.now();
+        Double monthlySpend = managerService.getTeamMonthlySpend(members, now.getMonthValue(), now.getYear());
+        Double budget = managerService.getTeamBudget(team.getId(), now.getMonthValue(), now.getYear());
+        return ResponseEntity.ok(aiService.teamSummary(
+                members,
+                monthlySpend != null ? monthlySpend : 0,
+                budget != null ? budget : 0,
+                team.getName()));
     }
 }

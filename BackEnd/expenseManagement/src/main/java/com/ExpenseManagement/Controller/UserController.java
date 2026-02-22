@@ -17,9 +17,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.expensemanagement.AI.AIResponse;
+import com.expensemanagement.AI.AIService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -31,6 +34,7 @@ public class UserController {
         private final UserRepository userRepository;
         private final ExpenseRepository expenseRepository;
         private final FreezePeriodService freezePeriodService;
+        private final AIService aiService;
 
         // ── stats ─────────────────────────────────────────────────────────────────
 
@@ -160,5 +164,54 @@ public class UserController {
                 }
                 expenseService.deleteExpense(id);
                 return ResponseEntity.ok().build();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // AI FEATURES (User Role)
+        // ══════════════════════════════════════════════════════════════════════
+
+        /**
+         * Feature 1: AI Expense Categorization
+         * POST /api/user/ai/categorize
+         * Body: { "title": "...", "description": "...", "amount": 500.0 }
+         */
+        @PostMapping("/ai/categorize")
+        public ResponseEntity<AIResponse> categorize(
+                        @RequestBody Map<String, Object> body,
+                        Authentication auth) {
+                String title = (String) body.getOrDefault("title", "");
+                String description = (String) body.getOrDefault("description", "");
+                double amount = body.containsKey("amount")
+                                ? ((Number) body.get("amount")).doubleValue()
+                                : 0.0;
+
+                CompletableFuture<AIResponse> future = aiService.categorize(title, description, amount);
+                return ResponseEntity.ok(future.join()); // join = blocking wait with fail-safe
+        }
+
+        /**
+         * Feature 3: Friendly Rejection Explanation
+         * GET /api/user/ai/explain-rejection/{expenseId}
+         */
+        @GetMapping("/ai/explain-rejection/{expenseId}")
+        public ResponseEntity<AIResponse> explainRejection(
+                        @PathVariable Long expenseId,
+                        Authentication auth) {
+                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                Expense expense = expenseRepository.findByIdAndUser(expenseId, user)
+                                .orElse(null);
+                if (expense == null)
+                        return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(aiService.explainRejection(expense));
+        }
+
+        /**
+         * Feature 4: Personal Spending Insights
+         * GET /api/user/ai/spending-insights
+         */
+        @GetMapping("/ai/spending-insights")
+        public ResponseEntity<AIResponse> spendingInsights(Authentication auth) {
+                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                return ResponseEntity.ok(aiService.spendingInsights(user));
         }
 }

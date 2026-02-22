@@ -4,7 +4,6 @@ import Table from '../../../components/ui/Table';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
 import ExpenseApprovalDrawer from './ExpenseApprovalDrawer';
 import {
     MagnifyingGlassIcon,
@@ -150,12 +149,15 @@ const ManagerExpenseList = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <FunnelIcon className="w-4 h-4 text-gray-400" />
-                    <Select
-                        options={STATUS_OPTIONS}
+                    <select
                         value={status}
                         onChange={e => setStatus(e.target.value)}
-                        className="w-48"
-                    />
+                        className="w-48 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
+                    >
+                        {STATUS_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 

@@ -258,4 +258,26 @@ public class ManagerService {
             // Budget check is advisory, never block main flow
         }
     }
+
+    // ── AI helper methods ──────────────────────────────────────────────────────
+
+    /** Returns an expense by ID — accessible to managers for AI analysis */
+    public Expense getExpenseById(Long expenseId, User manager) {
+        return expenseRepository.findById(expenseId).orElse(null);
+    }
+
+    /** Returns team's total spend for a given month/year */
+    public Double getTeamMonthlySpend(List<User> members, int month, int year) {
+        return expenseRepository.sumAmountByUserInAndMonth(members, month, year);
+    }
+
+    /** Returns the team's budget for a given month/year (from TeamBudgetService) */
+    public Double getTeamBudget(Long teamId, int month, int year) {
+        try {
+            Map<String, Object> status = teamBudgetService.getBudgetStatus(teamId, month, year);
+            return status.get("budget") != null ? ((Number) status.get("budget")).doubleValue() : 0.0;
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
 }

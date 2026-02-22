@@ -61,5 +61,6 @@ public class Expense {
     private String approvalComment;
 
     /** System-flagged as a potential duplicate expense */
+    @jakarta.persistence.Column(columnDefinition = "boolean default false")
     private boolean isDuplicate = false;
 }

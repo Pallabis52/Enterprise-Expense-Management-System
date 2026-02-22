@@ -25,6 +25,8 @@ import com.expensemanagement.Repository.UserRepository;
 import com.expensemanagement.Services.FreezePeriodService;
 import com.expensemanagement.Services.TeamBudgetService;
 import com.expensemanagement.Services.TeamService;
+import com.expensemanagement.AI.AIResponse;
+import com.expensemanagement.AI.AIService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,7 @@ public class AdminController {
     private final TeamService teamService;
     private final TeamBudgetService teamBudgetService;
     private final FreezePeriodService freezePeriodService;
+    private final AIService aiService;
 
     // ── Team Management ───────────────────────────────────────────────────────
 
@@ -312,5 +315,74 @@ public class AdminController {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // AI FEATURES (Admin Role)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Feature 8: Fraud Pattern Detection
+     * GET /api/admin/ai/fraud-insights
+     * Analyzes recent expenses across all users for fraud signals.
+     */
+    @GetMapping("/ai/fraud-insights")
+    public ResponseEntity<AIResponse> fraudInsights() {
+        LocalDate now = LocalDate.now();
+        List<Expense> recent = expenseRepository.findByMonthAndYear(
+                now.getMonthValue(), now.getYear());
+        return ResponseEntity.ok(aiService.fraudInsights(recent));
+    }
+
+    /**
+     * Feature 9: Budget Overrun Prediction
+     * GET /api/admin/ai/budget-prediction/{teamId}
+     */
+    @GetMapping("/ai/budget-prediction/{teamId}")
+    public ResponseEntity<AIResponse> budgetPrediction(@PathVariable Long teamId) {
+        LocalDate now = LocalDate.now();
+        java.util.Map<String, Object> status = teamBudgetService.getBudgetStatus(
+                teamId, now.getMonthValue(), now.getYear());
+        String teamName = (String) status.getOrDefault("teamName", "Team");
+        double budget = ((Number) status.getOrDefault("budget", 0.0)).doubleValue();
+        double spent = ((Number) status.getOrDefault("spent", 0.0)).doubleValue();
+        return ResponseEntity.ok(aiService.budgetPrediction(teamName, budget, spent));
+    }
+
+    /**
+     * Feature 10: Policy Violation Detection
+     * GET /api/admin/ai/policy-violations/{expenseId}
+     * Checks a specific expense against standard policy rules.
+     */
+    @GetMapping("/ai/policy-violations/{expenseId}")
+    public ResponseEntity<AIResponse> policyViolations(@PathVariable Long expenseId) {
+        Expense expense = expenseRepository.findById(expenseId).orElse(null);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        // Default policy rules — in production these would be loaded from
+        // ExpensePolicyService
+        String policyRules = """
+                - Meals: max ₹1,000 per meal, ₹5,000 per day
+                - Travel: economy class for domestic, business for international flights >6 hours
+                - Hotels: max ₹8,000 per night domestic, ₹20,000 international
+                - Office Supplies: single purchase max ₹10,000 without prior approval
+                - Entertainment: requires manager pre-approval above ₹5,000
+                - No personal expenses (groceries, clothing, etc.)
+                """;
+        return ResponseEntity.ok(aiService.policyViolation(expense, policyRules));
+    }
+
+    /**
+     * Feature 11: Vendor ROI Analysis
+     * GET /api/admin/ai/vendor-roi
+     * Aggregates this month's expenses by vendor and suggests cost-saving
+     * strategies.
+     */
+    @GetMapping("/ai/vendor-roi")
+    public ResponseEntity<AIResponse> vendorROI() {
+        LocalDate now = LocalDate.now();
+        List<Expense> recent = expenseRepository.findByMonthAndYear(
+                now.getMonthValue(), now.getYear());
+        return ResponseEntity.ok(aiService.vendorROI(recent));
     }
 }
