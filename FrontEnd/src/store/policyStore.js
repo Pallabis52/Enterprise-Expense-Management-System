@@ -18,10 +18,13 @@ const usePolicyStore = create((set, get) => ({
         }
     },
 
-    createPolicy: async (policyData) => {
+    createPolicy: async (policyData, isManager = false) => {
         set({ isLoading: true, error: null });
         try {
-            const newPolicy = await policyService.createPolicy(policyData);
+            const newPolicy = isManager
+                ? await policyService.createPolicyManager(policyData)
+                : await policyService.createPolicy(policyData);
+
             set((state) => ({
                 policies: [...state.policies, newPolicy],
                 isLoading: false

@@ -1,4 +1,4 @@
-package com.ExpenseManagement.Controller;
+package com.expensemanagement.Controller;
 
 import java.io.IOException;
 import java.util.List;
@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ExpenseManagement.Entities.Expense;
-import com.ExpenseManagement.Services.ApprovalService;
-import com.ExpenseManagement.Services.ExpenseService;
-import com.ExpenseManagement.Services.FileService;
+import com.expensemanagement.Entities.Expense;
+import com.expensemanagement.Services.ApprovalService;
+import com.expensemanagement.Services.ExpenseService;
+import com.expensemanagement.Services.FileService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

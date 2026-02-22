@@ -1,8 +1,8 @@
-package com.ExpenseManagement.Notification;
+package com.expensemanagement.Notification;
 
-import com.ExpenseManagement.Entities.Role;
-import com.ExpenseManagement.Entities.User;
-import com.ExpenseManagement.Repository.UserRepository;
+import com.expensemanagement.Entities.Role;
+import com.expensemanagement.Entities.User;
+import com.expensemanagement.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -38,11 +38,13 @@ public class NotificationService {
     // --- Sending Logic ---
 
     // Notify a specific user
-    public void notifyUser(Long userId, String title, String message, Notification.NotificationType type) {
+    public void notifyUser(Long userId, String title, String message, Notification.NotificationType type,
+            Notification.NotificationCategory category) {
         Notification notification = Notification.builder()
                 .title(title)
                 .message(message)
                 .type(type)
+                .category(category)
                 .userId(userId)
                 .build();
 
@@ -61,11 +63,13 @@ public class NotificationService {
     }
 
     // Notify all users with a specific role (e.g., ADM INS)
-    public void notifyRole(Role role, String title, String message, Notification.NotificationType type) {
+    public void notifyRole(Role role, String title, String message, Notification.NotificationType type,
+            Notification.NotificationCategory category) {
         Notification notification = Notification.builder()
                 .title(title)
                 .message(message)
                 .type(type)
+                .category(category)
                 .targetRole(role)
                 .build();
 

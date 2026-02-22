@@ -3,14 +3,15 @@ import api from './api';
 const managerService = {
     // Get expenses for assigned team members
     getTeamExpenses: async (params) => {
-        // params: { page, limit, status, search, startDate, endDate }
-        const response = await api.get('/manager/expenses', { params });
+        // params: { page, limit, status }
+        const response = await api.get('/manager/team/expenses', { params });
         return response.data;
     },
 
     // Get specific expense details
     getExpenseById: async (id) => {
-        const response = await api.get(`/manager/expenses/${id}`);
+        // This might need a custom endpoint or reuse of a generic one
+        const response = await api.get(`/expenses/getbyid/${id}`);
         return response.data;
     },
 
@@ -26,22 +27,33 @@ const managerService = {
         return response.data;
     },
 
-    // Bulk actions (Note: Backend may not implement this yet, keeping for future)
-    bulkApprove: async (ids) => {
-        // const response = await api.put('/manager/expenses/bulk-approve', { ids });
-        // return response.data;
-        throw new Error("Bulk approve not fully implemented in backend yet");
-    },
-
-    // Get assigned team members
-    getTeamMembers: async () => {
+    // Get assigned team
+    getTeam: async () => {
         const response = await api.get('/manager/team');
         return response.data;
     },
 
+    // Get assigned team members
+    getTeamMembers: async () => {
+        const response = await api.get('/manager/team/members');
+        return response.data;
+    },
+
     // Get team reports/stats
-    getTeamStats: async (params) => {
-        const response = await api.get('/manager/reports/stats', { params });
+    getTeamStats: async () => {
+        const response = await api.get('/manager/team/performance');
+        return response.data;
+    },
+
+    // Feature 1: Forward expense to admin with comment
+    forwardToAdmin: async (id, comment) => {
+        const response = await api.put(`/manager/expenses/${id}/forward`, { comment });
+        return response.data;
+    },
+
+    // Feature 7: Manager dashboard
+    getDashboard: async () => {
+        const response = await api.get('/manager/dashboard');
         return response.data;
     }
 };

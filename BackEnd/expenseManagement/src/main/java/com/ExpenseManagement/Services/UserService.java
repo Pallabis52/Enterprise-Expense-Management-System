@@ -1,24 +1,19 @@
-package com.ExpenseManagement.Services;
+package com.expensemanagement.Services;
 
-import com.ExpenseManagement.DTO.LoginRequest;
-import com.ExpenseManagement.DTO.RegisterRequest;
-import com.ExpenseManagement.Entities.Role;
-import com.ExpenseManagement.Entities.User;
-import com.ExpenseManagement.Repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.expensemanagement.DTO.RegisterRequest;
+import com.expensemanagement.Entities.Role;
+import com.expensemanagement.Entities.User;
+import com.expensemanagement.Repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public User register(RegisterRequest request) {
         User user = new User();
@@ -35,20 +30,6 @@ public class UserService {
 
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-    }
-
-    public List<User> getTeamMembers(Long managerId) {
-        return userRepository.findByManagerId(managerId);
-    }
-
-    public User assignManager(Long userId, Long managerId) {
-        User user = getUserById(userId);
-        User manager = getUserById(managerId);
-        if (manager.getRole() != Role.MANAGER && manager.getRole() != Role.ADMIN) {
-            throw new RuntimeException("Assignee must be a Manager or Admin");
-        }
-        user.setManager(manager);
-        return userRepository.save(user);
     }
 
     public User updateUser(User user) {

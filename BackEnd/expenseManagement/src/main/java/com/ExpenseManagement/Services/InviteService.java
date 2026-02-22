@@ -1,9 +1,9 @@
-package com.ExpenseManagement.Services;
+package com.expensemanagement.Services;
 
-import com.ExpenseManagement.DTO.Invite.InviteRequest;
-import com.ExpenseManagement.Entities.InviteToken;
-import com.ExpenseManagement.Entities.Role;
-import com.ExpenseManagement.Repository.InviteTokenRepository;
+import com.expensemanagement.DTO.Invite.InviteRequest;
+import com.expensemanagement.Entities.InviteToken;
+import com.expensemanagement.Entities.Role;
+import com.expensemanagement.Repository.InviteTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -64,7 +64,7 @@ public class InviteService {
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    private com.ExpenseManagement.Notification.NotificationService notificationService;
+    private com.expensemanagement.Notification.NotificationService notificationService;
 
     public void acceptInvite(String token) {
         InviteToken invite = validateToken(token);
@@ -76,7 +76,8 @@ public class InviteService {
                     invite.getManagerId(),
                     "Invitation Accepted",
                     "The invitation sent to " + invite.getEmail() + " has been accepted.",
-                    com.ExpenseManagement.Notification.Notification.NotificationType.SUCCESS);
+                    com.expensemanagement.Notification.Notification.NotificationType.SUCCESS,
+                    com.expensemanagement.Notification.Notification.NotificationCategory.TEAM);
         }
     }
 }

@@ -21,6 +21,7 @@ import ExpenseList from './pages/admin/expenses/ExpenseList';
 import CategoryList from './pages/admin/categories/CategoryList';
 import Reports from './pages/admin/reports/Reports';
 import AdminProfile from './pages/admin/profile/AdminProfile';
+import AdminTeamManagement from './pages/admin/teams/AdminTeamManagement';
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/dashboard/ManagerDashboard';
@@ -67,6 +68,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/admin/dashboard" replace /> }, // Default to dashboard
       { path: 'dashboard', element: <AdminDashboard /> },
       { path: 'expenses', element: <ExpenseList /> },
+      { path: 'teams', element: <AdminTeamManagement /> },
       { path: 'categories', element: <CategoryList /> },
       { path: 'reports', element: <Reports /> },
       { path: 'profile', element: <AdminProfile /> },

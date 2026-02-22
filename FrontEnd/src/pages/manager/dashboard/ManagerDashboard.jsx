@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useTeamStore from '../../../store/teamStore';
 import {
     ClipboardDocumentCheckIcon,
@@ -9,9 +9,25 @@ import {
 import Skeleton from '../../../components/ui/Skeleton';
 import { formatCurrency } from '../../../utils/helpers';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import PolicyModal from '../../admin/policies/PolicyModal';
+import InviteModal from '../../../components/manager/InviteModal';
+import usePolicyStore from '../../../store/policyStore';
 
 const ManagerDashboard = () => {
     const { stats, fetchTeamStats, isLoading } = useTeamStore();
+    const navigate = useNavigate();
+    const { createPolicy } = usePolicyStore();
+
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+    const handleCreatePolicy = async (policyData) => {
+        const success = await createPolicy(policyData, true); // true for isManager
+        if (success) {
+            setIsPolicyModalOpen(false);
+        }
+    };
 
     useEffect(() => {
         fetchTeamStats();
@@ -102,21 +118,42 @@ const ManagerDashboard = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                     <div className="space-y-3">
-                        <button className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                        <button
+                            onClick={() => setIsPolicyModalOpen(true)}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group"
+                        >
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">New Expense Policy</span>
                             <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                         </button>
-                        <button className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                        <button
+                            onClick={() => navigate('/manager/reports')}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group"
+                        >
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Team Performance</span>
                             <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                         </button>
-                        <button className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                        <button
+                            onClick={() => setIsInviteModalOpen(true)}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group"
+                        >
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Invite Member</span>
                             <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                         </button>
                     </div>
                 </div>
             </div>
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+                onSubmit={handleCreatePolicy}
+                isLoading={false}
+            />
+
+            <InviteModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
+            />
         </div>
     );
 };

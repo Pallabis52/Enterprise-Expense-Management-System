@@ -1,4 +1,4 @@
-package com.ExpenseManagement.Entities;
+package com.expensemanagement.Entities;
 
 import java.time.LocalDate;
 
@@ -50,4 +50,16 @@ public class Expense {
 
     // Rejection reason
     private String rejectionReason;
+
+    // --- Advanced Approval Workflow Fields ---
+
+    /** Tracks which approval level is responsible: "MANAGER" or "ADMIN" */
+    private String approvalStage;
+
+    /** Comment left by manager or admin when approving, rejecting, or forwarding */
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
+    private String approvalComment;
+
+    /** System-flagged as a potential duplicate expense */
+    private boolean isDuplicate = false;
 }

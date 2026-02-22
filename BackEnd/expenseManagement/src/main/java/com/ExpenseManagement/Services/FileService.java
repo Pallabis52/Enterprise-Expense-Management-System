@@ -1,4 +1,4 @@
-package com.ExpenseManagement.Services;
+package com.expensemanagement.Services;
 
 import java.io.File;
 import java.io.IOException;

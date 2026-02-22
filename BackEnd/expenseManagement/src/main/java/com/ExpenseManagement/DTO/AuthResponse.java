@@ -1,6 +1,6 @@
-package com.ExpenseManagement.DTO;
+package com.expensemanagement.DTO;
 
-import com.ExpenseManagement.Entities.Role;
+import com.expensemanagement.Entities.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

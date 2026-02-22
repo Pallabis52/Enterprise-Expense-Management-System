@@ -49,34 +49,41 @@ const AdminDashboard = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                     <KPICard
                         title="Total Expenses"
-                        value={formatCurrency(stats?.totalExpense || 0)}
+                        value={formatCurrency(stats?.totalSpent || 0)}
                         icon={BanknotesIcon}
                         color="blue"
                         delay={0.1}
                     />
                     <KPICard
                         title="Avg. Monthly Spend"
-                        value={formatCurrency(stats?.avgMonthly || 0)}
+                        value={formatCurrency(stats?.avgMonthlySpend || 0)}
                         icon={ArrowTrendingUpIcon}
                         color="emerald"
                         delay={0.2}
                     />
                     <KPICard
                         title="Active Categories"
-                        value={stats?.categoryCount || "5"} // Mock if not in stats
+                        value={stats?.categoryCount || "0"}
                         icon={ChartPieIcon}
                         color="amber"
                         delay={0.3}
                     />
                     <KPICard
                         title="Total Users"
-                        value={stats?.userCount || "12"} // Mock if not in stats
+                        value={stats?.userCount || "0"}
                         icon={UsersIcon}
                         color="purple"
                         delay={0.4}
+                    />
+                    <KPICard
+                        title="Total Teams"
+                        value={stats?.teamCount || "0"}
+                        icon={UsersIcon}
+                        color="indigo"
+                        delay={0.5}
                     />
                 </div>
 

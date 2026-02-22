@@ -1,6 +1,6 @@
-package com.ExpenseManagement.Repository;
+package com.expensemanagement.Repository;
 
-import com.ExpenseManagement.Entities.ExpensePolicy;
+import com.expensemanagement.Entities.ExpensePolicy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;

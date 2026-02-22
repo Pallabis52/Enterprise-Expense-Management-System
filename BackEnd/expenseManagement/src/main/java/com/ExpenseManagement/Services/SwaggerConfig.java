@@ -1,4 +1,4 @@
-// package com.ExpenseManagement.Services;
+// package com.expensemanagement.Services;
 
 // import io.swagger.v3.oas.models.info.Info;
 

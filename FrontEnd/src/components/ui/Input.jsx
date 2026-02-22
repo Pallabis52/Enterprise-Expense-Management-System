@@ -22,6 +22,7 @@ const Input = React.forwardRef(({ className, label, error, icon: Icon, ...props 
                 <input
                     ref={ref}
                     id={inputId}
+                    {...props}
                     type={props.type === "password" ? (showPassword ? "text" : "password") : props.type}
                     className={cn(
                         "block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-all duration-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-primary-500",

@@ -1,8 +1,8 @@
-package com.ExpenseManagement.Repository;
+package com.expensemanagement.Repository;
 
-import com.ExpenseManagement.Entities.Approval_Status;
-import com.ExpenseManagement.Entities.Expense;
-import com.ExpenseManagement.Entities.User;
+import com.expensemanagement.Entities.Approval_Status;
+import com.expensemanagement.Entities.Expense;
+import com.expensemanagement.Entities.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +20,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Page<Expense> findByUser(User user, Pageable pageable);
 
     List<Expense> findByUser(User user);
+
+    java.util.Optional<Expense> findByIdAndUser(Long id, User user);
 
     // Find by Team (Users managed by Manager)
     // Assuming we pass the list of team member users
@@ -71,4 +73,45 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT e.user, SUM(e.amount) as total FROM Expense e WHERE e.user IN :users GROUP BY e.user ORDER BY total DESC")
     List<Object[]> findTopSpenders(@Param("users") List<User> users);
+
+    // --- Admin Global Stats ---
+
+    @Query("SELECT SUM(e.amount) FROM Expense e")
+    Double sumTotalAmount();
+
+    Long countByStatus(Approval_Status status);
+
+    @Query("SELECT e.category, SUM(e.amount) FROM Expense e GROUP BY e.category")
+    List<Object[]> sumAmountByCategory();
+
+    @Query("SELECT MONTH(e.date), SUM(e.amount) FROM Expense e WHERE YEAR(e.date) = :year GROUP BY MONTH(e.date)")
+    List<Object[]> sumAmountByMonth(@Param("year") int year);
+
+    @Query("SELECT COUNT(DISTINCT e.category) FROM Expense e")
+    Long countDistinctCategories();
+
+    // --- Duplicate Detection ---
+    boolean existsByUserAndAmountAndDateAndDescription(User user, double amount, java.time.LocalDate date,
+            String description);
+
+    // --- Flagged Duplicates for Manager ---
+    @Query("SELECT e FROM Expense e WHERE e.user IN :users AND e.isDuplicate = true")
+    List<Expense> findByUserInAndIsDuplicateTrue(@Param("users") List<User> users);
+
+    // --- Forwarded to Admin ---
+    Page<Expense> findByStatusIn(List<Approval_Status> statuses, Pageable pageable);
+
+    // --- Team Monthly Spend ---
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user IN :users " +
+            "AND MONTH(e.date) = :month AND YEAR(e.date) = :year")
+    Double sumAmountByUserInAndMonth(@Param("users") List<User> users,
+            @Param("month") int month,
+            @Param("year") int year);
+
+    // --- TOP Teams spend by month (admin dashboard) ---
+    @Query("SELECT e.user.team.name, SUM(e.amount) as total FROM Expense e " +
+            "WHERE MONTH(e.date) = :month AND YEAR(e.date) = :year " +
+            "AND e.user.team IS NOT NULL " +
+            "GROUP BY e.user.team.name ORDER BY total DESC")
+    List<Object[]> findTopTeamsByMonth(@Param("month") int month, @Param("year") int year);
 }

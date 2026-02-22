@@ -3,9 +3,8 @@ import api from './api';
 const adminExpenseService = {
     // Get all expenses 
     getAllExpenses: async (params) => {
-        // Backend now at /api/expenses/get
-        // BaseURL is /api, so relative path is /expenses/get
-        const response = await api.get('/expenses/get');
+        // Updated to use the new paginated AdminController endpoint
+        const response = await api.get('/admin/expenses', { params });
         return response.data;
     },
 
@@ -17,14 +16,13 @@ const adminExpenseService = {
 
     // Approve expense from Admin
     approveExpense: async (id) => {
-        const response = await api.put(`/expenses/approve/${id}/ADMIN`);
+        const response = await api.put(`/admin/expenses/${id}/approve`);
         return response.data;
     },
 
     // Reject expense
     rejectExpense: async (id, reason) => {
-        // Fallback to Manager endpoint or implementing specific admin reject
-        const response = await api.put(`/manager/expenses/${id}/reject`, { reason });
+        const response = await api.put(`/admin/expenses/${id}/reject`, { reason });
         return response.data;
     },
 

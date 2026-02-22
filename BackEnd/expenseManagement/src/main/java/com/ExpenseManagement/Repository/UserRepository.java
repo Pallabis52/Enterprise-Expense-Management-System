@@ -1,7 +1,8 @@
-package com.ExpenseManagement.Repository;
+package com.expensemanagement.Repository;
 
-import com.ExpenseManagement.Entities.Role;
-import com.ExpenseManagement.Entities.User;
+import com.expensemanagement.Entities.Role;
+import com.expensemanagement.Entities.Team;
+import com.expensemanagement.Entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
-    List<User> findByManagerId(Long managerId);
+
+    List<User> findByTeam(Team team);
+
     List<User> findByRole(Role role);
 }

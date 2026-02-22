@@ -52,6 +52,16 @@ const ExpenseList = () => {
                 </div>
             )
         },
+        {
+            key: 'team',
+            title: 'Team',
+            render: (row) => (
+                <div>
+                    <p className="font-medium text-gray-900 dark:text-white">{row.user?.team?.name || '-'}</p>
+                    <p className="text-xs text-gray-500">{row.user?.team?.manager?.name ? `Mgr: ${row.user.team.manager.name}` : 'No Manager'}</p>
+                </div>
+            )
+        },
         { key: 'title', title: 'Expense', className: 'font-medium' },
         {
             key: 'category',

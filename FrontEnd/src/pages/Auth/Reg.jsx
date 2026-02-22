@@ -2,10 +2,15 @@ import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaLinkedin } from "react-icons/fa";
 import { Button } from "flowbite-react";
+import useAuthStore from "../../store/authStore";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 import "tailwindcss/tailwind.css";
 
 const Register = () => {
+    const navigate = useNavigate();
+    const register = useAuthStore((state) => state.register);
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -24,9 +29,39 @@ const Register = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form submitted", formData);
+
+        if (formData.password !== formData.confirmPassword) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Password Mismatch',
+                text: 'Passwords do not match!',
+            });
+            return;
+        }
+
+        try {
+            await register({
+                name: `${formData.firstName} ${formData.lastName}`,
+                email: formData.email,
+                password: formData.password,
+                role: 'USER' // Default role
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Registration Successful',
+                text: 'Please login with your credentials',
+            });
+            navigate('/login');
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                text: error.response?.data?.message || 'Something went wrong',
+            });
+        }
     };
 
     const handleGoogleLogin = () => {
@@ -40,7 +75,6 @@ const Register = () => {
     return (
         <section className="bg-gray-50 dark:bg-gray-900">
             <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-                {/* <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"> */}
                 <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
 
                     <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
@@ -50,31 +84,37 @@ const Register = () => {
                         <div className="flex space-x-4">
                             <div className="w-1/2">
                                 <label
-                                    htmlFor="first_name"
+                                    htmlFor="firstName"
                                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                 >
                                     First name
                                 </label>
                                 <input
                                     type="text"
-                                    id="first_name"
+                                    name="firstName"
+                                    id="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="first name"
+                                    placeholder="First Name"
                                     required
                                 />
                             </div>
                             <div className="w-1/2">
                                 <label
-                                    htmlFor="last_name"
+                                    htmlFor="lastName"
                                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                 >
                                     Last name
                                 </label>
                                 <input
                                     type="text"
-                                    id="last_name"
+                                    name="lastName"
+                                    id="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Last name"
+                                    placeholder="Last Name"
                                     required
                                 />
                             </div>
@@ -88,7 +128,10 @@ const Register = () => {
                             </label>
                             <input
                                 type="email"
+                                name="email"
                                 id="email"
+                                value={formData.email}
+                                onChange={handleChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 placeholder="name@company.com"
                                 required
@@ -104,7 +147,10 @@ const Register = () => {
                             </label>
                             <input
                                 type="password"
+                                name="password"
                                 id="password"
+                                value={formData.password}
+                                onChange={handleChange}
                                 placeholder="••••••••"
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 required
@@ -113,14 +159,17 @@ const Register = () => {
 
                         <div>
                             <label
-                                htmlFor="confirm-password"
+                                htmlFor="confirmPassword"
                                 className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                             >
                                 Confirm password
                             </label>
                             <input
                                 type="password"
-                                id="confirm-password"
+                                name="confirmPassword"
+                                id="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
                                 placeholder="••••••••"
                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 required
@@ -130,15 +179,18 @@ const Register = () => {
                         <div className="flex items-start">
                             <div className="flex items-center h-5">
                                 <input
-                                    id="terms"
+                                    id="termsAccepted"
+                                    name="termsAccepted"
                                     type="checkbox"
+                                    checked={formData.termsAccepted}
+                                    onChange={handleChange}
                                     className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
                                     required
                                 />
                             </div>
                             <div className="ml-3 text-sm">
                                 <label
-                                    htmlFor="terms"
+                                    htmlFor="termsAccepted"
                                     className="font-light text-gray-500 dark:text-gray-300"
                                 >
                                     I accept the{" "}
@@ -151,7 +203,7 @@ const Register = () => {
                                 </label>
                             </div>
                         </div>
-                        <Button className="w-full" color="blue" >create an account</Button>
+                        <Button type="submit" className="w-full" color="blue" >create an account</Button>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">Already have an account? <a href="/login" className="text-primary-600 hover:underline dark:text-primary-500">Login here</a></p>
 
                     </form>

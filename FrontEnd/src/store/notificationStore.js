@@ -69,7 +69,7 @@ const useNotificationStore = create((set, get) => ({
         const { user } = useAuthStore.getState();
         if (!user || get().isConnected) return;
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8081/ws');
         const client = Stomp.over(socket);
         client.debug = null; // Disable debug logs
 

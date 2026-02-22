@@ -4,16 +4,19 @@ import managerService from '../services/managerService';
 const useManagerExpenseStore = create((set, get) => ({
     expenses: [],
     currentExpense: null,
+    loading: false,
     isLoading: false,
     error: null,
+    dashboard: null,
     pagination: {
         page: 1,
         limit: 10,
         total: 0,
         totalPages: 0
     },
+    teamMembers: [],
     filters: {
-        status: 'PENDING', // Default to pending for approvals
+        status: 'PENDING',
         search: '',
         startDate: null,
         endDate: null,
@@ -33,8 +36,9 @@ const useManagerExpenseStore = create((set, get) => ({
         get().fetchTeamExpenses();
     },
 
+    // Legacy fetch (uses filters from state)
     fetchTeamExpenses: async () => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, loading: true, error: null });
         try {
             const { filters, pagination } = get();
             const params = {
@@ -42,9 +46,7 @@ const useManagerExpenseStore = create((set, get) => ({
                 limit: pagination.limit,
                 ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v != null && v !== 'all' && v !== ''))
             };
-
             const data = await managerService.getTeamExpenses(params);
-
             set({
                 expenses: data.content || data.expenses || [],
                 pagination: {
@@ -52,25 +54,70 @@ const useManagerExpenseStore = create((set, get) => ({
                     total: data.totalElements || data.total || 0,
                     totalPages: data.totalPages || 0
                 },
-                isLoading: false
+                isLoading: false,
+                loading: false
             });
         } catch (error) {
-            set({ error: error.message, isLoading: false });
+            set({ error: error.message, isLoading: false, loading: false });
         }
     },
 
-    approveExpense: async (id) => {
+    // New fetch with explicit params (used by ManagerExpenseList)
+    fetchExpenses: async ({ status, page = 1 } = {}) => {
+        set({ loading: true, isLoading: true, error: null });
         try {
-            await managerService.approveExpense(id);
+            const { pagination } = get();
+            const params = { page, limit: pagination.limit };
+            if (status) params.status = status;
+
+            const data = await managerService.getTeamExpenses(params);
+            set({
+                expenses: data.content || data.expenses || [],
+                pagination: {
+                    ...pagination,
+                    page,
+                    total: data.totalElements || 0,
+                    totalPages: data.totalPages || 0
+                },
+                loading: false,
+                isLoading: false
+            });
+        } catch (error) {
+            set({ error: error.message, loading: false, isLoading: false });
+        }
+    },
+
+    // Feature 7: Fetch manager dashboard KPIs
+    fetchDashboard: async () => {
+        try {
+            const data = await managerService.getDashboard();
+            set({ dashboard: data });
+        } catch (error) {
+            console.error('Failed to fetch manager dashboard:', error);
+        }
+    },
+
+    fetchTeamMembers: async () => {
+        try {
+            const data = await managerService.getTeamMembers();
+            set({ teamMembers: data });
+        } catch (error) {
+            console.error('Failed to fetch team members:', error);
+        }
+    },
+
+    approveExpense: async (id, comment) => {
+        try {
+            await managerService.approveExpense(id, comment);
             set((state) => ({
                 expenses: state.expenses.map(exp =>
-                    exp.id === id ? { ...exp, status: 'APPROVED' } : exp
+                    exp.id === id ? { ...exp, status: 'APPROVED', approvalComment: comment } : exp
                 )
             }));
             return true;
         } catch (error) {
-            set({ error: error.message });
-            return false;
+            set({ error: error.response?.data?.message || error.message });
+            throw error;
         }
     },
 
@@ -84,8 +131,24 @@ const useManagerExpenseStore = create((set, get) => ({
             }));
             return true;
         } catch (error) {
-            set({ error: error.message });
-            return false;
+            set({ error: error.response?.data?.message || error.message });
+            throw error;
+        }
+    },
+
+    // Feature 1: Forward expense to admin
+    forwardToAdmin: async (id, comment) => {
+        try {
+            await managerService.forwardToAdmin(id, comment);
+            set((state) => ({
+                expenses: state.expenses.map(exp =>
+                    exp.id === id ? { ...exp, status: 'FORWARDED_TO_ADMIN', approvalComment: comment } : exp
+                )
+            }));
+            return true;
+        } catch (error) {
+            set({ error: error.response?.data?.message || error.message });
+            throw error;
         }
     },
 

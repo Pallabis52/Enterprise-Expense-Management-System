@@ -1,173 +1,217 @@
 import React, { useEffect, useState } from 'react';
 import useManagerExpenseStore from '../../../store/managerExpenseStore';
 import Table from '../../../components/ui/Table';
-import Badge from '../../../components/ui/Badge';
 import Button from '../../../components/ui/Button';
+import Badge from '../../../components/ui/Badge';
 import Input from '../../../components/ui/Input';
+import Select from '../../../components/ui/Select';
 import ExpenseApprovalDrawer from './ExpenseApprovalDrawer';
+import {
+    MagnifyingGlassIcon,
+    FunnelIcon,
+    ExclamationTriangleIcon,
+    BanknotesIcon
+} from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../../utils/helpers';
-import { EyeIcon, MagnifyingGlassIcon, CheckCircleIcon } from '@heroicons/react/24/outline'; // CheckCircle for Bulk
+
+const STATUS_OPTIONS = [
+    { label: 'All', value: '' },
+    { label: 'Pending', value: 'PENDING' },
+    { label: 'Approved', value: 'APPROVED' },
+    { label: 'Rejected', value: 'REJECTED' },
+    { label: 'Forwarded to Admin', value: 'FORWARDED_TO_ADMIN' },
+];
+
+const statusVariant = s =>
+    s === 'APPROVED' ? 'success' :
+        s === 'REJECTED' ? 'error' :
+            s === 'FORWARDED_TO_ADMIN' ? 'warning' : 'warning';
 
 const ManagerExpenseList = () => {
     const {
         expenses,
-        isLoading,
-        filters,
-        setFilters,
-        fetchTeamExpenses,
-        setCurrentExpense
+        loading,
+        pagination,
+        dashboard,
+        fetchExpenses,
+        fetchDashboard,
+        setCurrentExpense,
     } = useManagerExpenseStore();
 
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [selectedIds, setSelectedIds] = useState([]); // For bulk actions
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
-        fetchTeamExpenses();
-    }, [filters]);
+        fetchExpenses({ status: status || undefined, page: 1 });
+        fetchDashboard();
+    }, [status]);
 
-    // Handle Checkbox Selection (if Table supports it, otherwise manual logic)
-    // Assuming Table supports rowSelection or we add it. 
-    // For simplicity in this demo, I will just add the Bulk Action button 
-    // but note that "Table" needs to support selection to be functional.
-    // If Table doesn't support selection, I'll assume we might add it later or mock it.
-    // For now, I'll add the button UI.
-
-    const handleBulkApprove = () => {
-        alert("Bulk Approve Feature: Implement 'bulkApprove' in store and connect here once Table supports selection.");
+    const handleRowClick = expense => {
+        setCurrentExpense(expense);
+        setDrawerOpen(true);
     };
+
+    const handlePageChange = page => fetchExpenses({ status: status || undefined, page });
+
+    const filtered = (expenses || []).filter(e =>
+        !search ||
+        e.title?.toLowerCase().includes(search.toLowerCase()) ||
+        e.user?.name?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const budgetExceeded = dashboard?.budget?.exceeded;
 
     const columns = [
         {
-            key: 'id',
-            title: 'Ref ID',
-            className: 'w-20',
-            render: (row) => <span className="text-gray-500">#{row.id.toString().slice(-4)}</span>
-        },
-        {
-            key: 'employee',
-            title: 'Employee',
-            render: (row) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-300">
+            header: 'Employee',
+            accessor: 'user',
+            cell: row => (
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold text-sm">
                         {row.user?.name?.[0] || 'E'}
                     </div>
-                    <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{row.user?.name || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500">{row.user?.email || 'No Email'}</p>
+                    <div className="leading-tight">
+                        <p className="font-medium text-sm text-gray-900 dark:text-white">{row.user?.name || 'N/A'}</p>
+                        <p className="text-xs text-gray-400">{row.user?.email}</p>
                     </div>
                 </div>
             )
         },
         {
-            key: 'category',
-            title: 'Category',
-            render: (row) => (
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {row.category}
+            header: 'Title',
+            accessor: 'title',
+            cell: row => (
+                <div className="flex items-center gap-2">
+                    <span>{row.title}</span>
+                    {row.isDuplicate && (
+                        <span title="Possible duplicate" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
+                            <ExclamationTriangleIcon className="w-3 h-3" /> Dup
+                        </span>
+                    )}
+                </div>
+            )
+        },
+        { header: 'Category', accessor: 'category' },
+        { header: 'Date', accessor: 'date', cell: row => new Date(row.date).toLocaleDateString() },
+        {
+            header: 'Amount',
+            accessor: 'amount',
+            cell: row => (
+                <span className={row.amount > 50_000 ? 'text-red-600 font-bold' :
+                    row.amount > 10_000 ? 'text-amber-600 font-semibold' :
+                        'font-medium'}>
+                    {formatCurrency(row.amount)}
                 </span>
             )
         },
         {
-            key: 'amount',
-            title: 'Amount',
-            sortable: true,
-            render: (row) => <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(row.amount)}</span>
+            header: 'Status',
+            accessor: 'status',
+            cell: row => <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
         },
         {
-            key: 'status',
-            title: 'Status',
-            sortable: true,
-            render: (row) => {
-                const variant =
-                    row.status === 'APPROVED' ? 'success' :
-                        row.status === 'REJECTED' ? 'error' : 'warning';
-                return <Badge variant={variant}>{row.status}</Badge>;
-            }
-        },
-        {
-            key: 'date',
-            title: 'Date',
-            sortable: true,
-            render: (row) => new Date(row.date).toLocaleDateString()
-        },
-        {
-            key: 'actions',
-            title: '',
-            className: 'text-right',
-            render: (row) => (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentExpense(row);
-                        setIsDrawerOpen(true);
-                    }}
-                >
-                    <EyeIcon className="w-4 h-4" />
+            header: '',
+            accessor: 'id',
+            cell: row => (
+                <Button size="sm" variant="ghost" onClick={() => handleRowClick(row)}>
+                    Review
                 </Button>
             )
-        }
+        },
     ];
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Expense Approvals</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Review and action assigned team expenses.</p>
+        <div className="space-y-4">
+            {/* ── Budget exceeded banner ── */}
+            {budgetExceeded && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+                    <BanknotesIcon className="w-5 h-5 shrink-0" />
+                    <div>
+                        <p className="font-semibold">Team Monthly Budget Exceeded</p>
+                        <p className="text-sm opacity-90">
+                            Your team has spent {formatCurrency(dashboard?.budget?.spent)} of the{' '}
+                            {formatCurrency(dashboard?.budget?.budget)} budget this month.
+                            Admin approval is required for further expenses.
+                        </p>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={handleBulkApprove}>
-                        <CheckCircleIcon className="w-5 h-5 mr-2" />
-                        Bulk Approve
-                    </Button>
-                </div>
-            </div>
+            )}
 
-            {/* Filters */}
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+            {/* ── Filters ── */}
+            <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-1 min-w-[200px]">
                     <Input
-                        icon={MagnifyingGlassIcon}
-                        placeholder="Search employee or expense..."
-                        value={filters.search}
-                        onChange={(e) => setFilters({ search: e.target.value })}
-                        className="w-full"
+                        prefix={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+                        placeholder="Search expenses or employees..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
                     />
                 </div>
-                <select
-                    value={filters.status}
-                    onChange={(e) => setFilters({ status: e.target.value })}
-                    className="rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-emerald-500"
-                >
-                    <option value="all">All Status</option>
-                    <option value="PENDING">Pending</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="REJECTED">Rejected</option>
-                </select>
-                <input
-                    type="date"
-                    className="rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-emerald-500"
-                    onChange={(e) => setFilters({ startDate: e.target.value })}
-                />
+                <div className="flex items-center gap-2">
+                    <FunnelIcon className="w-4 h-4 text-gray-400" />
+                    <Select
+                        options={STATUS_OPTIONS}
+                        value={status}
+                        onChange={e => setStatus(e.target.value)}
+                        className="w-48"
+                    />
+                </div>
             </div>
 
-            <Table
-                columns={columns}
-                data={expenses}
-                isLoading={isLoading}
-                onRowClick={(row) => {
-                    setCurrentExpense(row);
-                    setIsDrawerOpen(true);
-                }}
-                emptyMessage="No pending approvals found."
-            />
+            {/* ── Stats row ── */}
+            {dashboard && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                        { label: 'Pending', value: dashboard.pendingCount, color: 'text-amber-600' },
+                        { label: 'Forwarded', value: dashboard.forwardedCount, color: 'text-blue-600' },
+                        { label: 'Flagged', value: dashboard.flaggedCount, color: 'text-yellow-600' },
+                        { label: 'Monthly Spend', value: formatCurrency(dashboard.monthlySpend), color: 'text-emerald-600' },
+                    ].map(stat => (
+                        <div key={stat.label} className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
+                            <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
 
-            <ExpenseApprovalDrawer
-                isOpen={isDrawerOpen}
-                onClose={() => setIsDrawerOpen(false)}
-            />
+            {/* ── Table ── */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <Table
+                    columns={columns}
+                    data={filtered}
+                    loading={loading}
+                    emptyMessage="No expenses found"
+                    rowClassName={row =>
+                        row.isDuplicate
+                            ? 'bg-yellow-50 dark:bg-yellow-900/10 border-l-4 border-yellow-400'
+                            : ''
+                    }
+                />
+                {pagination && (
+                    <div className="flex justify-between items-center p-4 border-t border-gray-100 dark:border-gray-700">
+                        <p className="text-sm text-gray-500">
+                            Page {pagination.page} of {pagination.totalPages}
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                size="sm" variant="ghost"
+                                disabled={pagination.page <= 1}
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                            >Previous</Button>
+                            <Button
+                                size="sm" variant="ghost"
+                                disabled={pagination.page >= pagination.totalPages}
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                            >Next</Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Drawer ── */}
+            <ExpenseApprovalDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </div>
     );
 };

@@ -7,6 +7,7 @@ import {
     TagIcon,
     ChartBarIcon,
     UserCircleIcon,
+    UsersIcon,
     ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
@@ -20,6 +21,7 @@ const IconWrapper = ({ icon: Icon, fallback, className }) => {
 
 const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon }, // Admin Dashboard
+    { name: 'Teams', href: '/admin/teams', icon: UsersIcon },
     { name: 'Expenses', href: '/admin/expenses', icon: BanknotesIcon },
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },

@@ -1,7 +1,7 @@
-package com.ExpenseManagement.Services;
+package com.expensemanagement.Services;
 
-import com.ExpenseManagement.Entities.ExpensePolicy;
-import com.ExpenseManagement.Repository.ExpensePolicyRepository;
+import com.expensemanagement.Entities.ExpensePolicy;
+import com.expensemanagement.Repository.ExpensePolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,15 +22,16 @@ public class ExpensePolicyService {
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    private com.ExpenseManagement.Notification.NotificationService notificationService;
+    private com.expensemanagement.Notification.NotificationService notificationService;
 
     public ExpensePolicy createPolicy(ExpensePolicy policy) {
         ExpensePolicy saved = policyRepository.save(policy);
         notificationService.notifyRole(
-                com.ExpenseManagement.Entities.Role.MANAGER,
+                com.expensemanagement.Entities.Role.MANAGER,
                 "New Policy Created",
                 "A new expense policy '" + saved.getName() + "' has been created.",
-                com.ExpenseManagement.Notification.Notification.NotificationType.INFO);
+                com.expensemanagement.Notification.Notification.NotificationType.INFO,
+                com.expensemanagement.Notification.Notification.NotificationCategory.POLICY);
         return saved;
     }
 

@@ -1,6 +1,6 @@
-package com.ExpenseManagement.DTO;
+package com.expensemanagement.DTO;
 
-import com.ExpenseManagement.Entities.Role;
+import com.expensemanagement.Entities.Role;
 import lombok.Data;
 
 public class AuthDTO {

@@ -1,6 +1,6 @@
-package com.ExpenseManagement.Notification;
+package com.expensemanagement.Notification;
 
-import com.ExpenseManagement.Entities.Role;
+import com.expensemanagement.Entities.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,16 +30,27 @@ public class Notification {
     private Long userId; // If null, role specific
 
     @Column(name = "is_read")
+    @Builder.Default
     private boolean read = false;
 
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    private NotificationCategory category;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        if (this.category == null) {
+            this.category = NotificationCategory.GENERAL;
+        }
     }
 
     public enum NotificationType {
         INFO, WARNING, ACTION, SUCCESS
+    }
+
+    public enum NotificationCategory {
+        GENERAL, EXPENSE, TEAM, POLICY, SYSTEM, BUDGET
     }
 }

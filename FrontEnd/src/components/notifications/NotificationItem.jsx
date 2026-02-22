@@ -4,6 +4,18 @@ import { InformationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon, BellIc
 
 const NotificationItem = ({ notification, onClick }) => {
     const getIcon = () => {
+        if (notification.category) {
+            switch (notification.category) {
+                case 'EXPENSE': return <div className="text-xl">💸</div>;
+                case 'TEAM': return <div className="text-xl">👥</div>;
+                case 'POLICY': return <div className="text-xl">📜</div>;
+                case 'SYSTEM': return <div className="text-xl">⚙️</div>;
+                case 'GENERAL': return <div className="text-xl">🔔</div>;
+                default: break;
+            }
+        }
+
+        // Fallback to type-based icons if no category or unknown category
         switch (notification.type) {
             case 'WARNING': return <ExclamationTriangleIcon className="w-5 h-5 text-amber-500" />;
             case 'SUCCESS': return <CheckCircleIcon className="w-5 h-5 text-emerald-500" />;

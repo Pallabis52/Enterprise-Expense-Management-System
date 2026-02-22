@@ -25,6 +25,11 @@ const policyService = {
     getActivePolicies: async () => {
         const response = await api.get('/manager/policies');
         return response.data;
+    },
+
+    createPolicyManager: async (policyData) => {
+        const response = await api.post('/manager/policies', policyData);
+        return response.data;
     }
 };
 

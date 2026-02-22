@@ -1,12 +1,11 @@
-package com.ExpenseManagement.Entities;
+package com.expensemanagement.Entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
@@ -30,12 +29,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    // Self-referencing relationship for Manager -> Team
-    @ManyToOne
-    @JoinColumn(name = "manager_id")
-    @JsonIgnore
-    private User manager;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "team_id")
+    @JsonIgnoreProperties({ "members", "manager" })
+    private Team team;
 
-    @OneToMany(mappedBy = "manager", fetch = FetchType.LAZY)
-    private List<User> teamMembers;
+    @OneToOne(mappedBy = "manager")
+    @JsonIgnoreProperties({ "members", "manager" })
+    private Team managedTeam;
 }

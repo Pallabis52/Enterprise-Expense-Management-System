@@ -1,4 +1,4 @@
-package com.ExpenseManagement.Entities;
+package com.expensemanagement.Entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
