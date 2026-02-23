@@ -131,7 +131,7 @@ public class ManagerController {
         if (expense == null)
             return ResponseEntity.notFound().build();
         User owner = expense.getUser();
-        return ResponseEntity.ok(aiService.approvalRecommendation(expense, owner));
+        return ResponseEntity.ok(aiService.approvalRecommendation(expense, owner).join());
     }
 
     /**
@@ -145,7 +145,7 @@ public class ManagerController {
         Expense expense = managerService.getExpenseById(expenseId, manager);
         if (expense == null)
             return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(aiService.riskScore(expense, expense.getUser()));
+        return ResponseEntity.ok(aiService.riskScore(expense, expense.getUser()).join());
     }
 
     /**
@@ -166,6 +166,21 @@ public class ManagerController {
                 members,
                 monthlySpend != null ? monthlySpend : 0,
                 budget != null ? budget : 0,
-                team.getName()));
+                team.getName()).join());
+    }
+
+    /**
+     * Feature 10: AI Chatbot
+     * POST /api/manager/ai/chat
+     * Body: { "message": "...", "context": "..." }
+     */
+    @PostMapping("/ai/chat")
+    public ResponseEntity<AIResponse> chat(
+            @RequestBody Map<String, Object> body,
+            Authentication auth) {
+        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+        String message = (String) body.getOrDefault("message", "");
+        String context = (String) body.getOrDefault("context", "");
+        return ResponseEntity.ok(aiService.chat("MANAGER", manager.getName(), message, context).join());
     }
 }

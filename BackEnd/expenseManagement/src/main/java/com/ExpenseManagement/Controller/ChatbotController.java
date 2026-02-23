@@ -2,6 +2,7 @@ package com.expensemanagement.Controller;
 
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.AIService;
+import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.Entities.User;
 import com.expensemanagement.Services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +25,7 @@ import java.util.Map;
 public class ChatbotController {
 
     private final AIService aiService;
+    private final OllamaService ollamaService;
     private final UserService userService;
 
     /**
@@ -38,13 +41,13 @@ public class ChatbotController {
      * {
      * "feature": "chatbot",
      * "result": "Based on your history, Travel is your top category...",
-     * "model": "deepseek-r1:latest",
+     * "model": "phi3",
      * "processingMs": 1240,
      * "fallback": false
      * }
      */
     @PostMapping("/chat")
-    public ResponseEntity<AIResponse> chat(
+    public CompletableFuture<ResponseEntity<AIResponse>> chat(
             @RequestBody Map<String, String> body,
             Authentication auth) {
 
@@ -52,28 +55,33 @@ public class ChatbotController {
         String context = body.getOrDefault("context", "No additional context provided.");
 
         if (message.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(AIResponse.fallback("chatbot", 0));
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest()
+                    .body(AIResponse.fallback("chatbot", 0)));
         }
 
         User user = userService.getUserByEmail(auth.getName());
         String role = user.getRole() != null ? user.getRole().name() : "USER";
 
-        AIResponse response = aiService.chat(role, user.getName(), message, context);
-        return ResponseEntity.ok(response);
+        return aiService.chat(role, user.getName(), message, context)
+                .thenApply(ResponseEntity::ok);
     }
 
     /**
      * Health check — tells the frontend whether Ollama is reachable.
      * GET /api/ai/status
+     *
+     * <p>
+     * Uses {@link OllamaService#isOnline()} which performs a lightweight GET
+     * to {@code /api/tags} (no model inference, completes in milliseconds).
+     * Previously this endpoint called a full chat inference which could block
+     * for 60–120 seconds and waste a model-load slot.
      */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status() {
-        // Quick ping — use a trivial prompt
-        AIResponse probe = aiService.chat("USER", "system", "ping", "health check");
+        boolean online = ollamaService.isOnline();
         return ResponseEntity.ok(Map.of(
-                "ollamaAvailable", !probe.isFallback(),
-                "model", probe.getModel()));
+                "ollamaAvailable", online,
+                "model", online ? ollamaService.getModelName() : "offline"));
     }
 
     /**

@@ -39,8 +39,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "MANAGER", "ADMIN")
-                .requestMatchers("/api/categories/**").authenticated() // Allow all authenticated users to view/use
-                // categories
+                .requestMatchers("/api/categories/**").authenticated()
+                .requestMatchers("/api/ai/**").authenticated()
+                .requestMatchers("/api/voice/**").authenticated()
                 .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

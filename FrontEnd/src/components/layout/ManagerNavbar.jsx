@@ -11,13 +11,13 @@ import {
     UserCircleIcon,
     ArrowLeftOnRectangleIcon,
     SunIcon,
-    MoonIcon,
-    MagnifyingGlassIcon
+    MoonIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
 import useTheme from '../../hooks/useTheme';
 import NotificationBell from '../notifications/NotificationBell';
+import SearchVoiceInput from '../ui/SearchVoiceInput';
 
 const managerNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -29,6 +29,7 @@ const managerNavigation = [
 
 const ManagerNavbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [navSearch, setNavSearch] = useState('');
     const { user, logout } = useAuthStore();
     const { theme, toggleTheme } = useTheme();
 
@@ -54,11 +55,12 @@ const ManagerNavbar = () => {
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-2 sm:gap-4">
                     {/* Search (Desktop) */}
-                    <div className="hidden md:block w-64">
-                        <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input className="w-full pl-9 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700/50 border-none rounded-full focus:ring-2 focus:ring-primary-500/50 dark:text-white" placeholder="Search..." />
-                        </div>
+                    <div className="hidden md:block w-72">
+                        <SearchVoiceInput
+                            value={navSearch}
+                            onChange={setNavSearch}
+                            placeholder="Search anything…"
+                        />
                     </div>
                     {/* Theme Toggle */}
                     <button onClick={toggleTheme}

@@ -7,6 +7,8 @@ import {
     UsersIcon,
     ChartPieIcon,
     UserCircleIcon,
+    SparklesIcon,
+    ChatBubbleLeftRightIcon,
     ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
@@ -17,6 +19,8 @@ const navigation = [
     { name: 'Approvals', href: '/manager/expenses', icon: ClipboardDocumentCheckIcon },
     { name: 'My Team', href: '/manager/team', icon: UsersIcon },
     { name: 'Reports', href: '/manager/reports', icon: ChartPieIcon },
+    { name: 'AI Tools', href: '/manager/ai', icon: SparklesIcon },
+    { name: 'Chatbot', href: '/manager/chatbot', icon: ChatBubbleLeftRightIcon },
     { name: 'Profile', href: '/manager/profile', icon: UserCircleIcon },
 ];
 

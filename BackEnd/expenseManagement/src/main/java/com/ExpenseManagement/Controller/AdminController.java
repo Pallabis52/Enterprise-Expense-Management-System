@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.expensemanagement.DTO.AdminStatsDTO;
@@ -331,7 +332,7 @@ public class AdminController {
         LocalDate now = LocalDate.now();
         List<Expense> recent = expenseRepository.findByMonthAndYear(
                 now.getMonthValue(), now.getYear());
-        return ResponseEntity.ok(aiService.fraudInsights(recent));
+        return ResponseEntity.ok(aiService.fraudInsights(recent).join());
     }
 
     /**
@@ -346,7 +347,7 @@ public class AdminController {
         String teamName = (String) status.getOrDefault("teamName", "Team");
         double budget = ((Number) status.getOrDefault("budget", 0.0)).doubleValue();
         double spent = ((Number) status.getOrDefault("spent", 0.0)).doubleValue();
-        return ResponseEntity.ok(aiService.budgetPrediction(teamName, budget, spent));
+        return ResponseEntity.ok(aiService.budgetPrediction(teamName, budget, spent).join());
     }
 
     /**
@@ -369,7 +370,7 @@ public class AdminController {
                 - Entertainment: requires manager pre-approval above ₹5,000
                 - No personal expenses (groceries, clothing, etc.)
                 """;
-        return ResponseEntity.ok(aiService.policyViolation(expense, policyRules));
+        return ResponseEntity.ok(aiService.policyViolation(expense, policyRules).join());
     }
 
     /**
@@ -383,6 +384,21 @@ public class AdminController {
         LocalDate now = LocalDate.now();
         List<Expense> recent = expenseRepository.findByMonthAndYear(
                 now.getMonthValue(), now.getYear());
-        return ResponseEntity.ok(aiService.vendorROI(recent));
+        return ResponseEntity.ok(aiService.vendorROI(recent).join());
+    }
+
+    /**
+     * Feature 10: AI Chatbot
+     * POST /api/admin/ai/chat
+     * Body: { "message": "...", "context": "..." }
+     */
+    @PostMapping("/ai/chat")
+    public ResponseEntity<AIResponse> chat(
+            @RequestBody Map<String, Object> body,
+            Authentication auth) {
+        User admin = userRepository.findByEmail(auth.getName()).orElseThrow();
+        String message = (String) body.getOrDefault("message", "");
+        String context = (String) body.getOrDefault("context", "");
+        return ResponseEntity.ok(aiService.chat("ADMIN", admin.getName(), message, context).join());
     }
 }

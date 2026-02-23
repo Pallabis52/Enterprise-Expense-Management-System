@@ -3,15 +3,15 @@ import useManagerExpenseStore from '../../../store/managerExpenseStore';
 import Table from '../../../components/ui/Table';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
-import Input from '../../../components/ui/Input';
+import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
 import ExpenseApprovalDrawer from './ExpenseApprovalDrawer';
 import {
-    MagnifyingGlassIcon,
     FunnelIcon,
     ExclamationTriangleIcon,
     BanknotesIcon
 } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../../utils/helpers';
+import VoiceButton from '../../../components/ui/VoiceButton';
 
 const STATUS_OPTIONS = [
     { label: 'All', value: '' },
@@ -137,14 +137,25 @@ const ManagerExpenseList = () => {
                 </div>
             )}
 
+            {/* ── Voice Commands ── */}
+            <VoiceButton
+                role="MANAGER"
+                onResult={(r) => {
+                    // Reload expenses after approve/reject actions
+                    if (r.intent === 'APPROVE_EXPENSE' || r.intent === 'REJECT_EXPENSE') {
+                        fetchExpenses({ status: status || undefined, page: 1 });
+                        fetchDashboard();
+                    }
+                }}
+            />
+
             {/* ── Filters ── */}
             <div className="flex flex-wrap items-center gap-3">
-                <div className="flex-1 min-w-[200px]">
-                    <Input
-                        prefix={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-                        placeholder="Search expenses or employees..."
+                <div className="flex-1 min-w-[220px]">
+                    <SearchVoiceInput
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={setSearch}
+                        placeholder="Search expenses or employees…"
                     />
                 </div>
                 <div className="flex items-center gap-2">

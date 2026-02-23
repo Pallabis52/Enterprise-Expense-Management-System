@@ -202,7 +202,7 @@ public class UserController {
                                 .orElse(null);
                 if (expense == null)
                         return ResponseEntity.notFound().build();
-                return ResponseEntity.ok(aiService.explainRejection(expense));
+                return ResponseEntity.ok(aiService.explainRejection(expense).join());
         }
 
         /**
@@ -212,6 +212,21 @@ public class UserController {
         @GetMapping("/ai/spending-insights")
         public ResponseEntity<AIResponse> spendingInsights(Authentication auth) {
                 User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                return ResponseEntity.ok(aiService.spendingInsights(user));
+                return ResponseEntity.ok(aiService.spendingInsights(user).join());
+        }
+
+        /**
+         * Feature 10: AI Chatbot
+         * POST /api/user/ai/chat
+         * Body: { "message": "...", "context": "..." }
+         */
+        @PostMapping("/ai/chat")
+        public ResponseEntity<AIResponse> chat(
+                        @RequestBody Map<String, Object> body,
+                        Authentication auth) {
+                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                String message = (String) body.getOrDefault("message", "");
+                String context = (String) body.getOrDefault("context", "");
+                return ResponseEntity.ok(aiService.chat("USER", user.getName(), message, context).join());
         }
 }

@@ -10,6 +10,7 @@ import { formatCurrency } from '../../../utils/helpers';
 import Skeleton from '../../../components/ui/Skeleton';
 import Card3D from '../../../components/ui/Card3D';
 import PageTransition from '../../../components/layout/PageTransition';
+import VoiceButton from '../../../components/ui/VoiceButton';
 
 const AdminDashboard = () => {
     const { fetchDashboardData, stats, isLoading } = useReportStore();
@@ -86,6 +87,9 @@ const AdminDashboard = () => {
                         delay={0.5}
                     />
                 </div>
+
+                {/* ── Voice Commands (Admin AI Queries) ── */}
+                <VoiceButton role="ADMIN" />
 
                 {/* Quick Actions or Recent Table */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">

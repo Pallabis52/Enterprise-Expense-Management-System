@@ -5,6 +5,8 @@ import {
     BanknotesIcon,
     ChartBarIcon,
     UserIcon,
+    SparklesIcon,
+    ChatBubbleLeftRightIcon,
     ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../store/authStore';
@@ -22,6 +24,8 @@ const UserSidebar = ({ isOpen, toggleSidebar }) => {
         { name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
         { name: 'My Expenses', href: '/user/expenses', icon: BanknotesIcon },
         { name: 'Reports', href: '/user/reports', icon: ChartBarIcon },
+        { name: 'AI Tools', href: '/user/ai', icon: SparklesIcon },
+        { name: 'Chatbot', href: '/user/chatbot', icon: ChatBubbleLeftRightIcon },
         { name: 'Profile', href: '/user/profile', icon: UserIcon },
     ];
 

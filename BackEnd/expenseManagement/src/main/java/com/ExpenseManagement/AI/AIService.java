@@ -4,6 +4,7 @@ import com.expensemanagement.Entities.Expense;
 import com.expensemanagement.Entities.User;
 import com.expensemanagement.Repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -12,7 +13,22 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * High-level AI facade used by all controllers.
- * Each method builds the prompt from live data and delegates to OllamaService.
+ *
+ * <p>
+ * <b>Performance design:</b>
+ * <ul>
+ * <li>All methods return {@code CompletableFuture<AIResponse>} — fully
+ * non-blocking,
+ * servlet threads are never tied up waiting for Ollama.</li>
+ * <li>Stable, user-scoped / team-scoped results are annotated with
+ * {@code @Cacheable("ai-results")} (5-min TTL). A second call with the
+ * same key is served from Caffeine in &lt;1 ms.</li>
+ * <li>Real-time or per-ID calls (chat, risk, approve, policy) are <em>not</em>
+ * cached — their inputs change on every call.</li>
+ * <li>Simple classification tasks (categorize, policy) use
+ * {@link OllamaService#askLightweight} — the same model but flagged for
+ * easy swap to a faster lightweight model when available.</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -21,16 +37,19 @@ public class AIService {
         private final OllamaService ollamaService;
         private final ExpenseRepository expenseRepository;
 
-        // ── Feature 1: Expense Categorization ─────────────────────────────────────
+        // ── Feature 1: Expense Categorization ────────────────────────────────────
+        // Cached: same title+desc+amount always yields same category
 
+        @Cacheable(value = "ai-results", key = "'categorize:' + #title + ':' + #amount")
         public CompletableFuture<AIResponse> categorize(String title, String description, double amount) {
                 String prompt = PromptTemplates.categorize(title, description, amount);
-                return ollamaService.ask(prompt, "categorize");
+                return ollamaService.askLightweight(prompt, "categorize");
         }
 
-        // ── Feature 2: Rejection Explanation ──────────────────────────────────────
+        // ── Feature 2: Rejection Explanation ─────────────────────────────────────
+        // NOT cached — per-expense and real-time comment text varies
 
-        public AIResponse explainRejection(Expense expense) {
+        public CompletableFuture<AIResponse> explainRejection(Expense expense) {
                 String comment = expense.getApprovalComment() != null
                                 ? expense.getApprovalComment()
                                 : expense.getRejectionReason() != null
@@ -42,12 +61,14 @@ public class AIService {
                                 expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 comment);
-                return ollamaService.askSync(prompt, "explain-rejection");
+                return ollamaService.ask(prompt, "explain-rejection");
         }
 
-        // ── Feature 3: Personal Spending Insights ──────────────────────────────────
+        // ── Feature 3: Personal Spending Insights ─────────────────────────────────
+        // Cached per user for 5 minutes — expense data doesn't change that fast
 
-        public AIResponse spendingInsights(User user) {
+        @Cacheable(value = "ai-results", key = "'spending:' + #user.id")
+        public CompletableFuture<AIResponse> spendingInsights(User user) {
                 List<Expense> all = expenseRepository.findByUser(user);
                 double totalSpent = all.stream().mapToDouble(Expense::getAmount).sum();
                 double approved = all.stream()
@@ -68,12 +89,13 @@ public class AIService {
 
                 String prompt = PromptTemplates.spendingInsights(
                                 user.getName(), totalSpent, approved, pending, topCat, all.size());
-                return ollamaService.askSync(prompt, "spending-insights");
+                return ollamaService.ask(prompt, "spending-insights");
         }
 
-        // ── Feature 4: Approval Recommendation ────────────────────────────────────
+        // ── Feature 4: Approval Recommendation ───────────────────────────────────
+        // NOT cached — manager needs live analysis at approval time
 
-        public AIResponse approvalRecommendation(Expense expense, User expenseOwner) {
+        public CompletableFuture<AIResponse> approvalRecommendation(Expense expense, User expenseOwner) {
                 double monthlySpend = expenseRepository.findByUser(expenseOwner).stream()
                                 .filter(e -> {
                                         LocalDate d = e.getDate();
@@ -89,12 +111,13 @@ public class AIService {
                                 expense.getDescription() != null ? expense.getDescription() : "",
                                 Boolean.TRUE.equals(expense.isDuplicate()),
                                 monthlySpend);
-                return ollamaService.askSync(prompt, "approve-recommend");
+                return ollamaService.ask(prompt, "approve-recommend");
         }
 
-        // ── Feature 5: Risk Scoring ────────────────────────────────────────────────
+        // ── Feature 5: Risk Scoring ───────────────────────────────────────────────
+        // NOT cached — risk can change if duplicate status changes
 
-        public AIResponse riskScore(Expense expense, User expenseOwner) {
+        public CompletableFuture<AIResponse> riskScore(Expense expense, User expenseOwner) {
                 List<Expense> all = expenseRepository.findByUser(expenseOwner);
                 double avg = all.stream().mapToDouble(Expense::getAmount).average().orElse(0);
 
@@ -102,15 +125,15 @@ public class AIService {
                                 expense.getTitle(), expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 Boolean.TRUE.equals(expense.isDuplicate()), avg);
-                return ollamaService.askSync(prompt, "risk-score");
+                return ollamaService.ask(prompt, "risk-score");
         }
 
         // ── Feature 6: Team Summary ────────────────────────────────────────────────
+        // Cached per team name + budget for 5 minutes
 
-        public AIResponse teamSummary(List<User> members, double monthlySpend,
+        @Cacheable(value = "ai-results", key = "'team-summary:' + #teamName + ':' + #budget")
+        public CompletableFuture<AIResponse> teamSummary(List<User> members, double monthlySpend,
                         double budget, String teamName) {
-                List<com.expensemanagement.Entities.Approval_Status> pending = List
-                                .of(com.expensemanagement.Entities.Approval_Status.PENDING);
 
                 long pendingCount = expenseRepository.countByUserInAndStatus(members,
                                 com.expensemanagement.Entities.Approval_Status.PENDING);
@@ -125,13 +148,14 @@ public class AIService {
                 String prompt = PromptTemplates.teamSummary(
                                 teamName, monthlySpend, budget,
                                 (int) pendingCount, (int) approvedCount, topCat);
-                return ollamaService.askSync(prompt, "team-summary");
+                return ollamaService.ask(prompt, "team-summary");
         }
 
         // ── Feature 7: Fraud Insights ──────────────────────────────────────────────
+        // Cached company-wide for 5 minutes (expensive call, stable data)
 
-        public AIResponse fraudInsights(List<Expense> recentExpenses) {
-                // Build a compact JSON-like summary for the prompt
+        @Cacheable(value = "ai-results", key = "'fraud-insights'")
+        public CompletableFuture<AIResponse> fraudInsights(List<Expense> recentExpenses) {
                 StringBuilder sb = new StringBuilder("[");
                 recentExpenses.stream().limit(30).forEach(e -> sb.append("\n  { title: \"").append(e.getTitle())
                                 .append("\", amount: ").append(e.getAmount())
@@ -141,52 +165,56 @@ public class AIService {
                 sb.append("\n]");
 
                 String prompt = PromptTemplates.fraudInsights(sb.toString());
-                return ollamaService.askSync(prompt, "fraud-insights");
+                return ollamaService.ask(prompt, "fraud-insights");
         }
 
         // ── Feature 8: Budget Prediction ──────────────────────────────────────────
+        // Cached per team for 5 minutes
 
-        public AIResponse budgetPrediction(String teamName, double budget, double spent) {
+        @Cacheable(value = "ai-results", key = "'budget:' + #teamName + ':' + #spent")
+        public CompletableFuture<AIResponse> budgetPrediction(String teamName, double budget, double spent) {
                 LocalDate now = LocalDate.now();
                 int daysElapsed = now.getDayOfMonth();
                 int totalDays = now.lengthOfMonth();
 
                 String prompt = PromptTemplates.budgetPrediction(
                                 teamName, budget, spent, daysElapsed, totalDays);
-                return ollamaService.askSync(prompt, "budget-prediction");
+                return ollamaService.ask(prompt, "budget-prediction");
         }
 
         // ── Feature 9: Policy Violations ──────────────────────────────────────────
+        // NOT cached — uses lightweight model; per-expense check
 
-        public AIResponse policyViolation(Expense expense, String policyRules) {
+        public CompletableFuture<AIResponse> policyViolation(Expense expense, String policyRules) {
                 String prompt = PromptTemplates.policyViolation(
                                 expense.getTitle(), expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 policyRules);
-                return ollamaService.askSync(prompt, "policy-violations");
+                return ollamaService.askLightweight(prompt, "policy-violations");
         }
 
         // ── Feature 10: Chatbot ────────────────────────────────────────────────────
+        // NOT cached — real-time conversation, always fresh
 
-        public AIResponse chat(String userRole, String userName,
+        public CompletableFuture<AIResponse> chat(String userRole, String userName,
                         String message, String contextSummary) {
                 String prompt = PromptTemplates.chatbot(userRole, userName, message, contextSummary);
-                return ollamaService.askSync(prompt, "chatbot");
+                return ollamaService.ask(prompt, "chatbot");
         }
 
         // ── Feature 11: Vendor ROI Analysis ───────────────────────────────────────
+        // Cached company-wide for 5 minutes
 
-        public AIResponse vendorROI(List<Expense> expenses) {
-                // Aggregate spend by vendor (using description as vendor identifier)
+        @Cacheable(value = "ai-results", key = "'vendor-roi'")
+        public CompletableFuture<AIResponse> vendorROI(List<Expense> expenses) {
                 java.util.Map<String, Double> vendorSpend = new java.util.LinkedHashMap<>();
                 for (Expense e : expenses) {
                         String vendor = (e.getDescription() != null && !e.getDescription().isBlank())
                                         ? e.getDescription()
                                         : (e.getCategory() != null ? e.getCategory() : "Unknown");
-                        vendorSpend.merge(vendor, e.getAmount(), (a, b) -> a + b);
+                        vendorSpend.merge(vendor, e.getAmount(), Double::sum);
                 }
 
-                // Build compact JSON-like summary (top 20 vendors by spend)
                 StringBuilder sb = new StringBuilder("[");
                 vendorSpend.entrySet().stream()
                                 .sorted(java.util.Map.Entry.<String, Double>comparingByValue().reversed())
@@ -198,6 +226,20 @@ public class AIService {
                 sb.append("\n]");
 
                 String prompt = PromptTemplates.vendorROI(sb.toString());
-                return ollamaService.askSync(prompt, "vendor-roi");
+                return ollamaService.ask(prompt, "vendor-roi");
+        }
+
+        // ── Backward-compatible sync wrappers ─────────────────────────────────────
+        // Controllers that have not yet been migrated to async can call these.
+        // The CompletableFuture variants above are preferred for new code.
+
+        public AIResponse explainRejectionSync(Expense expense) {
+                return ollamaService.askSync(PromptTemplates.explainRejection(
+                                expense.getTitle(), expense.getAmount(),
+                                expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
+                                expense.getApprovalComment() != null ? expense.getApprovalComment()
+                                                : expense.getRejectionReason() != null ? expense.getRejectionReason()
+                                                                : "No specific reason provided."),
+                                "explain-rejection");
         }
 }

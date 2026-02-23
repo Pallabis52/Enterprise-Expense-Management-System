@@ -1,234 +1,195 @@
 package com.expensemanagement.AI;
 
 /**
- * Centralized, structured prompt templates for every AI feature.
+ * All prompt strings in one place.
  *
- * Design rules:
- * - Be explicit: tell the model exactly what format to return.
- * - Be concise: shorter prompts = faster responses from DeepSeek.
- * - Be safe: never include PII beyond what's needed for the task.
+ * <p>
+ * <b>Optimization note (v2):</b> Prompts have been trimmed to the minimum
+ * required context so that Ollama has fewer tokens to process and fewer tokens
+ * to generate, directly reducing latency. Each prompt ends with an
+ * explicit brevity instruction.
  */
 public final class PromptTemplates {
 
         private PromptTemplates() {
         }
 
-        // ── Feature 1: Expense Categorization ────────────────────────────────────
+        // ── Feature 1: Categorization ─────────────────────────────────────────────
+
+        // ── Feature 1: Categorization ─────────────────────────────────────────────
 
         public static String categorize(String title, String description, double amount) {
                 return """
-                                You are an expense categorization assistant.
-                                Classify the following expense into EXACTLY ONE of these categories:
-                                Travel, Accommodation, Meals, Office Supplies, Medical, Utilities, Training & Development, Entertainment, Software, Other.
+                                Instruction: Classify the following expense into exactly ONE category from the list below.
+                                Categories: [Travel, Accommodation, Meals, Office Supplies, Medical, Utilities, Training & Development, Entertainment, Software, Other]
 
-                                Expense:
-                                  Title: %s
-                                  Description: %s
-                                  Amount: ₹%.2f
+                                Data:
+                                - Title: %s
+                                - Description: %s
+                                - Amount: ₹%.2f
 
-                                respond with ONLY the category name, nothing else.
+                                Output: Reply with ONLY the category name. No other text.
                                 """
                                 .formatted(title, description, amount);
         }
 
-        // ── Feature 2: Friendly Rejection Explanation ─────────────────────────────
+        // ── Feature 2: Rejection Explanation ─────────────────────────────────────
 
-        public static String explainRejection(String expenseTitle, double amount,
-                        String category, String managerComment) {
+        public static String explainRejection(String title, double amount,
+                        String category, String rejectionComment) {
                 return """
-                                You are a helpful HR assistant. A user's expense was rejected. Explain
-                                the rejection clearly, empathetically, and in 2–3 concise sentences.
-                                Suggest what they could do to fix it.
+                                Instruction: Write a friendly 2-3 sentence explanation to an employee about why their expense was rejected.
+                                Details:
+                                - Expense: %s
+                                - Amount: ₹%.2f
+                                - Category: %s
+                                - Rejection Reason: %s
 
-                                Expense: %s | ₹%.2f | Category: %s
-                                Manager's comment: "%s"
-
-                                Write directly to the employee (use "your expense").
-                                """.formatted(expenseTitle, amount, category, managerComment);
+                                Tone: Empathetic, concise, and helpful.
+                                Output: A short message suggesting how to resubmit correctly.
+                                """
+                                .formatted(title, amount, category, rejectionComment);
         }
 
-        // ── Feature 3: Personal Spending Insights ────────────────────────────────
+        // ── Feature 3: Spending Insights ──────────────────────────────────────────
 
-        public static String spendingInsights(String userName, double totalSpent,
-                        double approved, double pending,
-                        String topCategory, int expenseCount) {
+        public static String spendingInsights(String name, double totalSpent,
+                        double approved, double pending, String topCategory, int expenseCount) {
                 return """
-                                You are a personal finance assistant for enterprise employees.
-                                Provide 3 concise, actionable insights about this employee's expense pattern.
+                                Instruction: Provide 3 short, actionable spending insights for %s based on their expense data.
+                                Data:
+                                - Total Spent: ₹%.2f
+                                - Approved: ₹%.2f
+                                - Pending: ₹%.2f
+                                - Top Category: %s
+                                - Total Expenses: %d
 
-                                Employee: %s
-                                This month: ₹%.2f total | ₹%.2f approved | ₹%.2f pending
-                                Most used category: %s
-                                Total expenses submitted: %d
-
-                                Format: numbered list, max 2 sentences per insight. Be friendly, not preachy.
-                                """.formatted(userName, totalSpent, approved, pending, topCategory, expenseCount);
+                                Constraints: Max 60 words total. Use bullet points.
+                                """
+                                .formatted(name, totalSpent, approved, pending, topCategory, expenseCount);
         }
 
         // ── Feature 4: Approval Recommendation ───────────────────────────────────
 
         public static String approvalRecommendation(String title, double amount,
-                        String category, String description,
-                        boolean isDuplicate, double employeeMonthlySpend) {
+                        String category, String description, boolean isDuplicate, double monthlySpend) {
                 return """
-                                You are an expense approval advisor for a business.
-                                Based on the details below, recommend APPROVE or REJECT and give 2 reasons.
+                                Instruction: Analyze this expense for a manager's approval.
+                                Data:
+                                - Expense: %s
+                                - Amount: ₹%.2f
+                                - Category: %s
+                                - Description: %s
+                                - Duplicate: %s
+                                - Monthly Total: ₹%.2f
 
-                                Expense:
-                                  Title: %s
-                                  Amount: ₹%.2f
-                                  Category: %s
-                                  Description: %s
-                                  Possible duplicate: %s
-                                  Employee's total spend this month: ₹%.2f
-
-                                Format:
-                                RECOMMENDATION: [APPROVE/REJECT]
-                                REASON 1: ...
-                                REASON 2: ...
-                                """.formatted(title, amount, category, description,
-                                isDuplicate ? "YES" : "NO", employeeMonthlySpend);
+                                Output: Start with [APPROVE], [REJECT], or [ESCALATE] followed by a one-line reason.
+                                """.formatted(title, amount, category, description, isDuplicate, monthlySpend);
         }
 
         // ── Feature 5: Risk Scoring ───────────────────────────────────────────────
 
-        public static String riskScore(String title, double amount, String category,
-                        boolean isDuplicate, double avgExpense) {
+        public static String riskScore(String title, double amount,
+                        String category, boolean isDuplicate, double avgExpense) {
                 return """
-                                You are an expense risk analyst.
-                                Score this expense from 1 (very low risk) to 10 (very high risk).
+                                Instruction: Evaluate the fraud risk of this expense.
+                                Data:
+                                - Title: %s
+                                - Amount: ₹%.2f
+                                - Category: %s
+                                - Duplicate Flag: %s
+                                - User's Average Expense: ₹%.2f
 
-                                Expense: %s | ₹%.2f | Category: %s
-                                Duplicate flag: %s
-                                Employee's average expense amount: ₹%.2f
-
-                                Format:
-                                RISK_SCORE: [1-10]
-                                EXPLANATION: [one sentence]
-                                """.formatted(title, amount, category,
-                                isDuplicate ? "YES" : "NO", avgExpense);
+                                Output: Choose [LOW], [MEDIUM], or [HIGH] risk and provide a one-sentence reason.
+                                """.formatted(title, amount, category, isDuplicate, avgExpense);
         }
 
-        // ── Feature 6: Team Spending Summary ─────────────────────────────────────
+        // ── Feature 6: Team Summary ───────────────────────────────────────────────
 
-        public static String teamSummary(String teamName, double monthlySpend,
-                        double budget, int pendingCount,
-                        int approvedCount, String topCategory) {
+        public static String teamSummary(String teamName, double monthlySpend, double budget,
+                        int pendingCount, int approvedCount, String topCategory) {
                 return """
-                                You are a team financial advisor. Write a 3-sentence natural language
-                                summary of this team's expense activity for the current month.
-                                Be factual, concise, and highlight any concerns.
+                                Instruction: Summarize the financial status of the "%s" team.
+                                Data:
+                                - Budget: ₹%.2f
+                                - Spent: ₹%.2f
+                                - Pending: %d
+                                - Approved: %d
+                                - Top Category: %s
 
-                                Team: %s
-                                Monthly spend: ₹%.2f / Budget: ₹%.2f
-                                Pending approvals: %d | Approved: %d
-                                Top spending category: %s
-                                """.formatted(teamName, monthlySpend, budget,
-                                pendingCount, approvedCount, topCategory);
+                                Constraints: Max 60 words. 3 concise bullet points highlighting budget status and risks.
+                                """.formatted(teamName, budget, monthlySpend, pendingCount, approvedCount, topCategory);
         }
 
-        // ── Feature 7: Fraud Pattern Detection ───────────────────────────────────
+        // ── Feature 7: Fraud Insights ─────────────────────────────────────────────
 
-        public static String fraudInsights(String expenseSummaryJson) {
+        public static String fraudInsights(String expensesJson) {
                 return """
-                                You are a corporate fraud detection specialist.
-                                Analyze the following expense data and identify potential fraud patterns,
-                                anomalies, or policy violations. Be specific and cite amounts/categories.
-
-                                Expense summary data:
+                                Instruction: Identify the top 3 fraud or policy risk patterns from the following list of expenses.
+                                Data (JSON):
                                 %s
 
-                                List up to 5 findings. Format each as:
-                                FINDING [n]: [description] | SEVERITY: [LOW/MEDIUM/HIGH]
-                                """.formatted(expenseSummaryJson);
+                                Output: 3 concise points. Max 80 words total.
+                                """
+                                .formatted(expensesJson);
         }
 
-        // ── Feature 8: Budget Overrun Prediction ─────────────────────────────────
+        // ── Feature 8: Budget Prediction ─────────────────────────────────────────
 
-        public static String budgetPrediction(String teamName, double budgetLimit,
-                        double spentSoFar, int daysElapsed,
-                        int totalDaysInMonth) {
-                double burnRate = daysElapsed > 0 ? spentSoFar / daysElapsed : 0;
-                double projected = burnRate * totalDaysInMonth;
+        public static String budgetPrediction(String teamName, double budget, double spent,
+                        int daysElapsed, int totalDays) {
                 return """
-                                You are a budget forecasting assistant.
-                                Based on current spending trends, predict whether this team will
-                                exceed their monthly budget.
+                                Instruction: Predict if the "%s" team will exceed their monthly budget.
+                                Data:
+                                - Monthly Budget: ₹%.2f
+                                - Spent to date: ₹%.2f
+                                - Days elapsed: %d out of %d
 
-                                Team: %s
-                                Budget: ₹%.2f | Spent so far: ₹%.2f
-                                Days elapsed: %d / %d | Daily burn rate: ₹%.2f
-                                Projected end-of-month spend: ₹%.2f
-
-                                Format:
-                                PREDICTION: [WILL EXCEED / ON TRACK / UNDER BUDGET]
-                                CONFIDENCE: [LOW/MEDIUM/HIGH]
-                                EXPLANATION: [2 sentences max]
-                                """.formatted(teamName, budgetLimit, spentSoFar,
-                                daysElapsed, totalDaysInMonth, burnRate, projected);
+                                Output: Start with [SAFE], [AT RISK], or [EXCEEDED] followed by a one-sentence prediction.
+                                """
+                                .formatted(teamName, budget, spent, daysElapsed, totalDays);
         }
 
-        // ── Feature 9: Policy Violation Detection ────────────────────────────────
+        // ── Feature 9: Policy Violation ───────────────────────────────────────────
 
         public static String policyViolation(String title, double amount,
                         String category, String policyRules) {
                 return """
-                                You are a corporate expense policy compliance officer.
-                                Determine if the following expense violates the company policy rules.
+                                Instruction: Check if the following expense violates company policy.
+                                Data:
+                                - Expense: %s
+                                - Amount: ₹%.2f
+                                - Category: %s
+                                - Policy Rules: %s
 
-                                Expense: %s | ₹%.2f | Category: %s
-
-                                Company policy:
-                                %s
-
-                                Format:
-                                VIOLATION: [YES/NO]
-                                RULE_BREACHED: [rule name or "None"]
-                                EXPLANATION: [one sentence]
+                                Output: Start with [COMPLIANT] or [VIOLATION] followed by a one-sentence reason.
                                 """.formatted(title, amount, category, policyRules);
-        }
-
-        // ── Feature 11: Vendor ROI Analysis ──────────────────────────────────────
-
-        public static String vendorROI(String vendorSummaryJson) {
-                return """
-                                You are a corporate procurement and vendor management specialist.
-                                Analyze the following vendor expense data and suggest specific cost-saving strategies.
-                                Focus on bulk discount opportunities, alternative vendors, and spending anomalies.
-
-                                Vendor spend data:
-                                %s
-
-                                List up to 5 actionable recommendations. Format each as:
-                                RECOMMENDATION [n]: [vendor name or category] | ACTION: [specific action] | ESTIMATED SAVING: [% or ₹ range]
-                                """
-                                .formatted(vendorSummaryJson);
         }
 
         // ── Feature 10: Chatbot ───────────────────────────────────────────────────
 
-        public static String chatbot(String userRole, String userName, String userMessage,
-                        String contextSummary) {
-                String roleContext = switch (userRole.toUpperCase()) {
-                        case "ADMIN" ->
-                                "You help system administrators with company-wide expense management, budgets, compliance, and reporting.";
-                        case "MANAGER" ->
-                                "You help team managers review, approve, and understand team expense patterns.";
-                        default ->
-                                "You help employees submit expenses, understand policies, track their spending, and resolve rejections.";
-                };
-
+        public static String chatbot(String role, String name, String message, String context) {
                 return """
-                                You are an AI assistant for an enterprise expense management system.
+                                System: You are a helpful AI assistant for an Enterprise Expense Management System.
+                                User Context: Role: %s, Name: %s.
+                                Application Context: %s
+
+                                User Message: %s
+
+                                Instruction: Reply in 2-4 friendly and direct sentences.
+                                """.formatted(role, name, context.isBlank() ? "None" : context, message);
+        }
+
+        // ── Feature 11: Vendor ROI ────────────────────────────────────────────────
+
+        public static String vendorROI(String vendorSpendJson) {
+                return """
+                                Instruction: Analyze the following vendor spending data and provide top 3 cost-saving recommendations.
+                                Data (JSON):
                                 %s
 
-                                User: %s | Role: %s
-                                Context: %s
-
-                                User's question: "%s"
-
-                                Answer helpfully in 2–4 sentences. Be direct and specific.
-                                If you don't know something, say so clearly.
-                                """.formatted(roleContext, userName, userRole, contextSummary, userMessage);
+                                Output: 3 actionable points. Max 80 words total.
+                                """
+                                .formatted(vendorSpendJson);
         }
 }

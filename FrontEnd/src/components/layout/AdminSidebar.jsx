@@ -8,6 +8,8 @@ import {
     ChartBarIcon,
     UserCircleIcon,
     UsersIcon,
+    SparklesIcon,
+    ChatBubbleLeftRightIcon,
     ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
@@ -20,11 +22,13 @@ const IconWrapper = ({ icon: Icon, fallback, className }) => {
 };
 
 const navigation = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon }, // Admin Dashboard
+    { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
     { name: 'Teams', href: '/admin/teams', icon: UsersIcon },
     { name: 'Expenses', href: '/admin/expenses', icon: BanknotesIcon },
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
+    { name: 'AI Tools', href: '/admin/ai', icon: SparklesIcon },
+    { name: 'Chatbot', href: '/admin/chatbot', icon: ChatBubbleLeftRightIcon },
     { name: 'Profile', href: '/admin/profile', icon: UserCircleIcon },
 ];
 

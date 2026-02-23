@@ -1,6 +1,6 @@
 import React from 'react';
-import Input from '../../../components/ui/Input';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
+import { FunnelIcon } from '@heroicons/react/24/outline';
 
 const ExpenseFilters = ({ filters, onChange }) => {
     const handleChange = (key, value) => {
@@ -12,12 +12,10 @@ const ExpenseFilters = ({ filters, onChange }) => {
 
             {/* Search */}
             <div className="flex-1">
-                <Input
-                    icon={MagnifyingGlassIcon}
-                    placeholder="Search by user or title..."
+                <SearchVoiceInput
                     value={filters.search}
-                    onChange={(e) => handleChange('search', e.target.value)}
-                    className="w-full"
+                    onChange={(val) => handleChange('search', val)}
+                    placeholder="Search by user or title…"
                 />
             </div>
 

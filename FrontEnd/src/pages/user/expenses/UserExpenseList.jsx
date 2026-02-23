@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
     PlusIcon,
-    MagnifyingGlassIcon,
     PencilSquareIcon,
     TrashIcon
 } from '@heroicons/react/24/outline';
 import useUserExpenseStore from '../../../store/userExpenseStore';
 import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
+import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
 import Card3D from '../../../components/ui/Card3D';
 import Badge from '../../../components/ui/Badge';
 import PageTransition from '../../../components/layout/PageTransition';
 import Swal from 'sweetalert2';
 import ExpenseModal from '../../../components/expenses/ExpenseModal';
+import VoiceButton from '../../../components/ui/VoiceButton';
 
 const UserExpenseList = () => {
     const { expenses, fetchMyExpenses, isLoading, deleteExpense, addExpense, updateExpense } = useUserExpenseStore();
@@ -23,6 +23,18 @@ const UserExpenseList = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalData, setModalData] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [voicePrefill, setVoicePrefill] = useState(null);
+
+    // Handle voice command results
+    const handleVoiceResult = (response) => {
+        if (response.intent === 'ADD_EXPENSE' && response.data?.action === 'PREFILL_FORM') {
+            setVoicePrefill(response.data);
+            setModalData(null);
+            setIsModalOpen(true);
+        } else if (response.intent === 'SEARCH_EXPENSES' && Array.isArray(response.data)) {
+            // Voice search — the VoiceResultPanel shows results inline
+        }
+    };
 
     useEffect(() => {
         fetchMyExpenses(1, statusFilter);
@@ -100,15 +112,17 @@ const UserExpenseList = () => {
                     </Button>
                 </div>
 
+                {/* Voice Search */}
+                <VoiceButton role="USER" onResult={handleVoiceResult} />
+
                 {/* Filters */}
                 <Card3D className="p-4 bg-white dark:bg-gray-800">
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1">
-                            <Input
-                                placeholder="Search expenses..."
-                                icon={MagnifyingGlassIcon}
+                            <SearchVoiceInput
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
+                                onChange={setSearch}
+                                placeholder="Search by title or category…"
                             />
                         </div>
                         <select
@@ -186,9 +200,9 @@ const UserExpenseList = () => {
                 {/* Expense Modal */}
                 <ExpenseModal
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => { setIsModalOpen(false); setVoicePrefill(null); }}
                     onSubmit={handleSaveExpense}
-                    initialData={modalData}
+                    initialData={voicePrefill || modalData}
                     isLoading={isSubmitting}
                 />
             </div>
