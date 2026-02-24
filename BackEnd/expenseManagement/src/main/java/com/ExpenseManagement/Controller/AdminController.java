@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AdminController {
 
     private final ExpenseRepository expenseRepository;
@@ -328,11 +328,11 @@ public class AdminController {
      * Analyzes recent expenses across all users for fraud signals.
      */
     @GetMapping("/ai/fraud-insights")
-    public ResponseEntity<AIResponse> fraudInsights() {
+    public CompletableFuture<ResponseEntity<AIResponse>> fraudInsights() {
         LocalDate now = LocalDate.now();
         List<Expense> recent = expenseRepository.findByMonthAndYear(
                 now.getMonthValue(), now.getYear());
-        return ResponseEntity.ok(aiService.fraudInsights(recent).join());
+        return aiService.fraudInsights(recent).thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -340,14 +340,14 @@ public class AdminController {
      * GET /api/admin/ai/budget-prediction/{teamId}
      */
     @GetMapping("/ai/budget-prediction/{teamId}")
-    public ResponseEntity<AIResponse> budgetPrediction(@PathVariable Long teamId) {
+    public CompletableFuture<ResponseEntity<AIResponse>> budgetPrediction(@PathVariable Long teamId) {
         LocalDate now = LocalDate.now();
         java.util.Map<String, Object> status = teamBudgetService.getBudgetStatus(
                 teamId, now.getMonthValue(), now.getYear());
         String teamName = (String) status.getOrDefault("teamName", "Team");
         double budget = ((Number) status.getOrDefault("budget", 0.0)).doubleValue();
         double spent = ((Number) status.getOrDefault("spent", 0.0)).doubleValue();
-        return ResponseEntity.ok(aiService.budgetPrediction(teamName, budget, spent).join());
+        return aiService.budgetPrediction(teamName, budget, spent).thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -356,10 +356,10 @@ public class AdminController {
      * Checks a specific expense against standard policy rules.
      */
     @GetMapping("/ai/policy-violations/{expenseId}")
-    public ResponseEntity<AIResponse> policyViolations(@PathVariable Long expenseId) {
+    public CompletableFuture<ResponseEntity<AIResponse>> policyViolations(@PathVariable Long expenseId) {
         Expense expense = expenseRepository.findById(expenseId).orElse(null);
         if (expense == null)
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         // Default policy rules — in production these would be loaded from
         // ExpensePolicyService
         String policyRules = """
@@ -370,7 +370,7 @@ public class AdminController {
                 - Entertainment: requires manager pre-approval above ₹5,000
                 - No personal expenses (groceries, clothing, etc.)
                 """;
-        return ResponseEntity.ok(aiService.policyViolation(expense, policyRules).join());
+        return aiService.policyViolation(expense, policyRules).thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -380,11 +380,11 @@ public class AdminController {
      * strategies.
      */
     @GetMapping("/ai/vendor-roi")
-    public ResponseEntity<AIResponse> vendorROI() {
+    public CompletableFuture<ResponseEntity<AIResponse>> vendorROI() {
         LocalDate now = LocalDate.now();
         List<Expense> recent = expenseRepository.findByMonthAndYear(
                 now.getMonthValue(), now.getYear());
-        return ResponseEntity.ok(aiService.vendorROI(recent).join());
+        return aiService.vendorROI(recent).thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -393,12 +393,13 @@ public class AdminController {
      * Body: { "message": "...", "context": "..." }
      */
     @PostMapping("/ai/chat")
-    public ResponseEntity<AIResponse> chat(
+    public CompletableFuture<ResponseEntity<AIResponse>> chat(
             @RequestBody Map<String, Object> body,
             Authentication auth) {
         User admin = userRepository.findByEmail(auth.getName()).orElseThrow();
         String message = (String) body.getOrDefault("message", "");
         String context = (String) body.getOrDefault("context", "");
-        return ResponseEntity.ok(aiService.chat("ADMIN", admin.getName(), message, context).join());
+        return aiService.chat("ADMIN", admin.getName(), message, context)
+                .thenApply(ResponseEntity::ok);
     }
 }

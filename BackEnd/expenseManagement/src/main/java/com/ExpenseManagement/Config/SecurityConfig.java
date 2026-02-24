@@ -1,6 +1,9 @@
 package com.expensemanagement.Config;
 
 import com.expensemanagement.Security.JwtAuthenticationFilter;
+import com.expensemanagement.Security.JwtUtils;
+import com.expensemanagement.Security.UserDetailsServiceImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,25 +32,48 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtUtils, (UserDetailsServiceImpl) userDetailsService);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("USER", "MANAGER", "ADMIN")
-                .requestMatchers("/api/categories/**").authenticated()
+                .requestMatchers("/api/user/**", "/api/voice/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/ai/**").authenticated()
-                .requestMatchers("/api/voice/**").authenticated()
                 .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling(ex -> ex
+                        // No token or invalid token → 401 Unauthorized (not 403)
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String authError = (String) request.getAttribute("authError");
+                            String message = (authError != null) ? authError
+                                    : "Invalid or missing authentication token.";
+
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                    String.format("{\"error\":\"Unauthorized\",\"message\":\"%s\"}", message));
+                        })
+                        // Valid token but wrong role → 403 Forbidden
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write(
+                                    "{\"error\":\"Forbidden\",\"message\":\"You do not have permission to access this resource.\"}");
+                        }))
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -73,7 +99,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(
-                Arrays.asList("http://localhost:5177", "http://localhost:3000", "http://localhost:5173"));
+                Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin",
                 "Access-Control-Request-Method", "Access-Control-Request-Headers"));

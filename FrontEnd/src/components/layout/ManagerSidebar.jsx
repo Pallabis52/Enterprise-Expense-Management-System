@@ -20,7 +20,6 @@ const navigation = [
     { name: 'My Team', href: '/manager/team', icon: UsersIcon },
     { name: 'Reports', href: '/manager/reports', icon: ChartPieIcon },
     { name: 'AI Tools', href: '/manager/ai', icon: SparklesIcon },
-    { name: 'Chatbot', href: '/manager/chatbot', icon: ChatBubbleLeftRightIcon },
     { name: 'Profile', href: '/manager/profile', icon: UserCircleIcon },
 ];
 

@@ -3,6 +3,9 @@ import api from './api';
 /**
  * Voice command service — wraps the backend voice endpoints.
  * Uses the existing `api` axios instance (JWT auto-attached by interceptor).
+ *
+ * suppressGlobalError:true — errors are handled inline by VoiceButton,
+ * so the global api.js SweetAlert popup does NOT fire for voice calls.
  */
 
 /**
@@ -12,7 +15,9 @@ import api from './api';
  * @returns {Promise<VoiceResponse>} - { intent, params, reply, data, fallback, processingMs }
  */
 export const sendVoiceCommand = async (text, context = '') => {
-    const response = await api.post('/voice/command', { text, context });
+    const response = await api.post('/voice/command', { text, context }, {
+        suppressGlobalError: true   // VoiceButton renders inline errors — no popup
+    });
     return response.data;
 };
 
@@ -21,6 +26,8 @@ export const sendVoiceCommand = async (text, context = '') => {
  * @returns {Promise<{ role: string, hints: string[], tip: string }>}
  */
 export const getVoiceHints = async () => {
-    const response = await api.get('/voice/hints');
+    const response = await api.get('/voice/hints', {
+        suppressGlobalError: true   // hints panel fails silently
+    });
     return response.data;
 };

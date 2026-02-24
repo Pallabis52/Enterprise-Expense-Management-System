@@ -17,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -30,19 +29,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        System.out.println("[FILTER START] " + request.getMethod() + " " + request.getRequestURI());
+
+        // Extreme Diagnostic: Log at the absolute entry to identify if filter is even
+        // hit
+        if (request.getRequestURI().contains("/api/voice") || request.getRequestURI().contains("/api/user")) {
+            log.info("[FILTER-ENTRY] {} {}?{}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    request.getQueryString());
+            log.info("[FILTER-PARAM] token param: {}", request.getParameter("token") != null ? "PRESENT" : "MISSING");
+        }
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.debug("No Bearer token found in Authorization header for: {}", request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
 
+        jwt = authHeader.substring(7);
+
         try {
-            jwt = authHeader.substring(7);
             userEmail = jwtUtils.extractUsername(jwt);
-            log.debug("JWT Token found for user: {}", userEmail);
+            log.debug("JWT Token found for user: {} on path: {}", userEmail, request.getRequestURI());
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
@@ -55,14 +68,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("User authenticated successfully: {} with authorities: {}", userEmail,
-                            userDetails.getAuthorities());
+                    log.debug("User {} authenticated successfully on path: {}", userEmail, request.getRequestURI());
                 } else {
-                    log.warn("Invalid JWT token for user: {}", userEmail);
+                    log.error("JWT token validation failed for user: {}", userEmail);
+                    request.setAttribute("authError", "Token validation failed (expired or invalid). Please re-login.");
                 }
+            } else if (userEmail == null) {
+                log.error("JWT token present but userEmail extracted is null");
+                request.setAttribute("authError", "Invalid token: Identity could not be determined.");
             }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.error("JWT token has expired: {}", e.getMessage());
+            request.setAttribute("authError", "Session expired (JWT timeout). Please re-login.");
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.error("Malformed JWT token: {}", e.getMessage());
+            request.setAttribute("authError", "Invalid token format. Possible transmission corruption.");
+        } catch (io.jsonwebtoken.security.SecurityException e) {
+            log.error("JWT signature validation failed: {}. Secret key mismatch.", e.getMessage());
+            request.setAttribute("authError",
+                    "Security key mismatch (System update occurred). Please log out and back in.");
+        } catch (io.jsonwebtoken.JwtException e) {
+            log.error("JWT processing failed: {}", e.getMessage());
+            request.setAttribute("authError", "Authentication failed: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+            log.error("Unexpected authentication error: {} — {}", e.getClass().getSimpleName(), e.getMessage());
+            request.setAttribute("authError", "Internal authentication error. Please try again.");
         }
 
         filterChain.doFilter(request, response);

@@ -2,6 +2,7 @@ package com.expensemanagement.Services;
 
 import java.util.List;
 import java.util.Optional;
+import com.expensemanagement.DTO.AIDTOs;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,9 @@ import com.expensemanagement.Notification.NotificationService;
 import com.expensemanagement.Repository.ExpenseRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExpenseServiceImple implements ExpenseService {
@@ -71,8 +74,13 @@ public class ExpenseServiceImple implements ExpenseService {
         }
 
         // Feature 6: Duplicate detection (flag, do not block)
-        if (duplicateDetectionService.isDuplicate(expense)) {
-            expense.setDuplicate(true);
+        if (expense.getUser() != null) {
+            AIDTOs.DuplicateDetectionResult dupResult = duplicateDetectionService
+                    .detectDuplicate(expense, expense.getUser()).join();
+            if ("yes".equalsIgnoreCase(dupResult.getDuplicate())) {
+                expense.setDuplicate(true);
+                log.info("AI detected possible duplicate: {}", dupResult.getReason());
+            }
         }
 
         // Default status

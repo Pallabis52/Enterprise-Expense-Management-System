@@ -25,7 +25,6 @@ const UserSidebar = ({ isOpen, toggleSidebar }) => {
         { name: 'My Expenses', href: '/user/expenses', icon: BanknotesIcon },
         { name: 'Reports', href: '/user/reports', icon: ChartBarIcon },
         { name: 'AI Tools', href: '/user/ai', icon: SparklesIcon },
-        { name: 'Chatbot', href: '/user/chatbot', icon: ChatBubbleLeftRightIcon },
         { name: 'Profile', href: '/user/profile', icon: UserIcon },
     ];
 

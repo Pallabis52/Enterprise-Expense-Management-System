@@ -76,6 +76,9 @@ public class OllamaService {
     @Value("${ollama.retry.backoff-seconds:3}")
     private long retryBackoffSeconds;
 
+    @Value("${ollama.async.enabled:true}")
+    private boolean asyncEnabled;
+
     public OllamaService(
             @Value("${ollama.base-url:http://127.0.0.1:11434}") String baseUrl,
             @Value("${ollama.timeout-seconds:90}") int timeoutSeconds,
@@ -125,7 +128,8 @@ public class OllamaService {
                 ObjectNode body = objectMapper.createObjectNode()
                         .put("model", model)
                         .put("prompt", "Hi")
-                        .put("stream", false);
+                        .put("stream", false)
+                        .put("keep_alive", "5m");
 
                 webClient.post()
                         .uri("/api/generate")
@@ -243,7 +247,32 @@ public class OllamaService {
         ObjectNode body = objectMapper.createObjectNode()
                 .put("model", modelName)
                 .put("prompt", prompt)
-                .put("stream", false);
+                .put("stream", false)
+                .put("keep_alive", "5m"); // Unload model from RAM after 5 mins of idle
+
+        if (!asyncEnabled) {
+            log.debug("Ollama async disabled — executing sync call for {}", feature);
+            try {
+                JsonNode response = webClient.post()
+                        .uri("/api/generate")
+                        .bodyValue(body)
+                        .retrieve()
+                        .bodyToMono(JsonNode.class)
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
+                        .block();
+
+                long ms = System.currentTimeMillis() - start;
+                if (response != null) {
+                    String text = response.path("response").asText("").trim();
+                    return CompletableFuture.completedFuture(AIResponse.success(feature, text, modelName, ms));
+                }
+                return CompletableFuture.completedFuture(AIResponse.fallback(feature, ms));
+            } catch (Exception ex) {
+                long ms = System.currentTimeMillis() - start;
+                log.warn("Ollama Sync Fallback failed for '{}': {}", feature, ex.getMessage());
+                return CompletableFuture.completedFuture(AIResponse.fallback(feature, ms));
+            }
+        }
 
         return webClient.post()
                 .uri("/api/generate")

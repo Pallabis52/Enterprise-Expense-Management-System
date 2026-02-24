@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Core voice intelligence service.
@@ -48,44 +49,55 @@ public class VoiceIntentService {
 
     // ── Entry point ────────────────────────────────────────────────────────────
 
-    public VoiceResponse resolve(String transcript, User user) {
+    public CompletableFuture<VoiceResponse> resolveAsync(String transcript, User user) {
         long start = System.currentTimeMillis();
         String role = user.getRole() != null ? user.getRole().name() : "USER";
 
-        try {
-            // Step 1: detect intent via AI assistant
-            String intentPrompt = buildIntentPrompt(role, transcript);
-            AIResponse intentResponse = ollamaService.askSync(intentPrompt, "voice-intent");
+        // Step 1: detect intent via AI assistant
+        String intentPrompt = buildIntentPrompt(role, transcript);
 
-            if (intentResponse.isFallback()) {
-                return VoiceResponse.offline(System.currentTimeMillis() - start);
-            }
+        return ollamaService.ask(intentPrompt, "voice-intent")
+                .thenCompose(intentResponse -> {
+                    if (intentResponse.isFallback()) {
+                        return CompletableFuture.completedFuture(
+                                VoiceResponse.offline(System.currentTimeMillis() - start));
+                    }
 
-            // Step 2: parse JSON
-            Map<String, Object> parsed = parseIntentJson(intentResponse.getResult());
-            String intent = (String) parsed.getOrDefault("intent", "UNKNOWN");
-            Map<String, Object> params = (Map<String, Object>) parsed.getOrDefault("params", Map.of());
+                    // Step 2: parse JSON
+                    Map<String, Object> parsed = parseIntentJson(intentResponse.getResult());
+                    String intent = (String) parsed.getOrDefault("intent", "UNKNOWN");
+                    Map<String, Object> params = (Map<String, Object>) parsed.getOrDefault("params", Map.of());
 
-            log.info("Voice intent detected: {} | user={} | role={}", intent, user.getEmail(), role);
+                    log.info("Voice intent detected: {} | user={} | role={}", intent, user.getEmail(), role);
 
-            // Step 3: route to data
-            Object data = routeIntent(intent, params, user, role);
+                    // Step 3: route to data
+                    return routeIntentAsync(intent, params, user, role)
+                            .thenCompose(data -> {
+                                // Step 4: generate friendly spoken reply
+                                String dataSummary = summarize(intent, data, params);
+                                String replyPrompt = VoicePromptTemplates.voiceReply(intent, dataSummary,
+                                        user.getName());
 
-            // Step 4: generate friendly spoken reply
-            String dataSummary = summarize(intent, data, params);
-            String replyPrompt = VoicePromptTemplates.voiceReply(intent, dataSummary, user.getName());
-            AIResponse replyResponse = ollamaService.askSync(replyPrompt, "voice-reply");
-            String reply = replyResponse.isFallback()
-                    ? buildFallbackReply(intent, data)
-                    : stripThinkingTags(replyResponse.getResult());
+                                return ollamaService.ask(replyPrompt, "voice-reply")
+                                        .thenApply(replyResponse -> {
+                                            String reply = replyResponse.isFallback()
+                                                    ? buildFallbackReply(intent, data)
+                                                    : stripThinkingTags(replyResponse.getResult());
 
-            return VoiceResponse.success(intent, params, reply, data,
-                    System.currentTimeMillis() - start);
+                                            return VoiceResponse.success(intent, params, reply, data,
+                                                    System.currentTimeMillis() - start);
+                                        });
+                            });
+                })
+                .exceptionally(e -> {
+                    log.error("Voice intent resolution failed for user={}: {}", user.getEmail(), e.getMessage(), e);
+                    return VoiceResponse.fallback(System.currentTimeMillis() - start);
+                });
+    }
 
-        } catch (Exception e) {
-            log.error("Voice intent resolution failed for user={}: {}", user.getEmail(), e.getMessage(), e);
-            return VoiceResponse.fallback(System.currentTimeMillis() - start);
-        }
+    @Deprecated
+    public VoiceResponse resolve(String transcript, User user) {
+        return resolveAsync(transcript, user).join();
     }
 
     // ── Intent prompt factory ─────────────────────────────────────────────────
@@ -100,7 +112,7 @@ public class VoiceIntentService {
 
     // ── Intent router ─────────────────────────────────────────────────────────
 
-    private Object routeIntent(String intent, Map<String, Object> params,
+    private CompletableFuture<Object> routeIntentAsync(String intent, Map<String, Object> params,
             User user, String role) {
         LocalDate now = LocalDate.now();
         return switch (intent) {
@@ -111,39 +123,42 @@ public class VoiceIntentService {
                 List<Expense> allExpenses = expenseRepository.findByUser(user);
                 String statusStr = (String) params.get("status");
                 String category = (String) params.get("category");
-                yield allExpenses.stream()
+                List<Expense> filtered = allExpenses.stream()
                         .filter(e -> statusStr == null || (e.getStatus() != null
                                 && e.getStatus().name().equalsIgnoreCase(statusStr)))
                         .filter(e -> category == null || (e.getCategory() != null
                                 && e.getCategory().equalsIgnoreCase(category)))
                         .limit(10)
                         .toList();
+                yield CompletableFuture.completedFuture(filtered);
             }
 
             case "CHECK_STATUS" -> {
-                long pending = expenseRepository.findByUser(user).stream()
+                List<Expense> userExpenses = expenseRepository.findByUser(user);
+                long pending = userExpenses.stream()
                         .filter(e -> Approval_Status.PENDING.equals(e.getStatus())).count();
-                long approved = expenseRepository.findByUser(user).stream()
+                long approved = userExpenses.stream()
                         .filter(e -> Approval_Status.APPROVED.equals(e.getStatus())).count();
-                long rejected = expenseRepository.findByUser(user).stream()
+                long rejected = userExpenses.stream()
                         .filter(e -> Approval_Status.REJECTED.equals(e.getStatus())).count();
-                yield Map.of("pending", pending, "approved", approved, "rejected", rejected);
+                yield CompletableFuture
+                        .completedFuture(Map.of("pending", pending, "approved", approved, "rejected", rejected));
             }
 
             case "ADD_EXPENSE" -> {
-                // Return parsed fields for frontend form pre-fill — no auto-submit
                 Map<String, Object> prefill = new HashMap<>();
                 prefill.put("title", params.getOrDefault("title", ""));
                 prefill.put("amount", params.getOrDefault("amount", 0));
                 prefill.put("category", params.getOrDefault("category", ""));
                 prefill.put("description", params.getOrDefault("description", ""));
                 prefill.put("action", "PREFILL_FORM");
-                yield prefill;
+                yield CompletableFuture.completedFuture(prefill);
             }
 
             case "SPENDING_SUMMARY" -> {
-                AIResponse summary = aiService.spendingInsights(user).join();
-                yield Map.of("insightText", summary.getResult(), "fallback", summary.isFallback());
+                yield aiService.spendingInsights(user)
+                        .thenApply(summary -> Map.of("insightText", summary.getResult(), "fallback",
+                                summary.isFallback()));
             }
 
             // ── MANAGER intents ───────────────────────────────────────────────
@@ -151,31 +166,33 @@ public class VoiceIntentService {
             case "APPROVE_EXPENSE" -> {
                 Object idObj = params.get("expenseId");
                 if (idObj == null)
-                    yield Map.of("error", "No expense ID found in command. Say: 'approve expense 42'");
+                    yield CompletableFuture.completedFuture(
+                            Map.of("error", "No expense ID found in command. Say: 'approve expense 42'"));
                 Long expenseId = Long.valueOf(idObj.toString());
-                yield managerService.approveExpense(expenseId, user.getId());
+                yield CompletableFuture.completedFuture(managerService.approveExpense(expenseId, user.getId()));
             }
 
             case "REJECT_EXPENSE" -> {
                 Object idObj = params.get("expenseId");
                 if (idObj == null)
-                    yield Map.of("error", "No expense ID found in command. Say: 'reject expense 42'");
+                    yield CompletableFuture.completedFuture(
+                            Map.of("error", "No expense ID found in command. Say: 'reject expense 42'"));
                 Long expenseId = Long.valueOf(idObj.toString());
                 String reason = (String) params.getOrDefault("reason", "Rejected via voice command");
-                yield managerService.rejectExpense(expenseId, reason);
+                yield CompletableFuture.completedFuture(managerService.rejectExpense(expenseId, reason));
             }
 
             case "TEAM_SUMMARY" -> {
                 Team team = user.getTeam();
                 if (team == null)
-                    yield Map.of("error", "No team assigned to this manager");
+                    yield CompletableFuture.completedFuture(Map.of("error", "No team assigned to this manager"));
                 List<User> members = team.getMembers();
                 Double spent = managerService.getTeamMonthlySpend(members, now.getMonthValue(), now.getYear());
                 Double budget = managerService.getTeamBudget(team.getId(), now.getMonthValue(), now.getYear());
-                AIResponse summary = aiService.teamSummary(members, spent != null ? spent : 0,
-                        budget != null ? budget : 0, team.getName()).join();
-                yield Map.of("teamName", team.getName(), "spent", spent, "budget", budget,
-                        "insightText", summary.getResult());
+                yield aiService.teamSummary(members, spent != null ? spent : 0,
+                        budget != null ? budget : 0, team.getName())
+                        .thenApply(summary -> Map.of("teamName", team.getName(), "spent", spent, "budget", budget,
+                                "insightText", summary.getResult()));
             }
 
             case "TEAM_QUERY" -> {
@@ -186,8 +203,8 @@ public class VoiceIntentService {
                         statusFilter = Approval_Status.valueOf(statusStr2.toUpperCase());
                 } catch (IllegalArgumentException ignored) {
                 }
-                yield managerService.getTeamExpenses(user.getId(), statusFilter,
-                        org.springframework.data.domain.PageRequest.of(0, 10)).getContent();
+                yield CompletableFuture.completedFuture(managerService.getTeamExpenses(user.getId(), statusFilter,
+                        org.springframework.data.domain.PageRequest.of(0, 10)).getContent());
             }
 
             // ── ADMIN intents ─────────────────────────────────────────────────
@@ -197,29 +214,30 @@ public class VoiceIntentService {
                         now.getMonthValue(), now.getYear());
                 String teamName = (String) params.get("teamName");
                 if (teamName != null) {
-                    yield budgets.stream()
+                    yield CompletableFuture.completedFuture(budgets.stream()
                             .filter(b -> teamName.equalsIgnoreCase((String) b.get("teamName")))
-                            .toList();
+                            .toList());
                 }
-                yield budgets;
+                yield CompletableFuture.completedFuture(budgets);
             }
 
             case "FRAUD_QUERY" -> {
                 List<Expense> recent = expenseRepository.findByMonthAndYear(
                         now.getMonthValue(), now.getYear());
-                AIResponse fraud = aiService.fraudInsights(recent).join();
-                yield Map.of("insightText", fraud.getResult(), "fallback", fraud.isFallback());
+                yield aiService.fraudInsights(recent)
+                        .thenApply(fraud -> Map.of("insightText", fraud.getResult(), "fallback", fraud.isFallback()));
             }
 
             case "VENDOR_ROI" -> {
                 List<Expense> recent2 = expenseRepository.findByMonthAndYear(
                         now.getMonthValue(), now.getYear());
-                AIResponse roi = aiService.vendorROI(recent2).join();
-                yield Map.of("insightText", roi.getResult(), "fallback", roi.isFallback());
+                yield aiService.vendorROI(recent2)
+                        .thenApply(roi -> Map.of("insightText", roi.getResult(), "fallback", roi.isFallback()));
             }
 
-            default -> Map.of("message", "I understood your voice command but couldn't match it to a system action. " +
-                    "Try phrasing like: 'show my pending expenses' or 'summarize team spending'.");
+            default -> CompletableFuture.completedFuture(
+                    Map.of("message", "I understood your voice command but couldn't match it to a system action. " +
+                            "Try phrasing like: 'show my pending expenses' or 'summarize team spending'."));
         };
     }
 

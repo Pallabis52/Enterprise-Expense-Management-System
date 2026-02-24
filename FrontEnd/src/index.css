@@ -30,3 +30,21 @@
     @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl;
   }
 }
+
+/* SweetAlert2 Theme Support */
+.dark .swal2-popup {
+  @apply bg-gray-800 text-white border border-gray-700 shadow-2xl;
+}
+
+.dark .swal2-title,
+.dark .swal2-html-container {
+  @apply text-white !important;
+}
+
+.dark .swal2-confirm {
+  @apply bg-primary-600 hover:bg-primary-700 !important;
+}
+
+.dark .swal2-cancel {
+  @apply bg-gray-700 hover:bg-gray-600 !important;
+}

@@ -33,8 +33,8 @@ const AIResultBox = ({ result, loading, onRetry }) => {
     const elapsed = ms ? (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`) : null;
     return (
         <div className={`mt-4 p-4 rounded-xl border text-sm leading-relaxed whitespace-pre-wrap ${result.fallback
-                ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                : 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 text-gray-800 dark:text-gray-200'
+            ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+            : 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 text-gray-800 dark:text-gray-200'
             }`}>
             {result.fallback && (
                 <div className="flex items-center justify-between mb-2">
@@ -146,7 +146,7 @@ const UserAIDashboard = () => {
                         description="Analyse your spending patterns and get personalised recommendations"
                     >
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            DeepSeek analyses all your expense history to identify trends, top categories, and cost-saving opportunities.
+                            Our AI Assistant analyses all your expense history to identify trends, top categories, and cost-saving opportunities.
                         </p>
                         <button className={btnCls} onClick={handleInsights} disabled={insightsLoading}>
                             {insightsLoading ? 'Analysing…' : '✨ Get My Insights'}

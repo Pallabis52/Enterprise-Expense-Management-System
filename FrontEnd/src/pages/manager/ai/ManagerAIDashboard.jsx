@@ -31,8 +31,8 @@ const AIResultBox = ({ result, loading }) => {
     if (!result) return null;
     return (
         <div className={`mt-4 p-4 rounded-xl border text-sm leading-relaxed whitespace-pre-wrap ${result.fallback
-                ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-gray-800 dark:text-gray-200'
+            ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+            : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-gray-800 dark:text-gray-200'
             }`}>
             {result.fallback && <p className="font-semibold text-amber-600 dark:text-amber-400 mb-2">⚠ AI Unavailable — Showing Fallback</p>}
             <p>{result.result}</p>
@@ -124,7 +124,7 @@ const ManagerAIDashboard = () => {
                         description="Get a comprehensive AI analysis of your team's expense patterns"
                     >
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            DeepSeek analyses your team's monthly spend, pending approvals, top categories, and compares against budget.
+                            Our AI Assistant analyses your team's monthly spend, pending approvals, top categories, and compares against budget.
                         </p>
                         <button className={btnCls} onClick={handleTeamSummary} disabled={summaryLoading}>
                             {summaryLoading ? 'Analysing…' : '✨ Analyse My Team'}

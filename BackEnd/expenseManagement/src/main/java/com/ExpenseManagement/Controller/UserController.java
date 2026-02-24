@@ -22,7 +22,6 @@ import com.expensemanagement.AI.AIService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -167,26 +166,30 @@ public class UserController {
         }
 
         // ══════════════════════════════════════════════════════════════════════
-        // AI FEATURES (User Role)
+        // AI FEATURES (User Role) — all sync with try/catch to guarantee 200
         // ══════════════════════════════════════════════════════════════════════
 
         /**
          * Feature 1: AI Expense Categorization
          * POST /api/user/ai/categorize
-         * Body: { "title": "...", "description": "...", "amount": 500.0 }
          */
         @PostMapping("/ai/categorize")
         public ResponseEntity<AIResponse> categorize(
                         @RequestBody Map<String, Object> body,
                         Authentication auth) {
-                String title = (String) body.getOrDefault("title", "");
-                String description = (String) body.getOrDefault("description", "");
-                double amount = body.containsKey("amount")
-                                ? ((Number) body.get("amount")).doubleValue()
-                                : 0.0;
-
-                CompletableFuture<AIResponse> future = aiService.categorize(title, description, amount);
-                return ResponseEntity.ok(future.join()); // join = blocking wait with fail-safe
+                try {
+                        String title = (String) body.getOrDefault("title", "");
+                        String description = (String) body.getOrDefault("description", "");
+                        double amount = body.containsKey("amount")
+                                        ? ((Number) body.get("amount")).doubleValue()
+                                        : 0.0;
+                        AIResponse result = aiService.categorize(title, description, amount)
+                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
+                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("categorize", 0));
+                } catch (Exception e) {
+                        log.warn("AI categorize error: {}", e.getMessage());
+                        return ResponseEntity.ok(AIResponse.fallback("categorize", 0));
+                }
         }
 
         /**
@@ -197,12 +200,18 @@ public class UserController {
         public ResponseEntity<AIResponse> explainRejection(
                         @PathVariable Long expenseId,
                         Authentication auth) {
-                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                Expense expense = expenseRepository.findByIdAndUser(expenseId, user)
-                                .orElse(null);
-                if (expense == null)
-                        return ResponseEntity.notFound().build();
-                return ResponseEntity.ok(aiService.explainRejection(expense).join());
+                try {
+                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                        Expense expense = expenseRepository.findByIdAndUser(expenseId, user).orElse(null);
+                        if (expense == null)
+                                return ResponseEntity.notFound().build();
+                        AIResponse result = aiService.explainRejection(expense)
+                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
+                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("explain-rejection", 0));
+                } catch (Exception e) {
+                        log.warn("AI explain-rejection error: {}", e.getMessage());
+                        return ResponseEntity.ok(AIResponse.fallback("explain-rejection", 0));
+                }
         }
 
         /**
@@ -211,22 +220,35 @@ public class UserController {
          */
         @GetMapping("/ai/spending-insights")
         public ResponseEntity<AIResponse> spendingInsights(Authentication auth) {
-                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                return ResponseEntity.ok(aiService.spendingInsights(user).join());
+                try {
+                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                        AIResponse result = aiService.spendingInsights(user)
+                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
+                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("spending-insights", 0));
+                } catch (Exception e) {
+                        log.warn("AI spending-insights error: {}", e.getMessage());
+                        return ResponseEntity.ok(AIResponse.fallback("spending-insights", 0));
+                }
         }
 
         /**
          * Feature 10: AI Chatbot
          * POST /api/user/ai/chat
-         * Body: { "message": "...", "context": "..." }
          */
         @PostMapping("/ai/chat")
         public ResponseEntity<AIResponse> chat(
                         @RequestBody Map<String, Object> body,
                         Authentication auth) {
-                User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                String message = (String) body.getOrDefault("message", "");
-                String context = (String) body.getOrDefault("context", "");
-                return ResponseEntity.ok(aiService.chat("USER", user.getName(), message, context).join());
+                try {
+                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+                        String message = (String) body.getOrDefault("message", "");
+                        String context = (String) body.getOrDefault("context", "");
+                        AIResponse result = aiService.chat("USER", user.getName(), message, context)
+                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
+                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("chatbot", 0));
+                } catch (Exception e) {
+                        log.warn("AI chat error: {}", e.getMessage());
+                        return ResponseEntity.ok(AIResponse.fallback("chatbot", 0));
+                }
         }
 }

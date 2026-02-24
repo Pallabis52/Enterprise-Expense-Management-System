@@ -3,7 +3,7 @@ import axios from 'axios';
 // ── Dedicated AI client with extended timeout ─────────────────────────────────
 // AI calls can take 20-60 s — use a longer timeout than the default API client.
 const aiApi = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api',
     timeout: 90_000, // 90 s — matches backend ollama.timeout-seconds
     headers: {
         'Content-Type': 'application/json',

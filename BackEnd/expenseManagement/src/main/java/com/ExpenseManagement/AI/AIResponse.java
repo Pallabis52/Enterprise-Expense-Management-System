@@ -1,13 +1,20 @@
 package com.expensemanagement.AI;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Unified response DTO returned by every AI feature endpoint.
+ * <p>
+ * Both @NoArgsConstructor and @AllArgsConstructor are required so that
+ * Spring's @Cacheable (Caffeine) can serialize/deserialize instances correctly.
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AIResponse {
 
         /** Which AI feature produced this response (e.g. "categorize", "risk-score") */

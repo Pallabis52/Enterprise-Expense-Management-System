@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import UserSidebar from './UserSidebar';
 import ThemeToggle from '../ui/ThemeToggle';
+import ChatWidget from '../ai/ChatWidget';
 
 const UserLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -37,6 +38,7 @@ const UserLayout = () => {
 
                     <Outlet />
                 </div>
+                <ChatWidget />
             </main>
         </div>
     );

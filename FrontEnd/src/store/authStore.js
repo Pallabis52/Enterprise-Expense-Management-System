@@ -6,6 +6,7 @@ const useAuthStore = create(
     persist(
         (set) => ({
             user: null,
+            token: null, // Unified token storage
             isAuthenticated: false,
             isLoading: false,
             error: null,
@@ -17,7 +18,7 @@ const useAuthStore = create(
                     // Backend returns: { token, name, email, role }
                     const data = response.data;
 
-                    // Store token for axios interceptors (if setup)
+                    // Store token for axios interceptors and persistence
                     localStorage.setItem('token', data.token);
 
                     const user = {
@@ -26,7 +27,7 @@ const useAuthStore = create(
                         role: data.role
                     };
 
-                    set({ user, isAuthenticated: true, isLoading: false });
+                    set({ user, token: data.token, isAuthenticated: true, isLoading: false });
                     return user;
                 } catch (error) {
                     const msg = error.response?.data?.message || 'Login failed';
@@ -51,7 +52,7 @@ const useAuthStore = create(
                 set({ isLoading: true });
                 try {
                     localStorage.removeItem('token');
-                    set({ user: null, isAuthenticated: false, isLoading: false });
+                    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
                     // Ideally call backend to blacklist token if supported
                 } catch (error) {
                     set({ isLoading: false });
@@ -59,8 +60,12 @@ const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-storage', // unique name
-            partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }), // only persist user and auth status
+            name: 'auth-storage',
+            partialize: (state) => ({
+                user: state.user,
+                token: state.token,
+                isAuthenticated: state.isAuthenticated
+            }),
         }
     )
 );

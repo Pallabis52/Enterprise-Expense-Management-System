@@ -35,10 +35,11 @@ public final class PromptTemplates {
 
         // ── Feature 2: Rejection Explanation ─────────────────────────────────────
 
-        public static String explainRejection(String title, double amount,
+        public static String explainRejection(String employeeName, String title, double amount,
                         String category, String rejectionComment) {
                 return """
-                                Instruction: Write a friendly 2-3 sentence explanation to an employee about why their expense was rejected.
+                                Instruction: Write a friendly 2-3 sentence explanation to the employee named "%s" about why their expense was rejected.
+                                Address them by name in the greeting (e.g. "Dear %s,").
                                 Details:
                                 - Expense: %s
                                 - Amount: ₹%.2f
@@ -46,9 +47,11 @@ public final class PromptTemplates {
                                 - Rejection Reason: %s
 
                                 Tone: Empathetic, concise, and helpful.
-                                Output: A short message suggesting how to resubmit correctly.
+                                Output: A short message starting with "Dear %s," and suggesting how to resubmit correctly.
+                                Always sign off with "Warm regards,\\nThe Expense Management Team" — never use placeholders like [Your Name].
                                 """
-                                .formatted(title, amount, category, rejectionComment);
+                                .formatted(employeeName, employeeName, title, amount, category, rejectionComment,
+                                                employeeName);
         }
 
         // ── Feature 3: Spending Insights ──────────────────────────────────────────

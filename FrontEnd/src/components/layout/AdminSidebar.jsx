@@ -28,7 +28,6 @@ const navigation = [
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
     { name: 'AI Tools', href: '/admin/ai', icon: SparklesIcon },
-    { name: 'Chatbot', href: '/admin/chatbot', icon: ChatBubbleLeftRightIcon },
     { name: 'Profile', href: '/admin/profile', icon: UserCircleIcon },
 ];
 

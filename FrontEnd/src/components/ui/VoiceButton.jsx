@@ -18,7 +18,6 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
     const [error, setError] = useState('');
     const [hints, setHints] = useState([]);
     const [showHints, setShowHints] = useState(false);
-    const [textFallback, setTextFallback] = useState('');
     const recognitionRef = useRef(null);
 
     // Check browser support
@@ -35,29 +34,65 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
         }
     }, []);
 
+    // ── Send to backend ───────────────────────────────────────────────────────
+    const sendCommand = async (text) => {
+        if (!text?.trim()) return;
+        setState('processing');
+        setError('');
+        try {
+            const response = await sendVoiceCommand(text);
+            setResult(response);
+            setState('result');
+            if (onResult) onResult(response);
+        } catch (err) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message || 'Session expired. Please log out and log back in.';
+
+            if (status === 401) {
+                setError(message);
+            } else if (status === 403) {
+                setError('Permission denied for this voice command.');
+            } else if (!err?.response) {
+                setError('Cannot reach server. Please check your connection.');
+            } else {
+                setError('Failed to process voice command. Please try again.');
+            }
+            setState('idle');
+        }
+    };
+
     // ── Start listening ───────────────────────────────────────────────────────
     const startListening = useCallback(() => {
         if (!isSupported) return;
         setError('');
         setResult(null);
+        setTranscript('');
 
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-IN';
-        recognition.interimResults = false;
+        recognition.interimResults = true; // Use interim for real-time feedback
         recognition.maxAlternatives = 1;
         recognitionRef.current = recognition;
 
         recognition.onstart = () => setState('listening');
 
         recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
+            const text = Array.from(event.results)
+                .map(res => res[0].transcript)
+                .join('');
+
             setTranscript(text);
-            sendCommand(text);
+
+            if (event.results[0].isFinal) {
+                sendCommand(text);
+            }
         };
 
         recognition.onerror = (event) => {
-            setError(`Mic error: ${event.error}. Please try again.`);
-            setState('idle');
+            if (event.error !== 'no-speech') {
+                setError(`Mic error: ${event.error}. Please try again.`);
+                setState('idle');
+            }
         };
 
         recognition.onend = () => {
@@ -65,7 +100,7 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
         };
 
         recognition.start();
-    }, [isSupported, state]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isSupported, state, sendCommand]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Stop listening early ──────────────────────────────────────────────────
     const stopListening = () => {
@@ -73,27 +108,17 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
         setState('idle');
     };
 
-    // ── Send to backend ───────────────────────────────────────────────────────
-    const sendCommand = async (text) => {
-        setState('processing');
-        try {
-            const response = await sendVoiceCommand(text);
-            setResult(response);
-            setState('result');
-            if (onResult) onResult(response);
-        } catch {
-            setError('Failed to process voice command. Please try again.');
-            setState('idle');
-        }
+    // ── Handle text submit (Manual Typing) ────────────────────────────────────
+    const handleManualSubmit = (e) => {
+        if (e) e.preventDefault();
+        if (state === 'processing') return;
+        sendCommand(transcript);
     };
 
-    // ── Handle text fallback submit ───────────────────────────────────────────
-    const handleTextSubmit = (e) => {
-        e.preventDefault();
-        if (!textFallback.trim()) return;
-        setTranscript(textFallback.trim());
-        sendCommand(textFallback.trim());
-        setTextFallback('');
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleManualSubmit();
+        }
     };
 
     // ── Reset state ───────────────────────────────────────────────────────────
@@ -111,98 +136,108 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
     };
 
     return (
-        <div className={`voice-widget ${className}`}>
-            {/* ── Main mic button area ── */}
-            <div className="voice-controls">
-                {isSupported ? (
-                    <button
-                        className={`voice-mic-btn ${state}`}
-                        onClick={state === 'listening' ? stopListening : startListening}
-                        disabled={state === 'processing'}
-                        title={state === 'listening' ? 'Click to stop' : 'Click to speak'}
-                        aria-label="Voice command button"
-                    >
-                        <span className="mic-icon">
-                            {state === 'processing' ? '⏳' : state === 'listening' ? '🔴' : '🎤'}
-                        </span>
-                        {state === 'listening' && <span className="pulse-ring" />}
-                    </button>
-                ) : (
-                    /* ── Text fallback when mic is not supported ── */
-                    <form className="voice-text-fallback" onSubmit={handleTextSubmit}>
-                        <input
-                            type="text"
-                            value={textFallback}
-                            onChange={(e) => setTextFallback(e.target.value)}
-                            placeholder="Type your command..."
-                            className="voice-text-input"
-                        />
-                        <button type="submit" className="voice-text-submit" disabled={state === 'processing'}>
-                            {state === 'processing' ? '...' : '→'}
-                        </button>
-                    </form>
-                )}
-
-                <span className="voice-status-label">
-                    {state === 'idle' && 'Ask anything'}
-                    {state === 'listening' && 'Listening…'}
-                    {state === 'processing' && 'Processing…'}
-                    {state === 'result' && 'Done'}
-                </span>
-
+        <div className={`voice-widget ${className} ${state}`}>
+            <div className="voice-main-bar">
+                {/* ── Mic Button ── */}
                 <button
-                    className="voice-hints-btn"
-                    onClick={toggleHints}
-                    title="See example commands"
-                    aria-label="Toggle example commands"
+                    className={`voice-mic-btn ${state}`}
+                    onClick={state === 'listening' ? stopListening : startListening}
+                    disabled={state === 'processing'}
+                    title={state === 'listening' ? 'Stop listening' : 'Start voice command'}
+                    aria-label="Toggle Microphone"
                 >
-                    💡
+                    <div className="mic-container">
+                        {state === 'processing' ? (
+                            <span className="voice-spinner" />
+                        ) : state === 'listening' ? (
+                            <div className="listening-indicator">
+                                <span className="dot" />
+                                <span className="dot" />
+                                <span className="dot" />
+                            </div>
+                        ) : (
+                            <span className="mic-icon">🎤</span>
+                        )}
+                        {state === 'listening' && <span className="pulse-ring" />}
+                    </div>
                 </button>
 
-                {result && (
-                    <button className="voice-reset-btn" onClick={reset} title="New command">
-                        ✕
-                    </button>
-                )}
-            </div>
+                {/* ── Dual Input Field ── */}
+                <div className="voice-input-container">
+                    <input
+                        type="text"
+                        className="voice-command-input"
+                        placeholder={state === 'listening' ? 'Listening...' : 'Type a command or use voice...'}
+                        value={transcript}
+                        onChange={(e) => setTranscript(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        disabled={state === 'processing'}
+                    />
 
-            {/* ── Transcript display ── */}
-            {transcript && state !== 'idle' && (
-                <div className="voice-transcript">
-                    <span className="voice-transcript-label">You said:</span> "{transcript}"
-                </div>
-            )}
+                    {transcript && (
+                        <button className="voice-input-clear" onClick={() => setTranscript('')} title="Clear">
+                            ✕
+                        </button>
+                    )}
 
-            {/* ── Error display ── */}
-            {error && <div className="voice-error">{error}</div>}
-
-            {/* ── Hints panel ── */}
-            {showHints && (
-                <div className="voice-hints-panel">
-                    <p className="voice-hints-title">Try saying:</p>
-                    {hints.length > 0 ? (
-                        <ul className="voice-hints-list">
-                            {hints.map((hint, i) => (
-                                <li
-                                    key={i}
-                                    className="voice-hint-item"
-                                    onClick={() => {
-                                        setTranscript(hint);
-                                        sendCommand(hint);
-                                        setShowHints(false);
-                                    }}
-                                >
-                                    "{hint}"
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="voice-hints-loading">Loading hints…</p>
+                    {transcript && state !== 'processing' && state !== 'listening' && (
+                        <button
+                            className="voice-command-send"
+                            onClick={handleManualSubmit}
+                            title="Send command"
+                        >
+                            →
+                        </button>
                     )}
                 </div>
+
+                <div className="voice-action-group">
+                    <button
+                        className="voice-action-btn hints"
+                        onClick={toggleHints}
+                        title="Command Hints"
+                    >
+                        💡
+                    </button>
+
+                    {(result || error || transcript) && (
+                        <button className="voice-action-btn reset" onClick={reset} title="Reset">
+                            ↺
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Error display ── */}
+            {error && (
+                <div className="voice-error-banner">
+                    <span className="error-icon">⚠️</span>
+                    <span className="error-text">{error}</span>
+                </div>
             )}
 
-            {/* ── Result panel ── */}
+            {/* ── Rendering Panels (Hints/Results) ── */}
+            {showHints && (
+                <div className="voice-hints-panel">
+                    <p className="voice-hints-title">Try Commands Like:</p>
+                    <ul className="voice-hints-list">
+                        {hints.length > 0 ? (
+                            hints.map((hint, i) => (
+                                <li key={i} className="voice-hint-item" onClick={() => {
+                                    setTranscript(hint);
+                                    sendCommand(hint);
+                                    setShowHints(false);
+                                }}>
+                                    "{hint}"
+                                </li>
+                            ))
+                        ) : (
+                            <li className="voice-hint-item loading">Loading examples...</li>
+                        )}
+                    </ul>
+                </div>
+            )}
+
             {result && state === 'result' && (
                 <VoiceResultPanel result={result} />
             )}

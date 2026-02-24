@@ -2,6 +2,7 @@ package com.expensemanagement.Controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.AIService;
@@ -124,14 +125,15 @@ public class ManagerController {
      * GET /api/manager/ai/recommend/{expenseId}
      */
     @GetMapping("/ai/recommend/{expenseId}")
-    public ResponseEntity<AIResponse> approvalRecommendation(
+    public CompletableFuture<ResponseEntity<AIResponse>> approvalRecommendation(
             @PathVariable Long expenseId, Authentication auth) {
         User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
         Expense expense = managerService.getExpenseById(expenseId, manager);
         if (expense == null)
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         User owner = expense.getUser();
-        return ResponseEntity.ok(aiService.approvalRecommendation(expense, owner).join());
+        return aiService.approvalRecommendation(expense, owner)
+                .thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -139,13 +141,14 @@ public class ManagerController {
      * GET /api/manager/ai/risk/{expenseId}
      */
     @GetMapping("/ai/risk/{expenseId}")
-    public ResponseEntity<AIResponse> riskScore(
+    public CompletableFuture<ResponseEntity<AIResponse>> riskScore(
             @PathVariable Long expenseId, Authentication auth) {
         User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
         Expense expense = managerService.getExpenseById(expenseId, manager);
         if (expense == null)
-            return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(aiService.riskScore(expense, expense.getUser()).join());
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+        return aiService.riskScore(expense, expense.getUser())
+                .thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -153,20 +156,20 @@ public class ManagerController {
      * GET /api/manager/ai/team-summary
      */
     @GetMapping("/ai/team-summary")
-    public ResponseEntity<AIResponse> teamSummary(Authentication auth) {
+    public CompletableFuture<ResponseEntity<AIResponse>> teamSummary(Authentication auth) {
         User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
         com.expensemanagement.Entities.Team team = manager.getTeam();
         if (team == null)
-            return ResponseEntity.badRequest().build();
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
         List<User> members = team.getMembers();
         java.time.LocalDate now = java.time.LocalDate.now();
         Double monthlySpend = managerService.getTeamMonthlySpend(members, now.getMonthValue(), now.getYear());
         Double budget = managerService.getTeamBudget(team.getId(), now.getMonthValue(), now.getYear());
-        return ResponseEntity.ok(aiService.teamSummary(
+        return aiService.teamSummary(
                 members,
                 monthlySpend != null ? monthlySpend : 0,
                 budget != null ? budget : 0,
-                team.getName()).join());
+                team.getName()).thenApply(ResponseEntity::ok);
     }
 
     /**
@@ -175,12 +178,13 @@ public class ManagerController {
      * Body: { "message": "...", "context": "..." }
      */
     @PostMapping("/ai/chat")
-    public ResponseEntity<AIResponse> chat(
+    public CompletableFuture<ResponseEntity<AIResponse>> chat(
             @RequestBody Map<String, Object> body,
             Authentication auth) {
         User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
         String message = (String) body.getOrDefault("message", "");
         String context = (String) body.getOrDefault("context", "");
-        return ResponseEntity.ok(aiService.chat("MANAGER", manager.getName(), message, context).join());
+        return aiService.chat("MANAGER", manager.getName(), message, context)
+                .thenApply(ResponseEntity::ok);
     }
 }

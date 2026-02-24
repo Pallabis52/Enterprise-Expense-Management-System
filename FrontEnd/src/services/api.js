@@ -5,7 +5,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true, // Important for HttpOnly cookies
+    // withCredentials not needed: auth uses Bearer token in Authorization header (localStorage JWT)
 });
 
 // Request Interceptor
@@ -13,7 +13,13 @@ api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
+            const tokenPreview = token.substring(0, 10) + '...';
+            console.log(`[API] Attaching token (${tokenPreview}) to ${config.method.toUpperCase()} ${config.url}`);
+
+            // Standard Header Auth
             config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            console.warn(`[API] NO TOKEN FOUND for ${config.method.toUpperCase()} ${config.url}`);
         }
         return config;
     },
@@ -34,26 +40,30 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || 'Something went wrong. Please try again.';
 
         if (status === 401) {
-            // Unauthenticated
-            Swal.fire({
-                icon: 'warning',
-                title: 'Session Expired',
-                text: 'Please log in again.',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Log In'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    localStorage.removeItem('token');
-                    window.location.href = '/login';
-                }
-            });
+            // Unauthenticated — skip popup if the caller suppressed it (e.g. voice commands)
+            if (!error.config?.suppressGlobalError) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'Please log in again.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Log In'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                    }
+                });
+            }
         } else if (status === 403) {
-            // Forbidden
-            Swal.fire({
-                icon: 'error',
-                title: 'Access Denied',
-                text: 'You do not have permission to perform this action.',
-            });
+            // Forbidden — skip popup if the caller suppressed it
+            if (!error.config?.suppressGlobalError) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'You do not have permission to perform this action.',
+                });
+            }
         } else if (status >= 500) {
             // Server Error
             Swal.fire({
