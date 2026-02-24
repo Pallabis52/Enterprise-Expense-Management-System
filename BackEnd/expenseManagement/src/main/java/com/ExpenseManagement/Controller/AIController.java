@@ -216,4 +216,24 @@ public class AIController {
                 List<Expense> recent = expenseRepository.findByMonthAndYear(now.getMonthValue(), now.getYear());
                 return aiFacade.vendorROI(recent).thenApply(ResponseEntity::ok);
         }
+
+        // ── Additional Features ──────────────────────────────────────────────────
+
+        @PostMapping("/enhance-description")
+        @PreAuthorize("isAuthenticated()")
+        public CompletableFuture<ResponseEntity<AIResponse>> enhanceDescription(
+                        @RequestBody Map<String, Object> body) {
+                String title = (String) body.getOrDefault("title", "");
+                String category = (String) body.getOrDefault("category", "");
+                double amount = body.containsKey("amount") ? ((Number) body.get("amount")).doubleValue() : 0.0;
+                return aiFacade.enhanceDescription(title, amount, category).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/audit-summary")
+        @PreAuthorize("hasRole('ADMIN')")
+        public CompletableFuture<ResponseEntity<AIResponse>> auditSummary() {
+                java.time.LocalDate now = java.time.LocalDate.now();
+                List<Expense> all = expenseRepository.findByMonthAndYear(now.getMonthValue(), now.getYear());
+                return aiFacade.auditSummary(all).thenApply(ResponseEntity::ok);
+        }
 }

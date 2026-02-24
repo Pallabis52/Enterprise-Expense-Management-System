@@ -184,8 +184,6 @@ public final class PromptTemplates {
                                 """.formatted(role, name, context.isBlank() ? "None" : context, message);
         }
 
-        // ── Feature 11: Vendor ROI ────────────────────────────────────────────────
-
         public static String vendorROI(String vendorSpendJson) {
                 return """
                                 Instruction: Analyze the following vendor spending data and provide top 3 cost-saving recommendations.
@@ -195,5 +193,33 @@ public final class PromptTemplates {
                                 Output: 3 actionable points. Max 80 words total.
                                 """
                                 .formatted(vendorSpendJson);
+        }
+
+        // ── Feature 12: Description Enhancer ─────────────────────────────────────
+
+        public static String enhanceDescription(String title, double amount, String category) {
+                return """
+                                Instruction: Rewrite the following basic expense details into a professional, clear description.
+                                Data:
+                                - Title: %s
+                                - Amount: ₹%.2f
+                                - Category: %s
+
+                                Output: 1-2 professional sentences. No greeting. No extra formatting.
+                                """
+                                .formatted(title, amount, category);
+        }
+
+        // ── Feature 13: Audit Summary ────────────────────────────────────────────
+
+        public static String auditSummary(String expensesJson) {
+                return """
+                                Instruction: Provide a high-level executive summary of this list of expenses for an annual audit.
+                                Data (JSON):
+                                %s
+
+                                Output: 3 short bullet points summarizing total risk, major spend categories, and policy compliance findings. Max 100 words.
+                                """
+                                .formatted(expensesJson);
         }
 }

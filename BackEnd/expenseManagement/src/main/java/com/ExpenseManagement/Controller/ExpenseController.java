@@ -20,7 +20,7 @@ import com.expensemanagement.Entities.Expense;
 import com.expensemanagement.Services.ApprovalService;
 import com.expensemanagement.Services.ExpenseService;
 import com.expensemanagement.Services.FileService;
-import com.expensemanagement.service.ReceiptStorageService;
+import com.expensemanagement.Services.ReceiptStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +37,7 @@ public class ExpenseController {
     private final ApprovalService approvalService;
     private final ReceiptStorageService receiptStorageService;
     private final com.expensemanagement.Repository.UserRepository userRepository;
+    private final com.expensemanagement.Repository.ExpenseRepository expenseRepository;
     private final com.expensemanagement.Services.UserService userService;
 
     // --- Receipt Upload & Viewing ---
@@ -44,6 +45,7 @@ public class ExpenseController {
     // POST /api/expenses/{id}/upload-receipt
     @Operation(summary = "Upload a receipt for an expense")
     @PostMapping("/{id}/upload-receipt")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> uploadReceipt(@PathVariable Long id, @RequestParam("file") MultipartFile file,
             org.springframework.security.core.Authentication auth) {
         Expense expense = expenseService.getById(id);
@@ -59,7 +61,10 @@ public class ExpenseController {
 
         String filename = receiptStorageService.store(file);
         expense.setReceiptUrl(filename);
-        expenseService.saveExpense(expense);
+
+        // Save using repository directly to bypass service-level notifications/AI
+        // checks
+        expenseRepository.save(expense);
 
         return ResponseEntity.ok(java.util.Map.of("message", "Receipt uploaded successfully", "filename", filename));
     }

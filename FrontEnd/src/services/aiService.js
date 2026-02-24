@@ -94,6 +94,22 @@ export const chatWithAI = (message, context = '', role = 'user') =>
 export const getVendorROI = () =>
     withRetry(() => aiApi.get('/ai/vendor-roi'));
 
+// ── Feature 12: Description Enhancer ─────────────────────────────────────────
+export const enhanceDescription = (title, amount, category) =>
+    withRetry(() => aiApi.post('/ai/enhance-description', { title, amount, category }));
+
+// ── Feature 13: Audit Summary ───────────────────────────────────────────────
+export const getAuditSummary = () =>
+    withRetry(() => aiApi.get('/ai/audit-summary'));
+
+// ── Feature 14: Natural Language Search ─────────────────────────────────────
+export const naturalSearch = (query) =>
+    withRetry(() => aiApi.get('/ai/search', { params: { query } }));
+
+// ── Feature 15: Voice Expense Parsing ───────────────────────────────────────
+export const parseVoiceExpense = (text) =>
+    withRetry(() => aiApi.post('/ai/voice-parse', { text }));
+
 // ── Ollama health check ──────────────────────────────────────────────────────
 // GET /api/ai/status
 export const getAIStatus = () =>

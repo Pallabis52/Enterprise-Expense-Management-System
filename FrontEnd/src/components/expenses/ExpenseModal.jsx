@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import VoiceExpenseButton from '../ai/VoiceExpenseButton';
+import { enhanceDescription } from '../../services/aiService';
+import { SparklesIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
     const [formData, setFormData] = useState({
@@ -13,6 +15,37 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
     });
     const [receiptFile, setReceiptFile] = useState(null);
     const [categories, setCategories] = useState([]);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+
+    const handleVoiceParsed = (data) => {
+        setFormData({
+            ...formData,
+            title: data.title || data.description || formData.title,
+            amount: data.amount || formData.amount,
+            category: data.category || formData.category,
+            description: data.description || formData.description,
+            date: data.date || formData.date
+        });
+    };
+
+    const handleEnhanceDescription = async () => {
+        if (!formData.title || !formData.amount) {
+            toast.error('Please enter title and amount first');
+            return;
+        }
+        setIsEnhancing(true);
+        try {
+            const res = await enhanceDescription(formData.title, formData.amount, formData.category);
+            if (!res.isFallback) {
+                setFormData({ ...formData, description: res.result });
+                toast.success('Description boosted!');
+            }
+        } catch (err) {
+            toast.error('AI enhancement failed');
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
 
     // Fetch categories on mount
     useEffect(() => {
@@ -71,7 +104,13 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {!initialData && (
+                        <div className="flex justify-center pb-2 border-b border-dashed border-gray-100 dark:border-gray-700 mb-4">
+                            <VoiceExpenseButton onParsed={handleVoiceParsed} />
+                        </div>
+                    )}
+
                     <Input
                         label="Expense Title"
                         placeholder="e.g., Team Lunch"
@@ -114,34 +153,44 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                         </select>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            rows="3"
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
-                            placeholder="Add details about the expense..."
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Receipt (Optional)
+                    <div className="border-2 border-dashed border-primary-100 dark:border-gray-600 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-700/30 hover:border-primary-500 transition-all duration-200">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Upload Bill / Receipt (Optional)
                         </label>
                         <input
                             type="file"
                             accept="image/*,.pdf"
                             onChange={(e) => setReceiptFile(e.target.files[0])}
-                            className="w-full text-sm text-gray-500 dark:text-gray-400
-                                file:mr-4 file:py-2 file:px-4
+                            className="block w-full text-sm text-gray-500 dark:text-gray-400
+                                file:mr-4 file:py-1 file:px-4
                                 file:rounded-full file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-primary-50 file:text-primary-700
-                                hover:file:bg-primary-100
-                                dark:file:bg-gray-700 dark:file:text-primary-400"
+                                file:text-xs file:font-semibold
+                                file:bg-primary-100 file:text-primary-700
+                                hover:file:bg-primary-200
+                                dark:file:bg-gray-600 dark:file:text-primary-300
+                                cursor-pointer"
+                        />
+                    </div>
+
+                    <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex justify-between">
+                            Description
+                            <button
+                                type="button"
+                                onClick={handleEnhanceDescription}
+                                disabled={isEnhancing}
+                                className="text-[10px] flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-tight"
+                            >
+                                <SparklesIcon className={`w-3 h-3 ${isEnhancing ? 'animate-spin' : ''}`} />
+                                {isEnhancing ? 'Boosting...' : 'Boost with AI'}
+                            </button>
+                        </label>
+                        <textarea
+                            rows="2"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
+                            placeholder="Add details about the expense..."
                         />
                     </div>
 

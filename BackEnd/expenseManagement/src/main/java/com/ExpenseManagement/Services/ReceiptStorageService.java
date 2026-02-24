@@ -44,7 +44,6 @@ public class ReceiptStorageService {
                     .normalize().toAbsolutePath();
 
             if (!destinationFile.getParent().equals(this.rootPath.toAbsolutePath())) {
-                // This is a security check
                 throw new RuntimeException("Cannot store file outside current directory.");
             }
             Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);

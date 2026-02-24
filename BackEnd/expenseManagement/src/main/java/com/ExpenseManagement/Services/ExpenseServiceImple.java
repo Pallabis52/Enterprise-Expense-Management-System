@@ -158,6 +158,10 @@ public class ExpenseServiceImple implements ExpenseService {
             expenseToUpdate.setDate(expense.getDate());
             expenseToUpdate.setCategory(expense.getCategory());
             expenseToUpdate.setDescription(expense.getDescription());
+            // Preserve/Update receiptUrl if provided in the DTO
+            if (expense.getReceiptUrl() != null) {
+                expenseToUpdate.setReceiptUrl(expense.getReceiptUrl());
+            }
             return expenseRepository.save(expenseToUpdate);
         }
         return null;

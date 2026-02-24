@@ -14,6 +14,7 @@ import { formatCurrency } from '../../../utils/helpers';
 import VoiceButton from '../../../components/ui/VoiceButton';
 import userService from '../../../services/userService';
 import { EyeIcon } from '@heroicons/react/24/outline';
+import SmartApprovalBadge from '../../../components/ai/SmartApprovalBadge';
 
 const STATUS_OPTIONS = [
     { label: 'All', value: '' },
@@ -92,13 +93,16 @@ const ManagerExpenseList = () => {
             title: 'Title',
             key: 'title',
             render: row => (
-                <div className="flex items-center gap-2">
-                    <span>{row.title}</span>
-                    {row.isDuplicate && (
-                        <span title="Possible duplicate" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
-                            <ExclamationTriangleIcon className="w-3 h-3" /> Dup
-                        </span>
-                    )}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">{row.title}</span>
+                        {row.isDuplicate && (
+                            <span title="Possible duplicate" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
+                                <ExclamationTriangleIcon className="w-3 h-3" /> Dup
+                            </span>
+                        )}
+                    </div>
+                    {row.status === 'PENDING' && <SmartApprovalBadge expenseId={row.id} />}
                 </div>
             )
         },

@@ -55,10 +55,10 @@ public class OllamaService {
     private final ObjectMapper objectMapper;
     private final int connectTimeoutSeconds;
 
-    @Value("${ollama.model:phi3}")
+    @Value("${ollama.model:phi3:latest}")
     private String model;
 
-    @Value("${ollama.light-model:phi3}")
+    @Value("${ollama.light-model:phi3:latest}")
     private String lightModel;
 
     @Value("${ollama.base-url:http://127.0.0.1:11434}")
@@ -101,7 +101,7 @@ public class OllamaService {
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .codecs(cfg -> cfg.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                .codecs(cfg -> cfg.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                 .build();
     }
 
@@ -247,8 +247,7 @@ public class OllamaService {
         ObjectNode body = objectMapper.createObjectNode()
                 .put("model", modelName)
                 .put("prompt", prompt)
-                .put("stream", false)
-                .put("keep_alive", "5m"); // Unload model from RAM after 5 mins of idle
+                .put("stream", false);
 
         if (!asyncEnabled) {
             log.debug("Ollama async disabled — executing sync call for {}", feature);
@@ -307,8 +306,9 @@ public class OllamaService {
                                 "Tip: increase ollama.timeout-seconds or ensure the model is warm.",
                                 feature, ms, modelName, timeoutSeconds);
                     } else if (ex instanceof WebClientResponseException httpEx) {
-                        log.warn("OllamaService '{}' HTTP {} after {}ms — {}",
-                                feature, httpEx.getStatusCode().value(), ms, httpEx.getMessage());
+                        String errorBody = httpEx.getResponseBodyAsString();
+                        log.warn("OllamaService '{}' HTTP {} after {}ms — Body: {}",
+                                feature, httpEx.getStatusCode().value(), ms, errorBody);
                     } else {
                         log.warn("OllamaService '{}' failed after {}ms — {}: {}",
                                 feature, ms, ex.getClass().getSimpleName(), ex.getMessage());

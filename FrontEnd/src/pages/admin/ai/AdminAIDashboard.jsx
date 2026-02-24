@@ -3,7 +3,8 @@ import {
     getFraudInsights,
     getBudgetPrediction,
     getPolicyViolations,
-    getVendorROI
+    getVendorROI,
+    getAuditSummary
 } from '../../../services/aiService';
 import api from '../../../services/api';
 import PageTransition from '../../../components/layout/PageTransition';
@@ -34,8 +35,8 @@ const AIResultBox = ({ result, loading, accentColor = 'violet' }) => {
     if (!result) return null;
     return (
         <div className={`mt-4 p-4 rounded-xl border text-sm leading-relaxed whitespace-pre-wrap ${result.fallback
-                ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                : 'bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800 text-gray-800 dark:text-gray-200'
+            ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+            : 'bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800 text-gray-800 dark:text-gray-200'
             }`}>
             {result.fallback && <p className="font-semibold text-amber-600 dark:text-amber-400 mb-2">⚠ AI Unavailable — Showing Fallback</p>}
             <p>{result.result}</p>
@@ -62,6 +63,10 @@ const AdminAIDashboard = () => {
     // Vendor ROI
     const [vendorResult, setVendorResult] = useState(null);
     const [vendorLoading, setVendorLoading] = useState(false);
+
+    // Audit Summary
+    const [auditResult, setAuditResult] = useState(null);
+    const [auditLoading, setAuditLoading] = useState(false);
 
     useEffect(() => {
         // Load teams for budget prediction dropdown
@@ -105,6 +110,13 @@ const AdminAIDashboard = () => {
         try { setVendorResult(await getVendorROI()); }
         catch { setVendorResult({ result: 'Vendor ROI analysis failed. Please try again.', fallback: true }); }
         finally { setVendorLoading(false); }
+    }, []);
+
+    const handleAuditSummary = useCallback(async () => {
+        setAuditLoading(true); setAuditResult(null);
+        try { setAuditResult(await getAuditSummary()); }
+        catch { setAuditResult({ result: 'Audit summary generation failed. Please try again.', fallback: true }); }
+        finally { setAuditLoading(false); }
     }, []);
 
     return (
@@ -210,6 +222,21 @@ const AdminAIDashboard = () => {
                             {vendorLoading ? 'Analysing…' : '💰 Analyse Vendors'}
                         </button>
                         <AIResultBox result={vendorResult} loading={vendorLoading} />
+                    </AICard>
+
+                    {/* Feature 13: Audit Summary */}
+                    <AICard
+                        title="Executive Audit Summary"
+                        icon="📋"
+                        description="Generate a high-level summary of company spending for external auditors"
+                    >
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            Aggregates all of this month's expenses and highlights key findings, risk areas, and compliance status in a professional format.
+                        </p>
+                        <button className={btnCls} onClick={handleAuditSummary} disabled={auditLoading}>
+                            {auditLoading ? 'Generating…' : '📋 Generate Audit Summary'}
+                        </button>
+                        <AIResultBox result={auditResult} loading={auditLoading} accentColor="indigo" />
                     </AICard>
                 </div>
             </div>

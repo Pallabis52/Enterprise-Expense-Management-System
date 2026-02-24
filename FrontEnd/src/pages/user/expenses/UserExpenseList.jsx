@@ -15,11 +15,13 @@ import PageTransition from '../../../components/layout/PageTransition';
 import Swal from 'sweetalert2';
 import ExpenseModal from '../../../components/expenses/ExpenseModal';
 import VoiceButton from '../../../components/ui/VoiceButton';
+import AISearchBar from '../../../components/ai/AISearchBar';
 
 const UserExpenseList = () => {
     const { expenses, fetchMyExpenses, isLoading, deleteExpense, addExpense, updateExpense } = useUserExpenseStore();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [aiFilters, setAiFilters] = useState({});
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,10 +106,23 @@ const UserExpenseList = () => {
         }
     };
 
-    const filteredExpenses = expenses.filter(ex =>
-        ex.title.toLowerCase().includes(search.toLowerCase()) ||
-        ex.category.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredExpenses = expenses.filter(ex => {
+        // Basic Search
+        const matchesBasic = ex.title.toLowerCase().includes(search.toLowerCase()) ||
+            ex.category.toLowerCase().includes(search.toLowerCase());
+        if (!matchesBasic) return false;
+
+        // Status Filter
+        if (statusFilter !== 'all' && ex.status !== statusFilter) return false;
+
+        // AI Filters
+        if (aiFilters.category && ex.category.toLowerCase() !== aiFilters.category.toLowerCase()) return false;
+        if (aiFilters.status && ex.status.toLowerCase() !== aiFilters.status.toLowerCase()) return false;
+        if (aiFilters.minAmount && ex.amount < aiFilters.minAmount) return false;
+        if (aiFilters.maxAmount && ex.amount > aiFilters.maxAmount) return false;
+
+        return true;
+    });
 
     return (
         <PageTransition>
@@ -123,8 +138,10 @@ const UserExpenseList = () => {
                     </Button>
                 </div>
 
-                {/* Voice Search */}
-                <VoiceButton role="USER" onResult={handleVoiceResult} />
+                {/* AI & Natural Search */}
+                <div className="mb-8">
+                    <AISearchBar onFilterChange={(f) => setAiFilters(f)} />
+                </div>
 
                 {/* Filters */}
                 <Card3D className="p-4 bg-white dark:bg-gray-800">

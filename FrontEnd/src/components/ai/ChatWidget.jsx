@@ -6,14 +6,8 @@ import {
     PaperAirplaneIcon,
     ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import api from '../../services/api';
+import { chatWithAI } from '../../services/aiService';
 import useAuthStore from '../../store/authStore';
-
-const ROLE_PREFIX = {
-    USER: 'user',
-    MANAGER: 'manager',
-    ADMIN: 'admin',
-};
 
 const BOT_STARTERS = {
     USER: [
@@ -43,7 +37,6 @@ const ChatWidget = () => {
     const inputRef = useRef(null);
 
     const role = user?.role || 'USER';
-    const rolePrefix = ROLE_PREFIX[role] || 'user';
 
     // Welcome message on first open
     useEffect(() => {
@@ -77,10 +70,7 @@ const ChatWidget = () => {
         setLoading(true);
 
         try {
-            const { data } = await api.post(`/${rolePrefix}/ai/chat`, {
-                message: userText,
-                context: '',
-            });
+            const data = await chatWithAI(userText, '', role);
             const botText = data?.result || 'I was unable to process that. Please try rephrasing.';
             setMessages(prev => [
                 ...prev,
@@ -213,8 +203,8 @@ const ChatWidget = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center justify-center p-4 rounded-full shadow-2xl transition-colors ${isOpen
-                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 animate-in fade-in zoom-in duration-300'
+                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 animate-in fade-in zoom-in duration-300'
                     }`}
             >
                 {isOpen ? (

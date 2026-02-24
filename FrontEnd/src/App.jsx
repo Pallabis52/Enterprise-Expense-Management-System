@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import AdminLayout from './layouts/AdminLayout'; // Revised Layout
 import ManagerLayout from './layouts/ManagerLayout'; // New Layout
 import UserLayout from './components/layout/UserLayout'; // User Layout
@@ -135,8 +136,15 @@ const router = createBrowserRouter([
   }
 ]);
 
+
+
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 export default App;

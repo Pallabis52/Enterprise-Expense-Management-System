@@ -231,4 +231,26 @@ public class AIService {
                                                                 : "No specific reason provided."),
                                 "explain-rejection");
         }
+
+        // ── Feature 12: Description Enhancer ─────────────────────────────────────
+
+        public CompletableFuture<AIResponse> enhanceDescription(String title, double amount, String category) {
+                String prompt = PromptTemplates.enhanceDescription(title, amount,
+                                category != null ? category : "Uncategorized");
+                return ollamaService.ask(prompt, "enhance-description");
+        }
+
+        // ── Feature 13: Audit Summary ────────────────────────────────────────────
+
+        public CompletableFuture<AIResponse> auditSummary(List<Expense> expenses) {
+                StringBuilder sb = new StringBuilder("[");
+                expenses.stream().limit(50).forEach(e -> sb.append("\n  { title: \"").append(e.getTitle())
+                                .append("\", amount: ").append(e.getAmount())
+                                .append(", category: \"").append(e.getCategory())
+                                .append("\", date: \"").append(e.getDate()).append("\" },"));
+                sb.append("\n]");
+
+                String prompt = PromptTemplates.auditSummary(sb.toString());
+                return ollamaService.ask(prompt, "audit-summary");
+        }
 }
