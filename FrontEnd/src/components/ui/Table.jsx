@@ -31,7 +31,7 @@ const Table = ({
                                 >
                                     <div className="flex items-center gap-1">
                                         {column.title}
-                                        {sortConfig?.key === column.key && (
+                                        {column.key && sortConfig?.key === column.key && sortConfig?.direction && (
                                             <span className="flex-shrink-0 text-primary-500">
                                                 {sortConfig.direction === 'asc' ? (
                                                     <ChevronUpIcon className="h-4 w-4" />

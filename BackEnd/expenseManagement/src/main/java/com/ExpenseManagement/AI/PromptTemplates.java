@@ -180,6 +180,7 @@ public final class PromptTemplates {
                                 User Message: %s
 
                                 Instruction: Reply in 2-4 friendly and direct sentences.
+                                Always sign off with "Warm regards,\\nThe Expense Management Team".
                                 """.formatted(role, name, context.isBlank() ? "None" : context, message);
         }
 

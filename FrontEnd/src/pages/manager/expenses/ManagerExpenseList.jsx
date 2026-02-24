@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../../utils/helpers';
 import VoiceButton from '../../../components/ui/VoiceButton';
+import userService from '../../../services/userService';
+import { EyeIcon } from '@heroicons/react/24/outline';
 
 const STATUS_OPTIONS = [
     { label: 'All', value: '' },
@@ -53,6 +55,15 @@ const ManagerExpenseList = () => {
 
     const handlePageChange = page => fetchExpenses({ status: status || undefined, page });
 
+    const handleViewReceipt = async (id) => {
+        try {
+            const url = await userService.viewReceipt(id);
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error('Failed to view receipt', error);
+        }
+    };
+
     const filtered = (expenses || []).filter(e =>
         !search ||
         e.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,9 +74,9 @@ const ManagerExpenseList = () => {
 
     const columns = [
         {
-            header: 'Employee',
-            accessor: 'user',
-            cell: row => (
+            title: 'Employee',
+            key: 'user',
+            render: row => (
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold text-sm">
                         {row.user?.name?.[0] || 'E'}
@@ -78,9 +89,9 @@ const ManagerExpenseList = () => {
             )
         },
         {
-            header: 'Title',
-            accessor: 'title',
-            cell: row => (
+            title: 'Title',
+            key: 'title',
+            render: row => (
                 <div className="flex items-center gap-2">
                     <span>{row.title}</span>
                     {row.isDuplicate && (
@@ -91,12 +102,13 @@ const ManagerExpenseList = () => {
                 </div>
             )
         },
-        { header: 'Category', accessor: 'category' },
-        { header: 'Date', accessor: 'date', cell: row => new Date(row.date).toLocaleDateString() },
+        { title: 'Category', key: 'category' },
+        { title: 'Date', key: 'date', sortable: true, render: row => new Date(row.date).toLocaleDateString() },
         {
-            header: 'Amount',
-            accessor: 'amount',
-            cell: row => (
+            title: 'Amount',
+            key: 'amount',
+            sortable: true,
+            render: row => (
                 <span className={row.amount > 50_000 ? 'text-red-600 font-bold' :
                     row.amount > 10_000 ? 'text-amber-600 font-semibold' :
                         'font-medium'}>
@@ -105,17 +117,32 @@ const ManagerExpenseList = () => {
             )
         },
         {
-            header: 'Status',
-            accessor: 'status',
-            cell: row => <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+            title: 'Status',
+            key: 'status',
+            render: row => <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
         },
         {
-            header: '',
-            accessor: 'id',
-            cell: row => (
-                <Button size="sm" variant="ghost" onClick={() => handleRowClick(row)}>
-                    Review
-                </Button>
+            title: '',
+            key: 'actions',
+            render: row => (
+                <div className="flex items-center gap-1">
+                    {row.receiptUrl && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewReceipt(row.id);
+                            }}
+                            title="View Receipt"
+                        >
+                            <EyeIcon className="w-4 h-4 text-blue-600" />
+                        </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => handleRowClick(row)}>
+                        Review
+                    </Button>
+                </div>
             )
         },
     ];

@@ -31,7 +31,8 @@ public class Expense {
     private LocalDate date;
 
     @Lob
-    private String recipturl;
+    @jakarta.persistence.Column(name = "receipt_url")
+    private String receiptUrl;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

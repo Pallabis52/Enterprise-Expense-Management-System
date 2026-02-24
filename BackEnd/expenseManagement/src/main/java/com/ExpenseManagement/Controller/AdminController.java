@@ -30,6 +30,8 @@ import com.expensemanagement.Services.TeamService;
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.AIService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final ExpenseRepository expenseRepository;
@@ -318,88 +321,4 @@ public class AdminController {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // AI FEATURES (Admin Role)
-    // ══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Feature 8: Fraud Pattern Detection
-     * GET /api/admin/ai/fraud-insights
-     * Analyzes recent expenses across all users for fraud signals.
-     */
-    @GetMapping("/ai/fraud-insights")
-    public CompletableFuture<ResponseEntity<AIResponse>> fraudInsights() {
-        LocalDate now = LocalDate.now();
-        List<Expense> recent = expenseRepository.findByMonthAndYear(
-                now.getMonthValue(), now.getYear());
-        return aiService.fraudInsights(recent).thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 9: Budget Overrun Prediction
-     * GET /api/admin/ai/budget-prediction/{teamId}
-     */
-    @GetMapping("/ai/budget-prediction/{teamId}")
-    public CompletableFuture<ResponseEntity<AIResponse>> budgetPrediction(@PathVariable Long teamId) {
-        LocalDate now = LocalDate.now();
-        java.util.Map<String, Object> status = teamBudgetService.getBudgetStatus(
-                teamId, now.getMonthValue(), now.getYear());
-        String teamName = (String) status.getOrDefault("teamName", "Team");
-        double budget = ((Number) status.getOrDefault("budget", 0.0)).doubleValue();
-        double spent = ((Number) status.getOrDefault("spent", 0.0)).doubleValue();
-        return aiService.budgetPrediction(teamName, budget, spent).thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 10: Policy Violation Detection
-     * GET /api/admin/ai/policy-violations/{expenseId}
-     * Checks a specific expense against standard policy rules.
-     */
-    @GetMapping("/ai/policy-violations/{expenseId}")
-    public CompletableFuture<ResponseEntity<AIResponse>> policyViolations(@PathVariable Long expenseId) {
-        Expense expense = expenseRepository.findById(expenseId).orElse(null);
-        if (expense == null)
-            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
-        // Default policy rules — in production these would be loaded from
-        // ExpensePolicyService
-        String policyRules = """
-                - Meals: max ₹1,000 per meal, ₹5,000 per day
-                - Travel: economy class for domestic, business for international flights >6 hours
-                - Hotels: max ₹8,000 per night domestic, ₹20,000 international
-                - Office Supplies: single purchase max ₹10,000 without prior approval
-                - Entertainment: requires manager pre-approval above ₹5,000
-                - No personal expenses (groceries, clothing, etc.)
-                """;
-        return aiService.policyViolation(expense, policyRules).thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 11: Vendor ROI Analysis
-     * GET /api/admin/ai/vendor-roi
-     * Aggregates this month's expenses by vendor and suggests cost-saving
-     * strategies.
-     */
-    @GetMapping("/ai/vendor-roi")
-    public CompletableFuture<ResponseEntity<AIResponse>> vendorROI() {
-        LocalDate now = LocalDate.now();
-        List<Expense> recent = expenseRepository.findByMonthAndYear(
-                now.getMonthValue(), now.getYear());
-        return aiService.vendorROI(recent).thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 10: AI Chatbot
-     * POST /api/admin/ai/chat
-     * Body: { "message": "...", "context": "..." }
-     */
-    @PostMapping("/ai/chat")
-    public CompletableFuture<ResponseEntity<AIResponse>> chat(
-            @RequestBody Map<String, Object> body,
-            Authentication auth) {
-        User admin = userRepository.findByEmail(auth.getName()).orElseThrow();
-        String message = (String) body.getOrDefault("message", "");
-        String context = (String) body.getOrDefault("context", "");
-        return aiService.chat("ADMIN", admin.getName(), message, context)
-                .thenApply(ResponseEntity::ok);
-    }
 }

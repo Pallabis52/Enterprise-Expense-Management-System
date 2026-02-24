@@ -20,6 +20,7 @@ import com.expensemanagement.Entities.Expense;
 import com.expensemanagement.Services.ApprovalService;
 import com.expensemanagement.Services.ExpenseService;
 import com.expensemanagement.Services.FileService;
+import com.expensemanagement.service.ReceiptStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,57 +35,100 @@ public class ExpenseController {
     private final ExpenseService expenseService;
     private final FileService fileService;
     private final ApprovalService approvalService;
+    private final ReceiptStorageService receiptStorageService;
+    private final com.expensemanagement.Repository.UserRepository userRepository;
+    private final com.expensemanagement.Services.UserService userService;
 
-    // localhost:8080/expense/getbymonthandyear/1/2021
-    @Operation()
-    @GetMapping("/getbymonthandyear/{month}/{year}")
-    public ResponseEntity<?> getbymonthandyear(@PathVariable int month, @PathVariable int year) {
-        List<Expense> getbymonthandyear = expenseService.getbymonthandyear(month, year);
-        if (getbymonthandyear != null) {
-            return ResponseEntity.ok(getbymonthandyear);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No expenses found");
+    // --- Receipt Upload & Viewing ---
+
+    // POST /api/expenses/{id}/upload-receipt
+    @Operation(summary = "Upload a receipt for an expense")
+    @PostMapping("/{id}/upload-receipt")
+    public ResponseEntity<?> uploadReceipt(@PathVariable Long id, @RequestParam("file") MultipartFile file,
+            org.springframework.security.core.Authentication auth) {
+        Expense expense = expenseService.getById(id);
+        if (expense == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Expense not found");
         }
+
+        // Validate Ownership
+        if (!expense.getUser().getEmail().equals(auth.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only upload receipts for your own expenses");
+        }
+
+        String filename = receiptStorageService.store(file);
+        expense.setReceiptUrl(filename);
+        expenseService.saveExpense(expense);
+
+        return ResponseEntity.ok(java.util.Map.of("message", "Receipt uploaded successfully", "filename", filename));
     }
 
-    // localhost:8080/expense/approve/1/ROLE
-    @Operation()
-    @PutMapping("/approve/{id}/{role}")
-    public ResponseEntity<?> approveExpense(@PathVariable long id, @PathVariable String role) {
-        Expense approveExpense = approvalService.approveExpense(id, role);
-        if (approveExpense != null) {
-            return ResponseEntity.ok(approveExpense);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Expense not approved");
-        }
-    }
-
-    // localhost:8080/expense/category/FOOD
-    @Operation()
-    @GetMapping("/category/{category}")
-    public ResponseEntity<?> getbycategory(@PathVariable String category) {
-        // Updated to pass String directly, allowing dynamic categories
-        List<Expense> expensesByCategory = expenseService.getExpensesByCategory(category);
-        if (expensesByCategory != null) {
-            return ResponseEntity.ok(expensesByCategory);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No expenses found");
+    // GET /api/expenses/{id}/receipt
+    @Operation(summary = "View a receipt for an expense")
+    @GetMapping("/{id}/receipt")
+    public ResponseEntity<?> viewReceipt(@PathVariable Long id, org.springframework.security.core.Authentication auth) {
+        Expense expense = expenseService.getById(id);
+        if (expense == null || expense.getReceiptUrl() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Receipt not found");
         }
 
-    }
+        String currentUserEmail = auth.getName();
+        com.expensemanagement.Entities.User currentUser = userRepository.findByEmail(currentUserEmail).orElseThrow();
+        String role = currentUser.getRole().name();
 
-    // localhost:8080/expense/id/fileupload
-    @Operation()
-    @PostMapping("/{id}/fileupload")
-    public ResponseEntity<?> uploadfile(@PathVariable long id, @RequestParam MultipartFile file) throws IOException {
-        Expense element = expenseService.getById(id);
-        if (element == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
-        } else {
-            String filepath = fileService.saveFile(file);
-            element.setRecipturl(filepath);
-            return ResponseEntity.ok(expenseService.saveExpense(element));
+        boolean authorized = false;
+
+        // USER -> only own
+        if ("USER".equals(role)) {
+            if (expense.getUser().getEmail().equals(currentUserEmail)) {
+                authorized = true;
+            }
         }
+        // MANAGER -> team members
+        else if ("MANAGER".equals(role)) {
+            // Check if expense owner is in manager's team
+            com.expensemanagement.Entities.User expenseOwner = expense.getUser();
+            if (expenseOwner.getTeam() != null && expenseOwner.getTeam().getManager() != null
+                    && expenseOwner.getTeam().getManager().getEmail().equals(currentUserEmail)) {
+                authorized = true;
+            } else if (expenseOwner.getEmail().equals(currentUserEmail)) {
+                authorized = true;
+            }
+        }
+        // ADMIN -> all
+        else if ("ADMIN".equals(role)) {
+            authorized = true;
+        }
+
+        if (!authorized) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to view this receipt");
+        }
+
+        org.springframework.core.io.Resource file = receiptStorageService.load(expense.getReceiptUrl());
+        String contentType = "application/octet-stream";
+        try {
+            contentType = org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()
+                    .toString().contains("pdf") ? "application/pdf" : "image/jpeg";
+            // Simple content type detection based on extension
+            String filename = file.getFilename();
+            if (filename != null) {
+                if (filename.toLowerCase().endsWith(".pdf"))
+                    contentType = "application/pdf";
+                else if (filename.toLowerCase().endsWith(".png"))
+                    contentType = "image/png";
+                else if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg"))
+                    contentType = "image/jpeg";
+            }
+        } catch (Exception e) {
+            // fallback
+        }
+
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + file.getFilename() + "\"")
+                .body(file);
     }
 
     // localhost:8080/expense/add

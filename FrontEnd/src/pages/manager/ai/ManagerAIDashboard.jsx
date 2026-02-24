@@ -66,8 +66,12 @@ const ManagerAIDashboard = () => {
         try {
             const data = await getTeamSummary();
             setSummaryResult(data);
-        } catch {
-            setSummaryResult({ result: 'Failed to load team summary. You may not be assigned to a team.', fallback: true });
+        } catch (error) {
+            console.error('[AI] Team Summary Error:', error);
+            const message = error.response?.status === 400
+                ? 'No team found. Please ensure you are assigned as a manager to a team.'
+                : 'AI Team Summary is temporarily unavailable. Please try again later.';
+            setSummaryResult({ result: message, fallback: true });
         } finally {
             setSummaryLoading(false);
         }
@@ -81,8 +85,9 @@ const ManagerAIDashboard = () => {
         try {
             const data = await getApprovalRecommendation(recExpenseId);
             setRecResult(data);
-        } catch {
-            setRecResult({ result: 'Expense not found or not accessible.', fallback: true });
+        } catch (error) {
+            console.error('[AI] Recommendation Error:', error);
+            setRecResult({ result: 'AI Recommendation is temporarily unavailable for this expense.', fallback: true });
         } finally {
             setRecLoading(false);
         }
@@ -96,8 +101,9 @@ const ManagerAIDashboard = () => {
         try {
             const data = await getRiskScore(riskExpenseId);
             setRiskResult(data);
-        } catch {
-            setRiskResult({ result: 'Risk scoring failed. Expense could not be found.', fallback: true });
+        } catch (error) {
+            console.error('[AI] Risk Score Error:', error);
+            setRiskResult({ result: 'AI Risk Analysis is temporarily unavailable.', fallback: true });
         } finally {
             setRiskLoading(false);
         }

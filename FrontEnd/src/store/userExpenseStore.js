@@ -44,10 +44,13 @@ const useUserExpenseStore = create((set, get) => ({
         }
     },
 
-    addExpense: async (expenseData) => {
+    addExpense: async (expenseData, receiptFile) => {
         set({ isLoading: true, error: null });
         try {
-            await userService.addExpense(expenseData);
+            const savedExpense = await userService.addExpense(expenseData);
+            if (receiptFile) {
+                await userService.uploadReceipt(savedExpense.id, receiptFile);
+            }
             set({ isLoading: false });
             get().fetchMyExpenses(1); // Refresh list
             get().fetchMyStats(); // Refresh stats
@@ -57,10 +60,13 @@ const useUserExpenseStore = create((set, get) => ({
         }
     },
 
-    updateExpense: async (id, expenseData) => {
+    updateExpense: async (id, expenseData, receiptFile) => {
         set({ isLoading: true, error: null });
         try {
             await userService.updateExpense(id, expenseData);
+            if (receiptFile) {
+                await userService.uploadReceipt(id, receiptFile);
+            }
             set({ isLoading: false });
             get().fetchMyExpenses(get().pagination.currentPage);
             get().fetchMyStats();

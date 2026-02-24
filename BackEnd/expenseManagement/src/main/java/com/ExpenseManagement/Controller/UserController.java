@@ -23,10 +23,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('USER')")
 public class UserController {
 
         private final ExpenseService expenseService;
@@ -165,55 +168,6 @@ public class UserController {
                 return ResponseEntity.ok().build();
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        // AI FEATURES (User Role) — all sync with try/catch to guarantee 200
-        // ══════════════════════════════════════════════════════════════════════
-
-        /**
-         * Feature 1: AI Expense Categorization
-         * POST /api/user/ai/categorize
-         */
-        @PostMapping("/ai/categorize")
-        public ResponseEntity<AIResponse> categorize(
-                        @RequestBody Map<String, Object> body,
-                        Authentication auth) {
-                try {
-                        String title = (String) body.getOrDefault("title", "");
-                        String description = (String) body.getOrDefault("description", "");
-                        double amount = body.containsKey("amount")
-                                        ? ((Number) body.get("amount")).doubleValue()
-                                        : 0.0;
-                        AIResponse result = aiService.categorize(title, description, amount)
-                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
-                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("categorize", 0));
-                } catch (Exception e) {
-                        log.warn("AI categorize error: {}", e.getMessage());
-                        return ResponseEntity.ok(AIResponse.fallback("categorize", 0));
-                }
-        }
-
-        /**
-         * Feature 3: Friendly Rejection Explanation
-         * GET /api/user/ai/explain-rejection/{expenseId}
-         */
-        @GetMapping("/ai/explain-rejection/{expenseId}")
-        public ResponseEntity<AIResponse> explainRejection(
-                        @PathVariable Long expenseId,
-                        Authentication auth) {
-                try {
-                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                        Expense expense = expenseRepository.findByIdAndUser(expenseId, user).orElse(null);
-                        if (expense == null)
-                                return ResponseEntity.notFound().build();
-                        AIResponse result = aiService.explainRejection(expense)
-                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
-                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("explain-rejection", 0));
-                } catch (Exception e) {
-                        log.warn("AI explain-rejection error: {}", e.getMessage());
-                        return ResponseEntity.ok(AIResponse.fallback("explain-rejection", 0));
-                }
-        }
-
         /**
          * Feature 4: Personal Spending Insights
          * GET /api/user/ai/spending-insights
@@ -231,24 +185,4 @@ public class UserController {
                 }
         }
 
-        /**
-         * Feature 10: AI Chatbot
-         * POST /api/user/ai/chat
-         */
-        @PostMapping("/ai/chat")
-        public ResponseEntity<AIResponse> chat(
-                        @RequestBody Map<String, Object> body,
-                        Authentication auth) {
-                try {
-                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                        String message = (String) body.getOrDefault("message", "");
-                        String context = (String) body.getOrDefault("context", "");
-                        AIResponse result = aiService.chat("USER", user.getName(), message, context)
-                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
-                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("chatbot", 0));
-                } catch (Exception e) {
-                        log.warn("AI chat error: {}", e.getMessage());
-                        return ResponseEntity.ok(AIResponse.fallback("chatbot", 0));
-                }
-        }
 }

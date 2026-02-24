@@ -8,7 +8,8 @@ import {
     CheckCircleIcon,
     XCircleIcon,
     ArrowUpTrayIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    EyeIcon
 } from '@heroicons/react/24/outline';
 
 const MANAGER_APPROVE_LIMIT = 10_000;   // ≤ this: manager can approve
@@ -244,8 +245,24 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                     {expense.receiptUrl && (
                         <div>
                             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Receipt</label>
-                            <img src={expense.receiptUrl} alt="Receipt"
-                                className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700 mt-2" />
+                            <div className="mt-2">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full justify-center gap-2"
+                                    onClick={async () => {
+                                        try {
+                                            const url = await import('../../../services/userService').then(m => m.default.viewReceipt(expense.id));
+                                            window.open(url, '_blank');
+                                        } catch (err) {
+                                            console.error('Failed to view receipt', err);
+                                        }
+                                    }}
+                                >
+                                    <EyeIcon className="w-4 h-4" />
+                                    View Receipt
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -29,18 +29,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        System.out.println("[FILTER START] " + request.getMethod() + " " + request.getRequestURI());
-
-        // Extreme Diagnostic: Log at the absolute entry to identify if filter is even
-        // hit
-        if (request.getRequestURI().contains("/api/voice") || request.getRequestURI().contains("/api/user")) {
-            log.info("[FILTER-ENTRY] {} {}?{}",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    request.getQueryString());
-            log.info("[FILTER-PARAM] token param: {}", request.getParameter("token") != null ? "PRESENT" : "MISSING");
-        }
-
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;

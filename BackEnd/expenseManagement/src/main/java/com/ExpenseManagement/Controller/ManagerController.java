@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.expensemanagement.Entities.Approval_Status;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/manager")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('MANAGER')")
 public class ManagerController {
 
     private final UserRepository userRepository;
@@ -116,75 +118,4 @@ public class ManagerController {
         return ResponseEntity.ok(managerService.getManagerDashboard(manager.getId()));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // AI FEATURES (Manager Role)
-    // ══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Feature 5: AI Approval Recommendation
-     * GET /api/manager/ai/recommend/{expenseId}
-     */
-    @GetMapping("/ai/recommend/{expenseId}")
-    public CompletableFuture<ResponseEntity<AIResponse>> approvalRecommendation(
-            @PathVariable Long expenseId, Authentication auth) {
-        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
-        Expense expense = managerService.getExpenseById(expenseId, manager);
-        if (expense == null)
-            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
-        User owner = expense.getUser();
-        return aiService.approvalRecommendation(expense, owner)
-                .thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 6: Risk Scoring
-     * GET /api/manager/ai/risk/{expenseId}
-     */
-    @GetMapping("/ai/risk/{expenseId}")
-    public CompletableFuture<ResponseEntity<AIResponse>> riskScore(
-            @PathVariable Long expenseId, Authentication auth) {
-        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
-        Expense expense = managerService.getExpenseById(expenseId, manager);
-        if (expense == null)
-            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
-        return aiService.riskScore(expense, expense.getUser())
-                .thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 7: Team Spending Summary
-     * GET /api/manager/ai/team-summary
-     */
-    @GetMapping("/ai/team-summary")
-    public CompletableFuture<ResponseEntity<AIResponse>> teamSummary(Authentication auth) {
-        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
-        com.expensemanagement.Entities.Team team = manager.getTeam();
-        if (team == null)
-            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
-        List<User> members = team.getMembers();
-        java.time.LocalDate now = java.time.LocalDate.now();
-        Double monthlySpend = managerService.getTeamMonthlySpend(members, now.getMonthValue(), now.getYear());
-        Double budget = managerService.getTeamBudget(team.getId(), now.getMonthValue(), now.getYear());
-        return aiService.teamSummary(
-                members,
-                monthlySpend != null ? monthlySpend : 0,
-                budget != null ? budget : 0,
-                team.getName()).thenApply(ResponseEntity::ok);
-    }
-
-    /**
-     * Feature 10: AI Chatbot
-     * POST /api/manager/ai/chat
-     * Body: { "message": "...", "context": "..." }
-     */
-    @PostMapping("/ai/chat")
-    public CompletableFuture<ResponseEntity<AIResponse>> chat(
-            @RequestBody Map<String, Object> body,
-            Authentication auth) {
-        User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
-        String message = (String) body.getOrDefault("message", "");
-        String context = (String) body.getOrDefault("context", "");
-        return aiService.chat("MANAGER", manager.getName(), message, context)
-                .thenApply(ResponseEntity::ok);
-    }
 }

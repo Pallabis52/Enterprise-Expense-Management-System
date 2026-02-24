@@ -10,7 +10,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.expensemanagement.AI.OllamaService;
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.Services.NaturalSearchService;
+import com.expensemanagement.Services.ChatAssistantService;
+import com.expensemanagement.Services.VoiceParsingService;
+import com.expensemanagement.Services.ApprovalAIService;
+import com.expensemanagement.Services.UserService;
+import com.expensemanagement.Services.ManagerService;
+import com.expensemanagement.Services.TeamBudgetService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -27,18 +37,24 @@ public class AIController {
         private final UserService userService;
         private final OllamaService ollamaService;
         private final ExpenseRepository expenseRepository;
+        private final AIService aiFacade;
+        private final UserRepository userRepository;
+        private final ManagerService managerService;
+        private final TeamBudgetService teamBudgetService;
 
-        // 1. Natural Language Search
-        @GetMapping("/search")
-        public CompletableFuture<ResponseEntity<List<Expense>>> search(
-                        @RequestParam String query, Authentication auth) {
-                User user = userService.getUserByEmail(auth.getName());
-                return naturalSearchService.search(query, user)
-                                .thenApply(ResponseEntity::ok);
+        // ── Auth & Status ────────────────────────────────────────────────────────
+
+        @GetMapping("/status")
+        @PreAuthorize("isAuthenticated()")
+        public ResponseEntity<Map<String, Object>> status() {
+                boolean online = ollamaService.isOnline();
+                return ResponseEntity.ok(Map.of(
+                                "ollamaAvailable", online,
+                                "model", online ? ollamaService.getModelName() : "offline"));
         }
 
-        // 2. Chat Assistant
         @PostMapping("/chat")
+        @PreAuthorize("isAuthenticated()")
         public CompletableFuture<ResponseEntity<AIResponse>> chat(
                         @RequestBody Map<String, String> body, Authentication auth) {
                 String message = body.getOrDefault("message", "").trim();
@@ -47,36 +63,8 @@ public class AIController {
                                 .thenApply(ResponseEntity::ok);
         }
 
-        // 3. Voice Expense Parsing
-        @PostMapping("/voice-parse")
-        public CompletableFuture<ResponseEntity<AIDTOs.VoiceParseResult>> parseVoice(
-                        @RequestBody Map<String, String> body) {
-                String text = body.getOrDefault("text", "");
-                return voiceParsingService.parseVoice(text)
-                                .thenApply(ResponseEntity::ok);
-        }
-
-        // 4. Smart Approval Recommendation (Manager)
-        @GetMapping("/recommendation/{expenseId}")
-        public CompletableFuture<ResponseEntity<AIDTOs.ApprovalRecommendation>> getRecommendation(
-                        @PathVariable Long expenseId) {
-                return expenseRepository.findById(expenseId)
-                                .map(expense -> approvalAIService.getRecommendation(expense)
-                                                .thenApply(ResponseEntity::ok))
-                                .orElse(CompletableFuture.completedFuture(ResponseEntity.notFound().build()));
-        }
-
-        // 5. System Status (Ollama Health)
-        @GetMapping("/status")
-        public ResponseEntity<Map<String, Object>> status() {
-                boolean online = ollamaService.isOnline();
-                return ResponseEntity.ok(Map.of(
-                                "ollamaAvailable", online,
-                                "model", online ? ollamaService.getModelName() : "offline"));
-        }
-
-        // 6. FAQ Suggesions
         @GetMapping("/suggestions")
+        @PreAuthorize("isAuthenticated()")
         public ResponseEntity<List<String>> suggestions(Authentication auth) {
                 User user = userService.getUserByEmail(auth.getName());
                 String role = user.getRole() != null ? user.getRole().name() : "USER";
@@ -99,5 +87,133 @@ public class AIController {
                                         "What is the expense policy for meals?");
                 };
                 return ResponseEntity.ok(suggestions);
+        }
+
+        // ── User Features ────────────────────────────────────────────────────────
+
+        @GetMapping("/search")
+        @PreAuthorize("hasRole('USER')")
+        public CompletableFuture<ResponseEntity<List<Expense>>> search(
+                        @RequestParam String query, Authentication auth) {
+                User user = userService.getUserByEmail(auth.getName());
+                return naturalSearchService.search(query, user)
+                                .thenApply(ResponseEntity::ok);
+        }
+
+        @PostMapping("/categorize")
+        @PreAuthorize("hasRole('USER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> categorize(
+                        @RequestBody Map<String, Object> body) {
+                String title = (String) body.getOrDefault("title", "");
+                String description = (String) body.getOrDefault("description", "");
+                double amount = body.containsKey("amount") ? ((Number) body.get("amount")).doubleValue() : 0.0;
+                return aiFacade.categorize(title, description, amount).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/explain-rejection/{expenseId}")
+        @PreAuthorize("hasRole('USER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> explainRejection(
+                        @PathVariable Long expenseId, Authentication auth) {
+                User user = userService.getUserByEmail(auth.getName());
+                Expense expense = expenseRepository.findByIdAndUser(expenseId, user).orElse(null);
+                if (expense == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                return aiFacade.explainRejection(expense).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/spending-insights")
+        @PreAuthorize("hasRole('USER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> spendingInsights(Authentication auth) {
+                User user = userService.getUserByEmail(auth.getName());
+                return aiFacade.spendingInsights(user).thenApply(ResponseEntity::ok);
+        }
+
+        @PostMapping("/voice-parse")
+        @PreAuthorize("hasRole('USER')")
+        public CompletableFuture<ResponseEntity<AIDTOs.VoiceParseResult>> parseVoice(
+                        @RequestBody Map<String, String> body) {
+                String text = body.getOrDefault("text", "");
+                return voiceParsingService.parseVoice(text)
+                                .thenApply(ResponseEntity::ok);
+        }
+
+        // ── Manager Features ─────────────────────────────────────────────────────
+
+        @GetMapping("/recommendation/{expenseId}")
+        @PreAuthorize("hasRole('MANAGER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> getRecommendation(
+                        @PathVariable Long expenseId, Authentication auth) {
+                User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+                Expense expense = managerService.getExpenseById(expenseId, manager);
+                if (expense == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                return aiFacade.approvalRecommendation(expense, expense.getUser()).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/risk-score/{expenseId}")
+        @PreAuthorize("hasRole('MANAGER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> riskScore(
+                        @PathVariable Long expenseId, Authentication auth) {
+                User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+                Expense expense = managerService.getExpenseById(expenseId, manager);
+                if (expense == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                return aiFacade.riskScore(expense, expense.getUser()).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/team-summary")
+        @PreAuthorize("hasRole('MANAGER')")
+        public CompletableFuture<ResponseEntity<AIResponse>> teamSummary(Authentication auth) {
+                User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
+                com.expensemanagement.Entities.Team team = managerService.getTeam(manager.getId());
+                if (team == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
+                List<User> members = team.getMembers();
+                java.time.LocalDate now = java.time.LocalDate.now();
+                Double monthlySpend = managerService.getTeamMonthlySpend(members, now.getMonthValue(), now.getYear());
+                Double budget = managerService.getTeamBudget(team.getId(), now.getMonthValue(), now.getYear());
+                return aiFacade.teamSummary(members, monthlySpend != null ? monthlySpend : 0,
+                                budget != null ? budget : 0,
+                                team.getName()).thenApply(ResponseEntity::ok);
+        }
+
+        // ── Admin Features ───────────────────────────────────────────────────────
+
+        @GetMapping("/fraud-insights")
+        @PreAuthorize("hasRole('ADMIN')")
+        public CompletableFuture<ResponseEntity<AIResponse>> fraudInsights() {
+                java.time.LocalDate now = java.time.LocalDate.now();
+                List<Expense> recent = expenseRepository.findByMonthAndYear(now.getMonthValue(), now.getYear());
+                return aiFacade.fraudInsights(recent).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/budget-prediction/{teamId}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public CompletableFuture<ResponseEntity<AIResponse>> budgetPrediction(@PathVariable Long teamId) {
+                java.time.LocalDate now = java.time.LocalDate.now();
+                java.util.Map<String, Object> status = teamBudgetService.getBudgetStatus(teamId, now.getMonthValue(),
+                                now.getYear());
+                String teamName = (String) status.getOrDefault("teamName", "Team");
+                double budget = ((Number) status.getOrDefault("budget", 0.0)).doubleValue();
+                double spent = ((Number) status.getOrDefault("spent", 0.0)).doubleValue();
+                return aiFacade.budgetPrediction(teamName, budget, spent).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/policy-violations/{expenseId}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public CompletableFuture<ResponseEntity<AIResponse>> policyViolations(@PathVariable Long expenseId) {
+                Expense expense = expenseRepository.findById(expenseId).orElse(null);
+                if (expense == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                String policyRules = "- Meals: max ₹1,000 per meal, ₹5,000 per day\n- Travel: economy...\n";
+                return aiFacade.policyViolation(expense, policyRules).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/vendor-roi")
+        @PreAuthorize("hasRole('ADMIN')")
+        public CompletableFuture<ResponseEntity<AIResponse>> vendorROI() {
+                java.time.LocalDate now = java.time.LocalDate.now();
+                List<Expense> recent = expenseRepository.findByMonthAndYear(now.getMonthValue(), now.getYear());
+                return aiFacade.vendorROI(recent).thenApply(ResponseEntity::ok);
         }
 }

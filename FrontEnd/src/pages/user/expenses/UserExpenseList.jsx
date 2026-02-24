@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import {
     PlusIcon,
     PencilSquareIcon,
-    TrashIcon
+    TrashIcon,
+    EyeIcon
 } from '@heroicons/react/24/outline';
+import userService from '../../../services/userService';
 import useUserExpenseStore from '../../../store/userExpenseStore';
 import Button from '../../../components/ui/Button';
 import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
@@ -64,16 +66,16 @@ const UserExpenseList = () => {
         setIsModalOpen(true);
     };
 
-    const handleSaveExpense = async (data) => {
+    const handleSaveExpense = async (data, receiptFile) => {
         setIsSubmitting(true);
         try {
             if (modalData) {
                 // Update
-                await updateExpense(modalData.id, data);
+                await updateExpense(modalData.id, data, receiptFile);
                 Swal.fire('Updated!', 'Expense updated successfully.', 'success');
             } else {
                 // Add
-                await addExpense(data);
+                await addExpense(data, receiptFile);
                 Swal.fire('Added!', 'Expense added successfully.', 'success');
             }
             setIsModalOpen(false);
@@ -81,6 +83,15 @@ const UserExpenseList = () => {
             Swal.fire('Error', error.message || 'Failed to save expense', 'error');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleViewReceipt = async (id) => {
+        try {
+            const url = await userService.viewReceipt(id);
+            window.open(url, '_blank');
+        } catch (error) {
+            Swal.fire('Error', 'Failed to load receipt', 'error');
         }
     };
 
@@ -175,7 +186,16 @@ const UserExpenseList = () => {
                                                     {expense.status}
                                                 </Badge>
                                             </td>
-                                            <td className="px-6 py-4 text-right space-x-2">
+                                            <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                                                {expense.receiptUrl && (
+                                                    <button
+                                                        onClick={() => handleViewReceipt(expense.id)}
+                                                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                                        title="View Receipt"
+                                                    >
+                                                        <EyeIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleOpenModal(expense)}
                                                     className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"

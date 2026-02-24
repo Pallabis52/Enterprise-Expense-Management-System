@@ -40,6 +40,27 @@ const userService = {
     updateProfile: async (userData) => {
         const response = await api.put('/user/profile', userData);
         return response.data;
+    },
+
+    // Receipts
+    uploadReceipt: async (id, file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/expenses/${id}/upload-receipt`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    viewReceipt: async (id) => {
+        const response = await api.get(`/expenses/${id}/receipt`, {
+            responseType: 'blob'
+        });
+        const contentType = response.headers['content-type'];
+        const blob = new Blob([response.data], { type: contentType });
+        return URL.createObjectURL(blob);
     }
 };
 

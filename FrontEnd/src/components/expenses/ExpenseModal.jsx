@@ -11,6 +11,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
         category: '',
         description: ''
     });
+    const [receiptFile, setReceiptFile] = useState(null);
     const [categories, setCategories] = useState([]);
 
     // Fetch categories on mount
@@ -43,6 +44,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                 category: categories.length > 0 ? categories[0].name : '',
                 description: ''
             });
+            setReceiptFile(null);
         }
     }, [initialData, isOpen, categories]);
 
@@ -50,7 +52,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        onSubmit(formData, receiptFile);
     };
 
 
@@ -122,6 +124,24 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
                             placeholder="Add details about the expense..."
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Receipt (Optional)
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => setReceiptFile(e.target.files[0])}
+                            className="w-full text-sm text-gray-500 dark:text-gray-400
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-primary-50 file:text-primary-700
+                                hover:file:bg-primary-100
+                                dark:file:bg-gray-700 dark:file:text-primary-400"
                         />
                     </div>
 
