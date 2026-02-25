@@ -114,4 +114,24 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                         "AND e.user.team IS NOT NULL " +
                         "GROUP BY e.user.team.name ORDER BY total DESC")
         List<Object[]> findTopTeamsByMonth(@Param("month") int month, @Param("year") int year);
+
+        // --- Keyword Search ---
+        @Query("SELECT e FROM Expense e WHERE " +
+                        "(LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.category) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+        List<Expense> searchByKeyword(@Param("query") String query);
+
+        @Query("SELECT e FROM Expense e WHERE e.user = :user AND " +
+                        "(LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.category) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+        List<Expense> searchByKeywordAndUser(@Param("query") String query, @Param("user") User user);
+
+        @Query("SELECT e FROM Expense e WHERE (e.user IN :users OR e.user = :manager) AND " +
+                        "(LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.category) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+        List<Expense> searchByKeywordAndUsers(@Param("query") String query, @Param("users") List<User> users,
+                        @Param("manager") User manager);
 }

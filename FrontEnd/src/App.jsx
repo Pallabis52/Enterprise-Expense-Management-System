@@ -1,9 +1,7 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import AdminLayout from './layouts/AdminLayout'; // Revised Layout
-import ManagerLayout from './layouts/ManagerLayout'; // New Layout
-import UserLayout from './components/layout/UserLayout'; // User Layout
+import MainLayout from './components/layout/MainLayout';
 
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
@@ -68,7 +66,7 @@ const router = createBrowserRouter([
     path: '/admin',
     element: (
       <ProtectedRoute allowedRoles={['ADMIN']}>
-        <AdminLayout />
+        <MainLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -88,7 +86,7 @@ const router = createBrowserRouter([
     path: '/manager',
     element: (
       <ProtectedRoute allowedRoles={['MANAGER']}>
-        <ManagerLayout />
+        <MainLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -107,7 +105,7 @@ const router = createBrowserRouter([
     path: '/user',
     element: (
       <ProtectedRoute allowedRoles={['USER']}>
-        <UserLayout />
+        <MainLayout />
       </ProtectedRoute>
     ),
     children: [

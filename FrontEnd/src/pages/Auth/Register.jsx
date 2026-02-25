@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import Swal from 'sweetalert2';
+import { premiumSuccess, premiumError, premiumWarning } from '../../utils/premiumAlerts';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import Button from '../../components/ui/Button';
@@ -32,35 +31,20 @@ const Register = () => {
         setError(null);
 
         if (formData.password !== formData.confirmPassword) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Password Mismatch',
-                text: 'Passwords do not match',
-                confirmButtonColor: '#3085d6',
-            });
+            premiumWarning('Password Mismatch', 'Passwords do not match');
             return;
         }
 
         try {
             await register({ name: formData.name, email: formData.email, password: formData.password, role: formData.role });
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Registration Successful!',
-                text: 'Your account has been created.',
-                confirmButtonText: 'Login Now'
-            }).then(() => {
+            premiumSuccess('Registration Successful!', 'Your account has been created.', null).then(() => {
                 navigate('/login');
             });
 
         } catch (err) {
             const msg = err.response?.data?.message || 'Something went wrong during registration. Please try again.';
-            Swal.fire({
-                icon: 'error',
-                title: 'Registration Failed',
-                text: msg,
-                confirmButtonColor: '#d33',
-            });
+            premiumError('Registration Failed', msg);
         }
     };
 

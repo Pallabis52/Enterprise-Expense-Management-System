@@ -1,15 +1,7 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bars3Icon,
-    XMarkIcon,
-    HomeIcon,
-    BanknotesIcon,
-    TagIcon,
-    ChartBarIcon,
-    UserCircleIcon,
-    ArrowLeftOnRectangleIcon,
     SunIcon,
     MoonIcon
 } from '@heroicons/react/24/outline';
@@ -17,97 +9,90 @@ import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
 import useTheme from '../../hooks/useTheme';
 import NotificationBell from '../notifications/NotificationBell';
-import SearchVoiceInput from '../ui/SearchVoiceInput';
+import UnifiedSearchBar from '../ui/UnifiedSearchBar';
+import { useNavigate } from 'react-router-dom';
+import useUserExpenseStore from '../../store/userExpenseStore';
 
-const userNavigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Expenses', href: '/expenses', icon: BanknotesIcon },
-    { name: 'Categories', href: '/categories', icon: TagIcon },
-    { name: 'Reports', href: '/reports', icon: ChartBarIcon },
-    { name: 'Profile', href: '/profile', icon: UserCircleIcon },
-];
-
-const UserNavbar = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [navSearch, setNavSearch] = useState('');
-    const { user, logout } = useAuthStore();
+const UserNavbar = ({ onMenuClick }) => {
+    const { user } = useAuthStore();
     const { theme, toggleTheme } = useTheme();
+    const navigate = useNavigate();
+    const { setExpenses } = useUserExpenseStore();
+
+    const handleSearchResults = (results) => {
+        setExpenses(results, true);
+        navigate('/user/expenses');
+    };
 
     return (
-        <nav className="sticky top-0 z-40 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-                {/* Mobile Menu Button & Brand */}
-                <div className="flex items-center gap-4 md:hidden">
-                    <button onClick={() => setIsOpen(!isOpen)}
-                        className="p-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                        {isOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
-                    </button>
-                    <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-600">
-                        Enterprise
-                    </span>
-                </div>
+        <header className="sticky top-0 z-40 w-full bg-white/60 dark:bg-slate-950/60 backdrop-blur-3xl border-b border-gray-100 dark:border-white/5 transition-all duration-500">
+            <div className="max-w-[1700px] mx-auto flex items-center justify-between px-6 lg:px-10 h-20">
 
-                {/* Desktop: Left Spacer or Breadcrumbs */}
-                <div className="hidden md:flex items-center">
-                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200">Overview</h2>
-                </div>
-
-                {/* Right Side Actions */}
-                <div className="flex items-center gap-2 sm:gap-4">
-                    {/* Search (Desktop) */}
-                    <div className="hidden md:block w-72">
-                        <SearchVoiceInput
-                            value={navSearch}
-                            onChange={setNavSearch}
-                            placeholder="Search anything…"
-                        />
-                    </div>
-                    {/* Theme Toggle */}
-                    <button onClick={toggleTheme}
-                        className="p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
-                        aria-label="Toggle Theme">
-                        {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                {/* Left Side: Context */}
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={onMenuClick}
+                        className="lg:hidden p-3 text-slate-600 dark:text-slate-300 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                    >
+                        <Bars3Icon className="w-6 h-6" />
                     </button>
-                    {/* Notifications */}
-                    <NotificationBell />
-                    {/* User Profile */}
-                    <div className="flex items-center gap-3 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700">
-                        <div className="hidden md:block text-right">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role || 'User'}</p>
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-primary-500/30">
-                            {user?.name?.[0] || 'U'}
-                        </div>
+
+                    <div className="hidden sm:flex flex-col">
+                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-1">Workspace</span>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">User Terminal</h2>
                     </div>
                 </div>
-            </div>
-            {/* Mobile Navigation Menu */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                        className="md:hidden overflow-hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl">
-                        <div className="px-4 py-3 space-y-1">
-                            {userNavigation.map(item => (
-                                <NavLink key={item.name} to={item.href} onClick={() => setIsOpen(false)}
-                                    className={({ isActive }) => cn('flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors',
-                                        isActive ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50')}
-                                >
-                                    <item.icon className="w-5 h-5 mr-3" />
-                                    {item.name}
-                                </NavLink>
-                            ))}
-                            <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                            <button onClick={() => { logout(); setIsOpen(false); }}
-                                className="flex w-full items-center px-4 py-3 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
-                                <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />
-                                Sign Out
-                            </button>
+
+                {/* Search Engine */}
+                <div className="hidden md:block flex-1 max-w-2xl px-12">
+                    <UnifiedSearchBar onResults={handleSearchResults} />
+                </div>
+
+                {/* Right Actions */}
+                <div className="flex items-center gap-4">
+
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={toggleTheme}
+                        className="p-3 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 rounded-2xl transition-all shadow-sm group relative"
+                    >
+                        {theme === 'dark' ? <SunIcon className="w-5 h-5 group-hover:rotate-45" /> : <MoonIcon className="w-5 h-5 group-hover:-rotate-12" />}
+                        <div className="absolute inset-0 bg-indigo-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </motion.button>
+
+                    <div className="p-1">
+                        <NotificationBell />
+                    </div>
+
+                    <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10 mx-2 hidden sm:block" />
+
+                    {/* User Identity */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-4 pl-2 group cursor-pointer"
+                        onClick={() => navigate('/user/profile')}
+                    >
+                        <div className="hidden lg:block text-right">
+                            <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider mb-0.5 group-hover:text-indigo-500 transition-colors">
+                                {user?.name || 'User'}
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-400 dark:text-indigo-500/60 uppercase tracking-[0.2em]">
+                                Verified Account
+                            </p>
+                        </div>
+
+                        <div className="relative">
+                            <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur opacity-20 group-hover:opacity-60 transition-all duration-700" />
+                            <div className="relative w-11 h-11 rounded-full bg-slate-900 dark:bg-indigo-500 flex items-center justify-center text-white font-black text-sm border-2 border-white dark:border-slate-800 shadow-xl overflow-hidden">
+                                {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user?.name?.[0] || 'U'}
+                            </div>
                         </div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-        </nav>
+                </div>
+            </div>
+        </header>
     );
 };
 

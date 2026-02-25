@@ -1,82 +1,131 @@
 import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     getSpendingInsights,
     categorizeExpense,
     explainRejection
 } from '../../../services/aiService';
 import PageTransition from '../../../components/layout/PageTransition';
+import {
+    CpuChipIcon,
+    SparklesIcon,
+    TagIcon,
+    ShieldExclamationIcon,
+    MicrophoneIcon,
+    ArrowPathIcon,
+    BoltIcon,
+    BeakerIcon
+} from '@heroicons/react/24/outline';
+import { cn } from '../../../utils/helpers';
+import Button from '../../../components/ui/Button';
 
 // ── Shared sub-components ────────────────────────────────────────────────────
 
-const AICard = ({ title, icon, description, children }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
-            <span className="text-2xl">{icon}</span>
-            <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+const AICard = ({ title, icon: Icon, description, children, delay = 0 }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, duration: 0.8, ease: "easeOut" }}
+        className="relative group h-full"
+    >
+        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-blue-500/20 rounded-[40px] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000" />
+        <div className="relative h-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[40px] p-8 border border-white/60 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center gap-5 mb-8">
+                <div className="p-4 rounded-2xl bg-indigo-500/10 text-indigo-500 shadow-lg shadow-indigo-500/5 group-hover:scale-110 transition-transform duration-500">
+                    <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">{title}</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">{description}</p>
+                </div>
             </div>
+            <div className="flex-1 space-y-6">{children}</div>
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/5 blur-[60px] rounded-full pointer-events-none" />
         </div>
-        <div className="p-5">{children}</div>
-    </div>
+    </motion.div>
 );
 
 const AIResultBox = ({ result, loading, onRetry }) => {
-    if (loading) return (
-        <div className="flex items-center gap-3 py-6 justify-center">
-            <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-gray-500 dark:text-gray-400">AI is thinking…</span>
-        </div>
-    );
-    if (!result) return null;
-    const ms = result.processingMs;
-    const elapsed = ms ? (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`) : null;
     return (
-        <div className={`mt-4 p-4 rounded-xl border text-sm leading-relaxed whitespace-pre-wrap ${result.fallback
-            ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-            : 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 text-gray-800 dark:text-gray-200'
-            }`}>
-            {result.fallback && (
-                <div className="flex items-center justify-between mb-2">
-                    <p className="font-semibold text-amber-600 dark:text-amber-400">⚠ AI Unavailable — Showing Fallback</p>
-                    {onRetry && (
-                        <button
-                            onClick={onRetry}
-                            className="text-xs px-3 py-1 rounded-lg bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-700 transition-colors font-medium"
-                        >
-                            ↻ Retry
-                        </button>
+        <AnimatePresence mode="wait">
+            {loading ? (
+                <motion.div
+                    key="loading"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="flex flex-col items-center justify-center py-12 gap-5 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 mt-6"
+                >
+                    <div className="relative">
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                            className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full"
+                        />
+                        <SparklesIcon className="w-5 h-5 text-indigo-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                    </div>
+                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] animate-pulse">Synthesizing Data…</span>
+                </motion.div>
+            ) : result ? (
+                <motion.div
+                    key="result"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                        "mt-6 p-6 rounded-3xl border backdrop-blur-xl relative overflow-hidden",
+                        result.fallback
+                            ? "bg-amber-500/5 border-amber-500/20 text-amber-900 dark:text-amber-200"
+                            : "bg-indigo-500/5 border-indigo-500/20 text-slate-700 dark:text-slate-200"
                     )}
-                </div>
-            )}
-            <p>{result.result}</p>
-            {elapsed && (
-                <p className="mt-2 text-xs opacity-50">⚡ {elapsed} · {result.model}</p>
-            )}
-        </div>
+                >
+                    <div className="absolute top-0 right-0 p-3 opacity-20">
+                        <BoltIcon className="w-5 h-5" />
+                    </div>
+                    {result.fallback && (
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                                <ShieldExclamationIcon className="w-4 h-4" />
+                                Fallback Matrix Active
+                            </p>
+                            {onRetry && (
+                                <button
+                                    onClick={onRetry}
+                                    className="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all"
+                                >
+                                    <ArrowPathIcon className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    <p className="text-sm font-medium leading-relaxed">{result.result}</p>
+                    <div className="mt-6 flex items-center justify-between border-t border-indigo-500/10 pt-4 opacity-50">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">{result.model || 'Neural Engine'}</span>
+                        </div>
+                        {result.processingMs && (
+                            <span className="text-[9px] font-black uppercase tracking-widest">
+                                {result.processingMs >= 1000 ? `${(result.processingMs / 1000).toFixed(1)}s` : `${result.processingMs}ms`} Interface Lag
+                            </span>
+                        )}
+                    </div>
+                </motion.div>
+            ) : null}
+        </AnimatePresence>
     );
 };
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const UserAIDashboard = () => {
-    // Feature: Spending Insights
     const [insightsResult, setInsightsResult] = useState(null);
     const [insightsLoading, setInsightsLoading] = useState(false);
-
-    // Feature: Smart Categorize
-    const [catTitle, setCatTitle] = useState('');
-    const [catDesc, setCatDesc] = useState('');
-    const [catAmount, setCatAmount] = useState('');
+    const [catState, setCatState] = useState({ title: '', desc: '', amount: '' });
     const [catResult, setCatResult] = useState(null);
     const [catLoading, setCatLoading] = useState(false);
-
-    // Feature: Explain Rejection
     const [rejectId, setRejectId] = useState('');
     const [rejectResult, setRejectResult] = useState(null);
     const [rejectLoading, setRejectLoading] = useState(false);
-
-    // ── Handlers ──────────────────────────────────────────────────────────────
 
     const handleInsights = useCallback(async () => {
         setInsightsLoading(true);
@@ -85,7 +134,7 @@ const UserAIDashboard = () => {
             const data = await getSpendingInsights();
             setInsightsResult(data);
         } catch {
-            setInsightsResult({ result: 'Failed to fetch insights. Please try again.', fallback: true });
+            setInsightsResult({ result: 'Failed to access neural patterns. Link unstable.', fallback: true });
         } finally {
             setInsightsLoading(false);
         }
@@ -96,14 +145,14 @@ const UserAIDashboard = () => {
         setCatLoading(true);
         setCatResult(null);
         try {
-            const data = await categorizeExpense(catTitle, catDesc, parseFloat(catAmount) || 0);
+            const data = await categorizeExpense(catState.title, catState.desc, parseFloat(catState.amount) || 0);
             setCatResult(data);
         } catch {
-            setCatResult({ result: 'Categorization failed. Please try again.', fallback: true });
+            setCatResult({ result: 'Categorization matrix failure. Retrying…', fallback: true });
         } finally {
             setCatLoading(false);
         }
-    }, [catTitle, catDesc, catAmount]);
+    }, [catState]);
 
     const handleExplainRejection = useCallback(async (e) => {
         e.preventDefault();
@@ -114,127 +163,188 @@ const UserAIDashboard = () => {
             const data = await explainRejection(rejectId);
             setRejectResult(data);
         } catch {
-            setRejectResult({ result: 'Could not fetch explanation. The expense may not exist or may not be rejected.', fallback: true });
+            setRejectResult({ result: 'Could not access rejection protocols for the specified ID.', fallback: true });
         } finally {
             setRejectLoading(false);
         }
     }, [rejectId]);
 
-    const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition";
-    const btnCls = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const inputCls = "w-full px-6 py-4 rounded-2xl bg-white/20 dark:bg-slate-900/50 border border-white/40 dark:border-white/10 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all";
 
     return (
         <PageTransition>
-            <div className="space-y-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        🤖 AI Assistant
-                    </h1>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        AI-powered tools to manage and understand your expenses
-                    </p>
+            <div className="max-w-7xl mx-auto space-y-16 pb-24 px-4 sm:px-6">
+
+                {/* ── Neural Interface Header ── */}
+                <div className="relative py-8">
+                    <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
+                        <motion.div
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                            transition={{ duration: 8, repeat: Infinity }}
+                            className="absolute -top-[50%] -left-[10%] w-[80%] h-[150%] bg-indigo-500/20 blur-[120px] rounded-full"
+                        />
+                    </div>
+
+                    <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-10">
+                        <div className="space-y-4">
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex items-center gap-6"
+                            >
+                                <div className="p-6 rounded-[32px] bg-slate-900 dark:bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20 relative group">
+                                    <CpuChipIcon className="w-12 h-12 relative z-10" />
+                                    <div className="absolute inset-0 bg-white/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-700" />
+                                </div>
+                                <div>
+                                    <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">NeuroLink</h1>
+                                    <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.4em] mt-5 flex items-center gap-3">
+                                        <SparklesIcon className="w-4 h-4 animate-spin-slow" />
+                                        Synthetic Intelligence Nexus
+                                    </p>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="px-6 py-4 rounded-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/60 dark:border-white/10 flex items-center gap-4">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none">Core Active</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Feature Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* ── Feature Matrix Grid ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
                     {/* Feature 1: Spending Insights */}
                     <AICard
-                        title="Personal Spending Insights"
-                        icon="📊"
-                        description="Analyse your spending patterns and get personalised recommendations"
+                        title="Neural Patterns"
+                        icon={BeakerIcon}
+                        description="Deep-Level Expenditure Decoding"
+                        delay={0.1}
                     >
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            Our AI Assistant analyses all your expense history to identify trends, top categories, and cost-saving opportunities.
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                            Initialize a system-wide audit of your operational spending. Our synthetic engine identifies anomalies and cost-reduction vectors.
                         </p>
-                        <button className={btnCls} onClick={handleInsights} disabled={insightsLoading}>
-                            {insightsLoading ? 'Analysing…' : '✨ Get My Insights'}
-                        </button>
-                        <AIResultBox result={insightsResult} loading={insightsLoading} />
+                        <div className="pt-4 flex flex-col">
+                            <Button
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl group/btn overflow-hidden relative"
+                                onClick={handleInsights}
+                                disabled={insightsLoading}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-500" />
+                                <span className="relative z-10 flex items-center justify-center gap-3">
+                                    {insightsLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <SparklesIcon className="w-4 h-4" />}
+                                    {insightsLoading ? 'Decoding…' : 'Execute Insight Protocol'}
+                                </span>
+                            </Button>
+                            <AIResultBox result={insightsResult} loading={insightsLoading} />
+                        </div>
                     </AICard>
 
                     {/* Feature 2: Smart Categorize */}
                     <AICard
-                        title="Smart Expense Categoriser"
-                        icon="🏷️"
-                        description="Can't decide which category? Let AI suggest the best one"
+                        title="Categorization Matrix"
+                        icon={TagIcon}
+                        description="Sector-Aligned Asset Labeling"
+                        delay={0.2}
                     >
-                        <form onSubmit={handleCategorize} className="space-y-3">
+                        <form onSubmit={handleCategorize} className="space-y-4">
                             <input
                                 className={inputCls}
-                                placeholder="Expense title (e.g. Team lunch at Taj Hotel)"
-                                value={catTitle}
-                                onChange={e => setCatTitle(e.target.value)}
+                                placeholder="Entity Descriptor (e.g. Travel Vector)"
+                                value={catState.title}
+                                onChange={e => setCatState({ ...catState, title: e.target.value })}
                                 required
                             />
-                            <input
-                                className={inputCls}
-                                placeholder="Description (optional)"
-                                value={catDesc}
-                                onChange={e => setCatDesc(e.target.value)}
-                            />
-                            <input
-                                className={inputCls}
-                                type="number"
-                                placeholder="Amount (₹)"
-                                value={catAmount}
-                                onChange={e => setCatAmount(e.target.value)}
-                                min="0"
-                            />
-                            <button type="submit" className={btnCls} disabled={catLoading || !catTitle}>
-                                {catLoading ? 'Categorising…' : '🏷️ Suggest Category'}
-                            </button>
+                            <div className="grid grid-cols-2 gap-4">
+                                <input
+                                    className={inputCls}
+                                    placeholder="Sub-Trace"
+                                    value={catState.desc}
+                                    onChange={e => setCatState({ ...catState, desc: e.target.value })}
+                                />
+                                <input
+                                    className={inputCls}
+                                    type="number"
+                                    placeholder="Value Units"
+                                    value={catState.amount}
+                                    onChange={e => setCatState({ ...catState, amount: e.target.value })}
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-2 group/btn"
+                                disabled={catLoading || !catState.title}
+                            >
+                                <span className="flex items-center justify-center gap-3 text-indigo-500">
+                                    {catLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <TagIcon className="w-4 h-4" />}
+                                    {catLoading ? 'Mapping…' : 'Determine Sector'}
+                                </span>
+                            </Button>
                         </form>
                         <AIResultBox result={catResult} loading={catLoading} />
                     </AICard>
 
                     {/* Feature 3: Explain Rejection */}
                     <AICard
-                        title="Why Was My Expense Rejected?"
-                        icon="❌"
-                        description="Get a clear, friendly explanation for any rejected expense"
+                        title="Anomaly Explanation"
+                        icon={ShieldExclamationIcon}
+                        description="Root-Cause Protocol Verification"
+                        delay={0.3}
                     >
-                        <form onSubmit={handleExplainRejection} className="space-y-3">
+                        <form onSubmit={handleExplainRejection} className="space-y-4">
                             <input
                                 className={inputCls}
                                 type="number"
-                                placeholder="Expense ID (find it in My Expenses)"
+                                placeholder="Entity Reference ID"
                                 value={rejectId}
                                 onChange={e => setRejectId(e.target.value)}
                                 required
-                                min="1"
                             />
-                            <button type="submit" className={btnCls} disabled={rejectLoading || !rejectId}>
-                                {rejectLoading ? 'Fetching…' : '🔍 Explain Rejection'}
-                            </button>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-2 group/btn"
+                                disabled={rejectLoading || !rejectId}
+                            >
+                                <span className="flex items-center justify-center gap-3 text-emerald-500">
+                                    {rejectLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <ShieldExclamationIcon className="w-4 h-4" />}
+                                    {rejectLoading ? 'Tracing…' : 'Trace Discrepancy'}
+                                </span>
+                            </Button>
                         </form>
                         <AIResultBox result={rejectResult} loading={rejectLoading} />
                     </AICard>
 
-                    {/* Info card – Voice */}
+                    {/* Voice Interface Hub */}
                     <AICard
-                        title="Voice Search"
-                        icon="🎤"
-                        description="Speak your commands directly from any page"
+                        title="Auditory Interface"
+                        icon={MicrophoneIcon}
+                        description="Non-Manual Control Vectors"
+                        delay={0.4}
                     >
-                        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
-                            A voice-enabled AI assistant is built into the <strong>My Expenses</strong> page.
-                            Click the microphone icon there to try voice commands like:
-                        </p>
-                        <ul className="space-y-2">
-                            {[
-                                '"Show my pending travel expenses"',
-                                '"What are my rejected expenses?"',
-                                '"Add expense for taxi 500 rupees"',
-                                '"Give me my spending summary"',
-                            ].map((hint, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                    <span className="text-indigo-500 mt-0.5">▸</span>
-                                    <span className="italic">{hint}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="space-y-6">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                                Auditory processing is active within the primary operational grid. Access commands via verbal initialization:
+                            </p>
+                            <div className="grid gap-3">
+                                {[
+                                    'Pending travel telemetry sub-set',
+                                    'Rejected entity audit log',
+                                    'Initialize taxi asset — value 500',
+                                    'Aggregate spending overview'
+                                ].map((hint, i) => (
+                                    <div key={i} className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 group-hover:bg-indigo-500/10 transition-colors">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest italic">{hint}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </AICard>
                 </div>
             </div>

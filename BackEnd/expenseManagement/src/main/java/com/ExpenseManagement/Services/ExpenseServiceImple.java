@@ -229,4 +229,19 @@ public class ExpenseServiceImple implements ExpenseService {
         expense.setApprovalStage(role.toUpperCase());
         return expenseRepository.save(expense);
     }
+
+    @Override
+    public List<Expense> searchExpenses(String query, User user) {
+        if (user.getRole() == Role.ADMIN) {
+            return expenseRepository.searchByKeyword(query);
+        } else if (user.getRole() == Role.MANAGER) {
+            // Include manager's own expenses and those of their team members
+            if (user.getTeam() != null) {
+                return expenseRepository.searchByKeywordAndUsers(query, user.getTeam().getMembers(), user);
+            }
+            return expenseRepository.searchByKeywordAndUser(query, user);
+        } else {
+            return expenseRepository.searchByKeywordAndUser(query, user);
+        }
+    }
 }

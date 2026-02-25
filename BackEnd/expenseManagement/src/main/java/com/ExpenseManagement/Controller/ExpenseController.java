@@ -198,4 +198,14 @@ public class ExpenseController {
         }
     }
 
+    // GET /api/expenses/search?query=...
+    @Operation(summary = "Search expenses by keyword")
+    @GetMapping("/search")
+    public ResponseEntity<?> searchExpenses(@RequestParam String query,
+            org.springframework.security.core.Authentication auth) {
+        com.expensemanagement.Entities.User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow();
+        List<Expense> results = expenseService.searchExpenses(query, currentUser);
+        return ResponseEntity.ok(results);
+    }
+
 }

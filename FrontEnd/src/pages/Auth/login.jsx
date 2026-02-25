@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Swal from 'sweetalert2';
+import { premiumSuccess, premiumError, premiumWarning } from '../../utils/premiumAlerts';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import Button from '../../components/ui/Button';
@@ -29,23 +29,12 @@ const Login = () => {
         setError(null);
 
         if (!formData.email || !formData.password) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Fields',
-                text: 'Please fill in all fields',
-                confirmButtonColor: '#3085d6',
-            });
+            premiumWarning('Missing Fields', 'Please fill in all fields');
             return;
         }
         try {
             const user = await login(formData.email, formData.password);
-            Swal.fire({
-                icon: 'success',
-                title: 'Welcome Back!',
-                text: `Successfully logged in as ${user.name}`,
-                timer: 1500,
-                showConfirmButton: false
-            });
+            premiumSuccess('Welcome Back!', `Successfully logged in as ${user.name}`, 1500);
 
             // Role-based redirect
             if (user.role === 'ADMIN') {
@@ -57,12 +46,7 @@ const Login = () => {
             }
         } catch (err) {
             const msg = useAuthStore.getState().error || 'Invalid credentials';
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: msg,
-                confirmButtonColor: '#d33',
-            });
+            premiumError('Login Failed', msg);
         }
     };
 

@@ -8,6 +8,7 @@ const useNotificationStore = create((set, get) => ({
     notifications: [],
     unreadCount: 0,
     isConnected: false,
+    isConnecting: false,
     stompClient: null,
 
     fetchNotifications: async () => {
@@ -67,14 +68,15 @@ const useNotificationStore = create((set, get) => ({
 
     connectWebSocket: () => {
         const { user } = useAuthStore.getState();
-        if (!user || get().isConnected) return;
+        if (!user || get().isConnected || get().isConnecting) return;
 
+        set({ isConnecting: true });
         const socket = new SockJS('http://localhost:8081/ws');
         const client = Stomp.over(socket);
         client.debug = null; // Disable debug logs
 
         client.connect({}, () => {
-            set({ isConnected: true, stompClient: client });
+            set({ isConnected: true, isConnecting: false, stompClient: client });
 
             // Subscribe to User User Queue (if using convertAndSendToUser)
             // Or typically manually mapped: /topic/user/{id}

@@ -28,7 +28,7 @@ api.interceptors.request.use(
     }
 );
 
-import Swal from 'sweetalert2';
+import { premiumWarning, premiumError, showPremiumAlert } from '../utils/premiumAlerts';
 
 // Response Interceptor
 api.interceptors.response.use(
@@ -42,13 +42,7 @@ api.interceptors.response.use(
         if (status === 401) {
             // Unauthenticated — skip popup if the caller suppressed it (e.g. voice commands)
             if (!error.config?.suppressGlobalError) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Session Expired',
-                    text: 'Please log in again.',
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'Log In'
-                }).then((result) => {
+                premiumWarning('Session Expired', 'Please log in again.', null).then((result) => {
                     if (result.isConfirmed) {
                         localStorage.removeItem('token');
                         window.location.href = '/login';
@@ -58,35 +52,19 @@ api.interceptors.response.use(
         } else if (status === 403) {
             // Forbidden — skip popup if the caller suppressed it
             if (!error.config?.suppressGlobalError) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Access Denied',
-                    text: 'You do not have permission to perform this action.',
-                });
+                premiumError('Access Denied', 'You do not have permission to perform this action.');
             }
         } else if (status >= 500) {
             // Server Error
-            Swal.fire({
-                icon: 'error',
-                title: 'Server Error',
-                text: 'A server error occurred. Please try again later.',
-            });
+            premiumError('Server Error', 'A server error occurred. Please try again later.');
         } else if (!error.response && error.message === 'Network Error') {
             // Network Error (Server down, CORS, or Crash)
-            Swal.fire({
-                icon: 'error',
-                title: 'Network Error',
-                text: 'Unable to connect to the server. Please check your connection or try again later.',
-            });
+            premiumError('Network Error', 'Unable to connect to the server. Please check your connection or try again later.');
         } else {
             // Other errors (400, 404, etc.)
             // Attempt to show meaningful message if possible
             if (!error.config?.suppressGlobalError) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: message || 'An unexpected error occurred.',
-                });
+                premiumError('Error', message || 'An unexpected error occurred.');
             }
         }
         return Promise.reject(error);

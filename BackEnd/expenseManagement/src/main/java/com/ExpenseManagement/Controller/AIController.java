@@ -92,7 +92,7 @@ public class AIController {
         // ── User Features ────────────────────────────────────────────────────────
 
         @GetMapping("/search")
-        @PreAuthorize("hasRole('USER')")
+        @PreAuthorize("isAuthenticated()")
         public CompletableFuture<ResponseEntity<List<Expense>>> search(
                         @RequestParam String query, Authentication auth) {
                 User user = userService.getUserByEmail(auth.getName());

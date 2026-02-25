@@ -14,6 +14,19 @@ const useManagerExpenseStore = create((set, get) => ({
         total: 0,
         totalPages: 0
     },
+
+    setExpenses: (newExpenses) => {
+        set({
+            expenses: newExpenses,
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: newExpenses.length,
+                totalPages: 1
+            }
+        });
+    },
+
     teamMembers: [],
     filters: {
         status: 'PENDING',

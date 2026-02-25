@@ -26,6 +26,11 @@ const userService = {
         await api.delete(`/user/expenses/${id}`);
     },
 
+    searchExpenses: async (query) => {
+        const response = await api.get('/expenses/search', { params: { query } });
+        return response.data;
+    },
+
     getMyStats: async () => {
         const response = await api.get('/user/expenses/stats');
         return response.data;

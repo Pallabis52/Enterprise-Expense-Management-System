@@ -6,10 +6,23 @@ const useUserExpenseStore = create((set, get) => ({
     stats: null,
     isLoading: false,
     error: null,
+    isSearchMode: false,
     pagination: {
         totalPages: 0,
         totalElements: 0,
         currentPage: 1
+    },
+
+    setExpenses: (newExpenses, searchMode = false) => {
+        set({
+            expenses: newExpenses,
+            isSearchMode: searchMode,
+            pagination: {
+                totalPages: 1,
+                totalElements: newExpenses.length,
+                currentPage: 1
+            }
+        });
     },
 
     // Actions

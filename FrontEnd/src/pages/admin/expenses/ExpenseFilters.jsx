@@ -1,53 +1,85 @@
-import React from 'react';
-import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+import React, { useMemo } from 'react';
+import UnifiedSearchBar from '../../../components/ui/UnifiedSearchBar';
+import {
+    FunnelIcon,
+    Squares2X2Icon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon
+} from '@heroicons/react/24/outline';
+import useAdminExpenseStore from '../../../store/adminExpenseStore';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 
 const ExpenseFilters = ({ filters, onChange }) => {
+    const STATUS_OPTIONS = useMemo(() => [
+        { label: 'All Statuses', value: 'all', icon: <Squares2X2Icon />, iconColor: 'text-gray-500' },
+        { label: 'Pending', value: 'PENDING', icon: <ClockIcon />, iconColor: 'text-amber-500' },
+        { label: 'Approved', value: 'APPROVED', icon: <CheckCircleIcon />, iconColor: 'text-emerald-500' },
+        { label: 'Rejected', value: 'REJECTED', icon: <XCircleIcon />, iconColor: 'text-rose-500' }
+    ], []);
+
+    const { setExpenses } = useAdminExpenseStore();
+
     const handleChange = (key, value) => {
         onChange({ [key]: value });
     };
 
+    const handleSearchResults = (results) => {
+        setExpenses(results);
+    };
+
     return (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
+        <div className="mb-8">
+            <div className="flex flex-col xl:flex-row items-center gap-4 bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl p-2 rounded-[24px] border border-white dark:border-gray-700 shadow-2xl shadow-primary-500/10 overflow-visible relative z-[10]">
 
-            {/* Search */}
-            <div className="flex-1">
-                <SearchVoiceInput
-                    value={filters.search}
-                    onChange={(val) => handleChange('search', val)}
-                    placeholder="Search by user or title…"
-                />
-            </div>
+                <div className="flex items-center gap-4 pl-4 py-2">
+                    {/* Status Filter */}
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-primary-500 dark:text-primary-400 uppercase tracking-[0.2em] mb-1">Filter</span>
+                        <div className="min-w-[150px]">
+                            <CustomDropdown
+                                options={STATUS_OPTIONS}
+                                value={filters.status}
+                                onChange={(val) => handleChange('status', val)}
+                            />
+                        </div>
+                    </div>
 
-            {/* Status Filter */}
-            <div className="w-full md:w-48">
-                <select
-                    value={filters.status}
-                    onChange={(e) => handleChange('status', e.target.value)}
-                    className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                >
-                    <option value="all">All Statuses</option>
-                    <option value="PENDING">Pending</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="REJECTED">Rejected</option>
-                </select>
-            </div>
+                    <div className="h-12 w-[1px] bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-700 to-transparent mx-2" />
 
-            {/* Date Range (Simplified for now) */}
-            <div className="flex items-center gap-2">
-                <input
-                    type="date"
-                    className="rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-primary-500"
-                    value={filters.startDate || ''}
-                    onChange={(e) => handleChange('startDate', e.target.value)}
-                />
-                <span className="text-gray-400">-</span>
-                <input
-                    type="date"
-                    className="rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-primary-500"
-                    value={filters.endDate || ''}
-                    onChange={(e) => handleChange('endDate', e.target.value)}
-                />
+                    {/* Date Range Section */}
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-[0.2em] mb-1">Date</span>
+                        <div className="flex items-center gap-2 bg-gray-100/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-1 px-3 rounded-[14px]">
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-[10px] focus:ring-0 text-gray-700 dark:text-gray-200 font-black uppercase"
+                                value={filters.startDate || ''}
+                                onChange={(e) => handleChange('startDate', e.target.value)}
+                            />
+                            <span className="text-gray-400 text-[9px] font-black">TO</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-[10px] focus:ring-0 text-gray-700 dark:text-gray-200 font-black uppercase"
+                                value={filters.endDate || ''}
+                                onChange={(e) => handleChange('endDate', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1" />
+
+                {/* Search - Right Side */}
+                <div className="w-full xl:w-[500px] p-1">
+                    <div className="flex flex-col mb-1 px-1">
+                        <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] xl:text-right">Global Neural Search Engine</span>
+                    </div>
+                    <UnifiedSearchBar
+                        onResults={handleSearchResults}
+                        placeholder="Search by user, expense, or semantic query..."
+                    />
+                </div>
             </div>
         </div>
     );

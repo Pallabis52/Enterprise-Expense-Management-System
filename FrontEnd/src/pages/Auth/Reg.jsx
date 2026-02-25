@@ -4,7 +4,7 @@ import { FaLinkedin } from "react-icons/fa";
 import { Button } from "flowbite-react";
 import useAuthStore from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import { premiumSuccess, premiumError } from "../../utils/premiumAlerts";
 
 import "tailwindcss/tailwind.css";
 
@@ -33,11 +33,7 @@ const Register = () => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Password Mismatch',
-                text: 'Passwords do not match!',
-            });
+            premiumError('Password Mismatch', 'Passwords do not match!');
             return;
         }
 
@@ -49,18 +45,10 @@ const Register = () => {
                 role: 'USER' // Default role
             });
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Registration Successful',
-                text: 'Please login with your credentials',
-            });
+            premiumSuccess('Registration Successful', 'Please login with your credentials');
             navigate('/login');
         } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Registration Failed',
-                text: error.response?.data?.message || 'Something went wrong',
-            });
+            premiumError('Registration Failed', error.response?.data?.message || 'Something went wrong');
         }
     };
 

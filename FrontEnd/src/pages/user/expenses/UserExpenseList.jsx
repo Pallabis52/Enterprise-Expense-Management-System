@@ -1,25 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import Table from '../../../components/ui/Table';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 import {
     PlusIcon,
     PencilSquareIcon,
     TrashIcon,
-    EyeIcon
+    EyeIcon,
+    XMarkIcon,
+    FunnelIcon,
+    Squares2X2Icon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon
 } from '@heroicons/react/24/outline';
 import userService from '../../../services/userService';
 import useUserExpenseStore from '../../../store/userExpenseStore';
 import Button from '../../../components/ui/Button';
-import SearchVoiceInput from '../../../components/ui/SearchVoiceInput';
+import UnifiedSearchBar from '../../../components/ui/UnifiedSearchBar';
 import Card3D from '../../../components/ui/Card3D';
 import Badge from '../../../components/ui/Badge';
 import PageTransition from '../../../components/layout/PageTransition';
-import Swal from 'sweetalert2';
+import { premiumSuccess, premiumError, premiumConfirm } from '../../../utils/premiumAlerts';
 import ExpenseModal from '../../../components/expenses/ExpenseModal';
-import VoiceButton from '../../../components/ui/VoiceButton';
-import AISearchBar from '../../../components/ai/AISearchBar';
 
 const UserExpenseList = () => {
-    const { expenses, fetchMyExpenses, isLoading, deleteExpense, addExpense, updateExpense } = useUserExpenseStore();
-    const [search, setSearch] = useState('');
+    const STATUS_OPTIONS = useMemo(() => [
+        { label: 'All Status', value: 'all', icon: <Squares2X2Icon />, iconColor: 'text-indigo-500' },
+        { label: 'Pending', value: 'PENDING', icon: <ClockIcon />, iconColor: 'text-amber-500' },
+        { label: 'Approved', value: 'APPROVED', icon: <CheckCircleIcon />, iconColor: 'text-emerald-500' },
+        { label: 'Rejected', value: 'REJECTED', icon: <XCircleIcon />, iconColor: 'text-rose-500' }
+    ], []);
+
+    const {
+        expenses,
+        fetchMyExpenses,
+        isLoading,
+        deleteExpense,
+        addExpense,
+        updateExpense,
+        setExpenses,
+        isSearchMode
+    } = useUserExpenseStore();
     const [statusFilter, setStatusFilter] = useState('all');
     const [aiFilters, setAiFilters] = useState({});
 
@@ -45,20 +66,12 @@ const UserExpenseList = () => {
     }, [statusFilter]);
 
     const handleDelete = async (id) => {
-        const result = await Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        });
+        const result = await premiumConfirm('Are you sure?', "You won't be able to revert this!", 'Yes, delete it!');
 
         if (result.isConfirmed) {
             const success = await deleteExpense(id);
             if (success) {
-                Swal.fire('Deleted!', 'Your expense has been deleted.', 'success');
+                premiumSuccess('Deleted!', 'Your expense has been deleted.');
             }
         }
     };
@@ -74,15 +87,15 @@ const UserExpenseList = () => {
             if (modalData) {
                 // Update
                 await updateExpense(modalData.id, data, receiptFile);
-                Swal.fire('Updated!', 'Expense updated successfully.', 'success');
+                premiumSuccess('Updated!', 'Expense updated successfully.');
             } else {
                 // Add
                 await addExpense(data, receiptFile);
-                Swal.fire('Added!', 'Expense added successfully.', 'success');
+                premiumSuccess('Added!', 'Expense added successfully.');
             }
             setIsModalOpen(false);
         } catch (error) {
-            Swal.fire('Error', error.message || 'Failed to save expense', 'error');
+            premiumError('Error', error.message || 'Failed to save expense');
         } finally {
             setIsSubmitting(false);
         }
@@ -93,7 +106,7 @@ const UserExpenseList = () => {
             const url = await userService.viewReceipt(id);
             window.open(url, '_blank');
         } catch (error) {
-            Swal.fire('Error', 'Failed to load receipt', 'error');
+            premiumError('Error', 'Failed to load receipt');
         }
     };
 
@@ -106,23 +119,65 @@ const UserExpenseList = () => {
         }
     };
 
-    const filteredExpenses = expenses.filter(ex => {
-        // Basic Search
-        const matchesBasic = ex.title.toLowerCase().includes(search.toLowerCase()) ||
-            ex.category.toLowerCase().includes(search.toLowerCase());
-        if (!matchesBasic) return false;
+    // List display helper
+    const displayExpenses = expenses;
 
-        // Status Filter
-        if (statusFilter !== 'all' && ex.status !== statusFilter) return false;
-
-        // AI Filters
-        if (aiFilters.category && ex.category.toLowerCase() !== aiFilters.category.toLowerCase()) return false;
-        if (aiFilters.status && ex.status.toLowerCase() !== aiFilters.status.toLowerCase()) return false;
-        if (aiFilters.minAmount && ex.amount < aiFilters.minAmount) return false;
-        if (aiFilters.maxAmount && ex.amount > aiFilters.maxAmount) return false;
-
-        return true;
-    });
+    const columns = [
+        { title: 'Date', key: 'date', sortable: true },
+        {
+            title: 'Title',
+            key: 'title',
+            render: row => <span className="font-semibold text-gray-900 dark:text-white">{row.title}</span>
+        },
+        { title: 'Category', key: 'category' },
+        {
+            title: 'Amount',
+            key: 'amount',
+            sortable: true,
+            render: row => <span className="font-bold text-gray-900 dark:text-white">₹{row.amount}</span>
+        },
+        {
+            title: 'Status',
+            key: 'status',
+            render: row => (
+                <Badge variant={getStatusColor(row.status)}>
+                    {row.status}
+                </Badge>
+            )
+        },
+        {
+            title: '',
+            key: 'actions',
+            className: 'text-right',
+            render: row => (
+                <div className="flex items-center justify-end gap-2 px-2">
+                    {row.receiptUrl && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleViewReceipt(row.id); }}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            title="View Receipt"
+                        >
+                            <EyeIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenModal(row); }}
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                        title="Edit"
+                    >
+                        <PencilSquareIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}
+                        className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        title="Delete"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            )
+        }
+    ];
 
     return (
         <PageTransition>
@@ -138,101 +193,74 @@ const UserExpenseList = () => {
                     </Button>
                 </div>
 
-                {/* AI & Natural Search */}
-                <div className="mb-8">
-                    <AISearchBar onFilterChange={(f) => setAiFilters(f)} />
-                </div>
+                {/* Cohesive Header Bar */}
+                <div className="mb-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-4 bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl p-2 rounded-[24px] border border-white dark:border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-visible relative z-[10]">
+                        {/* Status Filter Section */}
+                        <div className="flex items-center gap-4 pl-4 py-2">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Filter</span>
+                                <div className="min-w-[150px]">
+                                    <CustomDropdown
+                                        options={STATUS_OPTIONS}
+                                        value={statusFilter}
+                                        onChange={setStatusFilter}
+                                    />
+                                </div>
+                            </div>
 
-                {/* Filters */}
-                <Card3D className="p-4 bg-white dark:bg-gray-800">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                            <SearchVoiceInput
-                                value={search}
-                                onChange={setSearch}
-                                placeholder="Search by title or category…"
+                            <div className="h-12 w-[1px] bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-700 to-transparent mx-2" />
+
+                            <div className="flex flex-col min-w-[120px]">
+                                <span className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Intelligence</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full blur opacity-25 animate-pulse"></div>
+                                        <span className="relative px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-black">
+                                            {expenses.length}
+                                        </span>
+                                    </div>
+                                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-none">
+                                        Total<br />Records
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Spacer for Desktop */}
+                        <div className="flex-1" />
+
+                        {/* Search Section */}
+                        <div className="w-full lg:w-[500px] p-1">
+                            <div className="flex flex-col mb-1 px-1">
+                                <div className="flex justify-between items-center w-full">
+                                    <span className="text-[9px] font-black text-purple-500 dark:text-purple-400 uppercase tracking-[0.2em]">Unified Search Engine</span>
+                                    {isSearchMode && (
+                                        <button
+                                            onClick={() => fetchMyExpenses(1, statusFilter)}
+                                            className="text-[9px] font-black text-red-500 hover:text-red-600 uppercase tracking-[0.1em] flex items-center gap-1 transition-all"
+                                        >
+                                            <XMarkIcon className="w-3 h-3" /> Clear
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <UnifiedSearchBar
+                                onResults={(results) => setExpenses(results, true)}
+                                placeholder="Search by details or try AI commands..."
                             />
                         </div>
-                        <select
-                            className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2.5"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="all">All Status</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="APPROVED">Approved</option>
-                            <option value="REJECTED">Rejected</option>
-                        </select>
-                    </div>
-                </Card3D>
-
-                {/* List */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                <tr>
-                                    <th className="px-6 py-3">Date</th>
-                                    <th className="px-6 py-3">Title</th>
-                                    <th className="px-6 py-3">Category</th>
-                                    <th className="px-6 py-3">Amount</th>
-                                    <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {isLoading ? (
-                                    <tr>
-                                        <td colSpan="6" className="text-center py-8">Loading...</td>
-                                    </tr>
-                                ) : filteredExpenses.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" className="text-center py-8">No expenses found</td>
-                                    </tr>
-                                ) : (
-                                    filteredExpenses.map((expense) => (
-                                        <tr key={expense.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td className="px-6 py-4">{expense.date}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                                {expense.title}
-                                            </td>
-                                            <td className="px-6 py-4">{expense.category}</td>
-                                            <td className="px-6 py-4">₹{expense.amount}</td>
-                                            <td className="px-6 py-4">
-                                                <Badge variant={getStatusColor(expense.status)}>
-                                                    {expense.status}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                                {expense.receiptUrl && (
-                                                    <button
-                                                        onClick={() => handleViewReceipt(expense.id)}
-                                                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                        title="View Receipt"
-                                                    >
-                                                        <EyeIcon className="w-5 h-5" />
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleOpenModal(expense)}
-                                                    className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-                                                >
-                                                    <PencilSquareIcon className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(expense.id)}
-                                                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                                >
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
+
+                {/* List */}
+                <Table
+                    columns={columns}
+                    data={displayExpenses}
+                    isLoading={isLoading}
+                    emptyMessage="No expenses found"
+                    onRowClick={(row) => handleOpenModal(row)}
+                />
 
                 {/* Expense Modal */}
                 <ExpenseModal

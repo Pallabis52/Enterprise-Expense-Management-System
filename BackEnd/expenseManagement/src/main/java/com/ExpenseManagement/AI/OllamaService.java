@@ -19,6 +19,7 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -78,6 +79,9 @@ public class OllamaService {
 
     @Value("${ollama.async.enabled:true}")
     private boolean asyncEnabled;
+
+    // Concurrency Gate to prevent native memory exhaustion on low-RAM systems (6GB)
+    private final Semaphore concurrencyGate = new Semaphore(1);
 
     public OllamaService(
             @Value("${ollama.base-url:http://127.0.0.1:11434}") String baseUrl,
@@ -252,20 +256,28 @@ public class OllamaService {
         if (!asyncEnabled) {
             log.debug("Ollama async disabled — executing sync call for {}", feature);
             try {
-                JsonNode response = webClient.post()
-                        .uri("/api/generate")
-                        .bodyValue(body)
-                        .retrieve()
-                        .bodyToMono(JsonNode.class)
-                        .timeout(Duration.ofSeconds(timeoutSeconds))
-                        .block();
-
-                long ms = System.currentTimeMillis() - start;
-                if (response != null) {
-                    String text = response.path("response").asText("").trim();
-                    return CompletableFuture.completedFuture(AIResponse.success(feature, text, modelName, ms));
+                if (!concurrencyGate.tryAcquire(2, TimeUnit.SECONDS)) {
+                    log.warn("AI Concurrency Limit — '{}' skipped (Ollama busy)", feature);
+                    return CompletableFuture.completedFuture(AIResponse.fallback(feature, 0));
                 }
-                return CompletableFuture.completedFuture(AIResponse.fallback(feature, ms));
+                try {
+                    JsonNode response = webClient.post()
+                            .uri("/api/generate")
+                            .bodyValue(body)
+                            .retrieve()
+                            .bodyToMono(JsonNode.class)
+                            .timeout(Duration.ofSeconds(timeoutSeconds))
+                            .block();
+
+                    long ms = System.currentTimeMillis() - start;
+                    if (response != null) {
+                        String text = response.path("response").asText("").trim();
+                        return CompletableFuture.completedFuture(AIResponse.success(feature, text, modelName, ms));
+                    }
+                    return CompletableFuture.completedFuture(AIResponse.fallback(feature, ms));
+                } finally {
+                    concurrencyGate.release();
+                }
             } catch (Exception ex) {
                 long ms = System.currentTimeMillis() - start;
                 log.warn("Ollama Sync Fallback failed for '{}': {}", feature, ex.getMessage());
@@ -273,49 +285,41 @@ public class OllamaService {
             }
         }
 
-        return webClient.post()
-                .uri("/api/generate")
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                // ── Reactor-level timeout (primary guard) ───────────────────
-                .timeout(Duration.ofSeconds(timeoutSeconds))
-                // ── Retry: back-off on transient IO errors, NOT on timeout ──
-                // TimeoutException means the model is slow — retrying would
-                // just queue another 120-second wait. Retry only on network
-                // errors (connection reset, Netty read timeout, HTTP 5xx).
-                .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofSeconds(retryBackoffSeconds))
-                        .filter(this::isRetryable)
-                        .doBeforeRetry(signal -> log.warn(
-                                "OllamaService '{}' — retrying after transient error (attempt {}): {}",
-                                feature, signal.totalRetries() + 1, signal.failure().getMessage())))
-                .map(json -> {
-                    if (json == null) {
-                        return AIResponse.fallback(feature, System.currentTimeMillis() - start);
-                    }
-                    String text = json.path("response").asText("").trim();
-                    long ms = System.currentTimeMillis() - start;
-                    log.debug("AI Success '{}' — {}ms via {}", feature, ms, modelName);
-                    return AIResponse.success(feature, text, modelName, ms);
-                })
-                .onErrorResume(Throwable.class, ex -> {
-                    long ms = System.currentTimeMillis() - start;
-                    // ── Structured error logging ─────────────────────────────
-                    if (ex instanceof TimeoutException || ex.getCause() instanceof TimeoutException) {
-                        log.warn("OllamaService '{}' TIMEOUT after {}ms — model '{}' did not respond within {}s. " +
-                                "Tip: increase ollama.timeout-seconds or ensure the model is warm.",
-                                feature, ms, modelName, timeoutSeconds);
-                    } else if (ex instanceof WebClientResponseException httpEx) {
-                        String errorBody = httpEx.getResponseBodyAsString();
-                        log.warn("OllamaService '{}' HTTP {} after {}ms — Body: {}",
-                                feature, httpEx.getStatusCode().value(), ms, errorBody);
-                    } else {
-                        log.warn("OllamaService '{}' failed after {}ms — {}: {}",
-                                feature, ms, ex.getClass().getSimpleName(), ex.getMessage());
-                    }
-                    return Mono.just(AIResponse.fallback(feature, ms));
-                })
-                .toFuture();
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // Wait for slot (prevents overlapping native memory buffers)
+                if (!concurrencyGate.tryAcquire(30, TimeUnit.SECONDS)) {
+                    log.warn("AI Overload — request '{}' timed out waiting for concurrency slot", feature);
+                    return AIResponse.fallback(feature, System.currentTimeMillis() - start);
+                }
+
+                try {
+                    return webClient.post()
+                            .uri("/api/generate")
+                            .bodyValue(body)
+                            .retrieve()
+                            .bodyToMono(JsonNode.class)
+                            .timeout(Duration.ofSeconds(timeoutSeconds))
+                            .retryWhen(Retry.backoff(retryMaxAttempts, Duration.ofSeconds(retryBackoffSeconds))
+                                    .filter(this::isRetryable))
+                            .map(json -> {
+                                if (json == null)
+                                    return AIResponse.fallback(feature, System.currentTimeMillis() - start);
+                                String text = json.path("response").asText("").trim();
+                                long ms = System.currentTimeMillis() - start;
+                                return AIResponse.success(feature, text, modelName, ms);
+                            })
+                            .onErrorResume(
+                                    e -> Mono.just(AIResponse.fallback(feature, System.currentTimeMillis() - start)))
+                            .block(); // Block inside worker thread to maintain semaphore hold
+                } finally {
+                    concurrencyGate.release();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return AIResponse.fallback(feature, System.currentTimeMillis() - start);
+            }
+        });
     }
 
     /**
