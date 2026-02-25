@@ -211,10 +211,10 @@ const AdminAIDashboard = () => {
                                     />
                                 </div>
                                 <div>
-                                    <h1 className="text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Aegis</h1>
+                                    <h1 className="text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Sentinel</h1>
                                     <p className="text-[11px] text-violet-600 dark:text-violet-400 font-black uppercase tracking-[0.5em] mt-6 flex items-center gap-4">
                                         <CubeIcon className="w-5 h-5 animate-spin-slow" />
-                                        Advanced Governance Logic
+                                        Aegis Protocol Active
                                     </p>
                                 </div>
                             </motion.div>

@@ -189,10 +189,10 @@ const ManagerAIDashboard = () => {
                                     />
                                 </div>
                                 <div>
-                                    <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Nexus</h1>
+                                    <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Vertex</h1>
                                     <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.4em] mt-5 flex items-center gap-3">
                                         <BoltIcon className="w-4 h-4 animate-pulse" />
-                                        Strategic Intelligence Command
+                                        Strategic Core Interface
                                     </p>
                                 </div>
                             </motion.div>

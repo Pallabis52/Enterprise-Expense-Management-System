@@ -13,6 +13,7 @@ import PageTransition from '../../../components/layout/PageTransition';
 import useAuthStore from '../../../store/authStore';
 import Input from '../../../components/ui/Input';
 import Toggle from '../../../components/ui/Toggle';
+import Button from '../../../components/ui/Button';
 
 const ManagerProfile = () => {
     const { user } = useAuthStore();

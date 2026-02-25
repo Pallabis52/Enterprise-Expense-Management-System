@@ -197,10 +197,10 @@ const UserAIDashboard = () => {
                                     <div className="absolute inset-0 bg-white/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-700" />
                                 </div>
                                 <div>
-                                    <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">NeuroLink</h1>
+                                    <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Aether</h1>
                                     <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.4em] mt-5 flex items-center gap-3">
                                         <SparklesIcon className="w-4 h-4 animate-spin-slow" />
-                                        Synthetic Intelligence Nexus
+                                        Neural Sync Nexus
                                     </p>
                                 </div>
                             </motion.div>

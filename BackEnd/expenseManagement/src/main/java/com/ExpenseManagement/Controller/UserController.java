@@ -17,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.expensemanagement.AI.AIResponse;
-import com.expensemanagement.AI.AIService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +34,6 @@ public class UserController {
         private final UserRepository userRepository;
         private final ExpenseRepository expenseRepository;
         private final FreezePeriodService freezePeriodService;
-        private final AIService aiService;
 
         // ── stats ─────────────────────────────────────────────────────────────────
 
@@ -166,23 +163,6 @@ public class UserController {
                 }
                 expenseService.deleteExpense(id);
                 return ResponseEntity.ok().build();
-        }
-
-        /**
-         * Feature 4: Personal Spending Insights
-         * GET /api/user/ai/spending-insights
-         */
-        @GetMapping("/ai/spending-insights")
-        public ResponseEntity<AIResponse> spendingInsights(Authentication auth) {
-                try {
-                        User user = userRepository.findByEmail(auth.getName()).orElseThrow();
-                        AIResponse result = aiService.spendingInsights(user)
-                                        .get(95, java.util.concurrent.TimeUnit.SECONDS);
-                        return ResponseEntity.ok(result != null ? result : AIResponse.fallback("spending-insights", 0));
-                } catch (Exception e) {
-                        log.warn("AI spending-insights error: {}", e.getMessage());
-                        return ResponseEntity.ok(AIResponse.fallback("spending-insights", 0));
-                }
         }
 
 }

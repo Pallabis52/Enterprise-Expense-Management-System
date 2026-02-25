@@ -52,70 +52,105 @@ const Login = () => {
 
     return (
         <PageTransition className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary-500/20 rounded-full blur-[100px] animate-float" />
-                <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-accent-500/20 rounded-full blur-[80px] animate-float" style={{ animationDelay: '2s' }} />
-                <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-blue-500/20 rounded-full blur-[90px] animate-float" style={{ animationDelay: '4s' }} />
+            {/* Mesh Gradient Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary-500/20 dark:bg-primary-500/10 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent-500/20 dark:bg-accent-500/10 rounded-full blur-[100px] animate-float" style={{ animationDelay: '2s' }} />
+                <div className="absolute top-[20%] right-[10%] w-[35%] h-[35%] bg-indigo-500/20 dark:bg-indigo-500/10 rounded-full blur-[90px] animate-float" style={{ animationDelay: '1s' }} />
+                <div className="absolute bottom-[20%] left-[5%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-[110px] animate-pulse" style={{ animationDelay: '3s' }} />
+
+                {/* Subtle Grid Pattern Overlay */}
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
             </div>
 
-            <div className="z-10 w-full max-w-md px-4">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400">
-                        Enterprise Expense
+            <div className="z-10 w-full max-w-md px-6 py-12">
+                <div className="text-center mb-10 transform transition-all duration-700 animate-in fade-in slide-in-from-top-8">
+                    <div className="inline-block p-3 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-2xl mb-6">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30">
+                            <span className="text-white text-2xl font-black italic">E</span>
+                        </div>
+                    </div>
+                    <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3">
+                        Welcome to <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400">Aether</span>
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-2">
-                        Welcome back, please login to your account
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">
+                        The next generation of expense management
                     </p>
                 </div>
 
-                <Card3D className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <Input
-                            label="Email Address"
-                            type="email"
-                            placeholder="name@company.com"
-                            icon={MailIcon}
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                        />
+                <div className="relative group">
+                    {/* Animated Border Glow */}
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-gradient-xy"></div>
 
-                        <div className="space-y-1">
-                            <Input
-                                label="Password"
-                                type="password"
-                                placeholder="••••••••"
-                                icon={LockIcon}
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                required
-                            />
-                            <div className="flex justify-end">
-                                <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">
-                                    Forgot password?
+                    <Card3D className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-2xl border border-white/20 dark:border-gray-700/30 overflow-hidden rounded-[2rem] shadow-2xl p-8">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <Input
+                                    label="Corporate Email"
+                                    type="email"
+                                    placeholder="name@company.com"
+                                    icon={MailIcon}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="bg-white/50 dark:bg-gray-900/50 border-white/30 dark:border-gray-700/30 transition-all duration-300 focus:ring-2 focus:ring-primary-500/50"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
+                                    <Link to="/forgot-password" virtual="true" className="text-xs font-bold text-primary-600 hover:text-primary-500 dark:text-primary-400 uppercase tracking-wider">
+                                        Forgot?
+                                    </Link>
+                                </div>
+                                <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    icon={LockIcon}
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="bg-white/50 dark:bg-gray-900/50 border-white/30 dark:border-gray-700/30 transition-all duration-300 focus:ring-2 focus:ring-primary-500/50"
+                                    required
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium flex items-center gap-2 animate-in fade-in zoom-in-95">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {error}
+                                </div>
+                            )}
+
+                            <Button
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-500 hover:to-accent-500 text-white shadow-xl shadow-primary-500/25 border-none transform active:scale-95 transition-all py-4"
+                                isLoading={isLoading}
+                                size="lg"
+                            >
+                                Authenticate Nexus
+                            </Button>
+
+                            <div className="relative py-4">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-200 dark:border-gray-700/50"></div>
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-transparent px-2 text-gray-400 font-bold tracking-widest">or initialize access</span>
+                                </div>
+                            </div>
+
+                            <p className="text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                No credential token?{' '}
+                                <Link to="/register" className="font-bold text-primary-600 hover:text-primary-500 dark:text-primary-400 underline decoration-2 decoration-primary-500/30 underline-offset-4">
+                                    Request Access
                                 </Link>
-                            </div>
-                        </div>
-
-                        {error && (
-                            <div className="p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-                                {error}
-                            </div>
-                        )}
-
-                        <Button type="submit" className="w-full" isLoading={isLoading} size="lg">
-                            Sign In
-                        </Button>
-
-                        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                            Don't have an account?{' '}
-                            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">
-                                Sign up
-                            </Link>
-                        </p>
-                    </form>
-                </Card3D>
+                            </p>
+                        </form>
+                    </Card3D>
+                </div>
             </div>
         </PageTransition>
     );

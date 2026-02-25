@@ -27,8 +27,6 @@ import com.expensemanagement.Repository.UserRepository;
 import com.expensemanagement.Services.FreezePeriodService;
 import com.expensemanagement.Services.TeamBudgetService;
 import com.expensemanagement.Services.TeamService;
-import com.expensemanagement.AI.AIResponse;
-import com.expensemanagement.AI.AIService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -47,7 +45,6 @@ public class AdminController {
     private final TeamService teamService;
     private final TeamBudgetService teamBudgetService;
     private final FreezePeriodService freezePeriodService;
-    private final AIService aiService;
 
     // ── Team Management ───────────────────────────────────────────────────────
 

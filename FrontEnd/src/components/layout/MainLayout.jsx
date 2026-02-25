@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatWidget from '../ai/ChatWidget';
 
@@ -28,8 +29,12 @@ const MainLayout = () => {
 
                 {/* Prime Content Area */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto relative no-scrollbar">
-                    <div className="p-4 sm:p-6 lg:p-10 max-w-[1700px] mx-auto">
-                        <Outlet />
+                    <div className="p-4 sm:p-6 lg:p-10 max-w-[1700px] mx-auto min-h-screen flex flex-col">
+                        <div className="flex-1">
+                            <Outlet />
+                        </div>
+                        {/* Premium Footer Integration */}
+                        <Footer />
                     </div>
                 </main>
 

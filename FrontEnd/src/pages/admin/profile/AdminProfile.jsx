@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     UserCircleIcon,
@@ -10,6 +11,9 @@ import {
     KeyIcon
 } from '@heroicons/react/24/outline';
 import PageTransition from '../../../components/layout/PageTransition';
+import Button from '../../../components/ui/Button';
+import Input from '../../../components/ui/Input';
+import Toggle from '../../../components/ui/Toggle';
 
 const AdminProfile = () => {
     // Mock User Data

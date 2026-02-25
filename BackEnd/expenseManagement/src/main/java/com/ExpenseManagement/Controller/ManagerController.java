@@ -4,9 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import com.expensemanagement.AI.AIResponse;
-import com.expensemanagement.AI.AIService;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,7 +34,6 @@ public class ManagerController {
     private final UserRepository userRepository;
     private final ManagerService managerService;
     private final PerformanceService performanceService;
-    private final AIService aiService;
 
     // ── team info ─────────────────────────────────────────────────────────────
 
