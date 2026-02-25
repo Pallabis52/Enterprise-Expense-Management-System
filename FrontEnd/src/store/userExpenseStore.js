@@ -61,12 +61,52 @@ const useUserExpenseStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const savedExpense = await userService.addExpense(expenseData);
+
+            // Handle Budget Warning
+            if (savedExpense.budgetWarning?.exceeded) {
+                const { premiumWarning } = await import('../utils/premiumAlerts');
+                premiumWarning(
+                    'Budget Alert',
+                    `This expense exceeds the team limit. Current spend: ₹${savedExpense.budgetWarning.currentSpend}`
+                );
+            }
+
             if (receiptFile) {
                 await userService.uploadReceipt(savedExpense.id, receiptFile);
             }
             set({ isLoading: false });
             get().fetchMyExpenses(1); // Refresh list
             get().fetchMyStats(); // Refresh stats
+            return savedExpense;
+        } catch (error) {
+            set({ error: error.message, isLoading: false });
+            throw error;
+        }
+    },
+
+    saveDraft: async (expenseData, receiptFile) => {
+        set({ isLoading: true, error: null });
+        try {
+            const savedDraft = await userService.saveDraft(expenseData);
+            if (receiptFile) {
+                await userService.uploadReceipt(savedDraft.id, receiptFile);
+            }
+            set({ isLoading: false });
+            get().fetchMyExpenses(1);
+            return savedDraft;
+        } catch (error) {
+            set({ error: error.message, isLoading: false });
+            throw error;
+        }
+    },
+
+    submitDraft: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await userService.submitDraft(id);
+            set({ isLoading: false });
+            get().fetchMyExpenses(get().pagination.currentPage);
+            return response;
         } catch (error) {
             set({ error: error.message, isLoading: false });
             throw error;

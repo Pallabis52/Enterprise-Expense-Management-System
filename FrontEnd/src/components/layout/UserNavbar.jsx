@@ -9,20 +9,12 @@ import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
 import useTheme from '../../hooks/useTheme';
 import NotificationBell from '../notifications/NotificationBell';
-import UnifiedSearchBar from '../ui/UnifiedSearchBar';
 import { useNavigate } from 'react-router-dom';
-import useUserExpenseStore from '../../store/userExpenseStore';
 
 const UserNavbar = ({ onMenuClick }) => {
     const { user } = useAuthStore();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
-    const { setExpenses } = useUserExpenseStore();
-
-    const handleSearchResults = (results) => {
-        setExpenses(results, true);
-        navigate('/user/expenses');
-    };
 
     return (
         <header className="sticky top-0 z-40 w-full bg-white/60 dark:bg-slate-950/60 backdrop-blur-3xl border-b border-gray-100 dark:border-white/5 transition-all duration-500">
@@ -41,11 +33,6 @@ const UserNavbar = ({ onMenuClick }) => {
                         <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-1">Workspace</span>
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">User Terminal</h2>
                     </div>
-                </div>
-
-                {/* Search Engine */}
-                <div className="hidden md:block flex-1 max-w-2xl px-12">
-                    <UnifiedSearchBar onResults={handleSearchResults} />
                 </div>
 
                 {/* Right Actions */}

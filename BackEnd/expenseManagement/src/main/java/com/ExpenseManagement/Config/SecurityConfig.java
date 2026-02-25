@@ -37,7 +37,6 @@ public class SecurityConfig {
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
-    @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtUtils, (UserDetailsServiceImpl) userDetailsService);
     }
@@ -50,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/ai/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
-                .requestMatchers("/api/user/**", "/api/voice/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

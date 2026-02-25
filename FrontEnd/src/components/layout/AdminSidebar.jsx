@@ -10,7 +10,8 @@ import {
     UsersIcon,
     SparklesIcon,
     ArrowLeftOnRectangleIcon,
-    CpuChipIcon
+    CpuChipIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
@@ -19,6 +20,8 @@ const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
     { name: 'Teams', href: '/admin/teams', icon: UsersIcon },
     { name: 'Expenses', href: '/admin/expenses', icon: BanknotesIcon },
+    { name: 'Vendors', href: '/admin/vendors', icon: CpuChipIcon },
+    { name: 'Fraud Flags', href: '/admin/fraud-flags', icon: ExclamationTriangleIcon },
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
     { name: 'AI Tools', href: '/admin/ai', icon: SparklesIcon },

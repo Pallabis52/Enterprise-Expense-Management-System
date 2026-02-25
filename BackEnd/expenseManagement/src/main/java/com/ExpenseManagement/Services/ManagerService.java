@@ -241,6 +241,87 @@ public class ManagerService {
         return dashboard;
     }
 
+    /**
+     * Feature 8: Returns team's spending heatmap for a given month.
+     */
+    public List<Map<String, Object>> getTeamHeatmap(Long managerId, int month, int year) {
+        Team team = getTeamForManager(managerId);
+        if (team == null)
+            return List.of();
+        List<User> members = getTeamMembers(team);
+        if (members.isEmpty())
+            return List.of();
+
+        List<Object[]> raw = expenseRepository.findHeatmapByTeamAndMonth(members, month, year);
+        return raw.stream().map(r -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("day", r[0]);
+            map.put("totalSpend", r[1]);
+            return map;
+        }).toList();
+    }
+
+    /**
+     * Feature 7: Returns pending expenses sorted by calculated priority score.
+     * Score = (amount * 0.4) + (daysOverdue * 0.4) + ((100-confidence) * 0.2)
+     */
+    public List<Map<String, Object>> getPriorityExpenses(Long managerId) {
+        Team team = getTeamForManager(managerId);
+        if (team == null)
+            return List.of();
+        List<User> members = getTeamMembers(team);
+        if (members.isEmpty())
+            return List.of();
+
+        List<Expense> pending = expenseRepository
+                .findByUserInAndStatus(members, Approval_Status.PENDING, Pageable.unpaged()).getContent();
+        LocalDate now = LocalDate.now();
+
+        return pending.stream().map(e -> {
+            long daysOverdue = 0;
+            if (e.getSlaDeadAt() != null) {
+                daysOverdue = java.time.Duration.between(e.getSlaDeadAt(), now.atStartOfDay()).toDays();
+                if (daysOverdue < 0)
+                    daysOverdue = 0;
+            }
+            double riskFactor = 100 - (e.getConfidenceScore() != null ? e.getConfidenceScore() : 100);
+            double priorityScore = (e.getAmount() * 0.0001 * 40) + (daysOverdue * 5) + (riskFactor * 0.2);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("expense", e);
+            map.put("priorityScore", priorityScore);
+            return map;
+        }).sorted((a, b) -> Double.compare((Double) b.get("priorityScore"), (Double) a.get("priorityScore")))
+                .toList();
+    }
+
+    /**
+     * Feature 9: Bulk approve multiple expenses.
+     * Only for PENDING expenses < 5,000 INR.
+     */
+    @Transactional
+    public Map<String, Object> bulkApprove(List<Long> ids, Long managerId, String comment) {
+        int successCount = 0;
+        int failedCount = 0;
+        for (Long id : ids) {
+            try {
+                Expense e = expenseRepository.findById(id).orElseThrow();
+                if (e.getStatus() == Approval_Status.PENDING && e.getAmount() <= 5000) {
+                    approveExpense(id, managerId);
+                    successCount++;
+                } else {
+                    failedCount++;
+                }
+            } catch (Exception e) {
+                failedCount++;
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("successCount", successCount);
+        result.put("failedCount", failedCount);
+        return result;
+    }
+
     // ── private utils ─────────────────────────────────────────────────────────
 
     private void checkAndNotifyBudget(Team team, Long managerId) {

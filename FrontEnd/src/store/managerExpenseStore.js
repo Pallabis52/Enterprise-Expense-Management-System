@@ -165,6 +165,24 @@ const useManagerExpenseStore = create((set, get) => ({
         }
     },
 
+    // Feature 9: Bulk Approval
+    bulkApprove: async (expenseIds, comment) => {
+        set({ isLoading: true });
+        try {
+            await managerService.bulkApprove(expenseIds, comment);
+            set((state) => ({
+                expenses: state.expenses.map(exp =>
+                    expenseIds.includes(exp.id) ? { ...exp, status: 'APPROVED', approvalComment: comment } : exp
+                ),
+                isLoading: false
+            }));
+            return true;
+        } catch (error) {
+            set({ error: error.message, isLoading: false });
+            throw error;
+        }
+    },
+
     setCurrentExpense: (expense) => set({ currentExpense: expense }),
 }));
 

@@ -18,63 +18,79 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DuplicateDetectionService {
 
-    private final OllamaService ollamaService;
-    private final ExpenseRepository expenseRepository;
-    private final ObjectMapper objectMapper;
+        private final OllamaService ollamaService;
+        private final ExpenseRepository expenseRepository;
+        private final ObjectMapper objectMapper;
 
-    public CompletableFuture<AIDTOs.DuplicateDetectionResult> detectDuplicate(Expense newExpense, User user) {
-        List<Expense> recent = expenseRepository.findByUser(user).stream()
-                .limit(10)
-                .collect(Collectors.toList());
+        public CompletableFuture<AIDTOs.DuplicateDetectionResult> detectDuplicate(Expense newExpense, User user) {
+                List<Expense> exactMatches = expenseRepository.findByUser(user).stream()
+                                .filter(e -> !e.getId().equals(newExpense.getId()) &&
+                                                e.getAmount() == newExpense.getAmount() &&
+                                                e.getTitle().equalsIgnoreCase(newExpense.getTitle()) &&
+                                                e.getDate() != null && newExpense.getDate() != null &&
+                                                e.getDate().equals(newExpense.getDate()))
+                                .toList();
 
-        if (recent.isEmpty()) {
-            return CompletableFuture.completedFuture(AIDTOs.DuplicateDetectionResult.builder()
-                    .duplicate("no")
-                    .reason("No previous expenses found.")
-                    .build());
-        }
+                if (!exactMatches.isEmpty()) {
+                        return CompletableFuture.completedFuture(AIDTOs.DuplicateDetectionResult.builder()
+                                        .duplicate("yes")
+                                        .reason("Exact match found in database (Amount, Title, and Date identical).")
+                                        .build());
+                }
 
-        String recentText = recent.stream()
-                .map(e -> String.format("- %s (₹%.2f, %s, %s)", e.getTitle(), e.getAmount(), e.getDate(),
-                        e.getCategory()))
-                .collect(Collectors.joining("\n"));
+                List<Expense> recent = expenseRepository.findByUser(user).stream()
+                                .limit(10)
+                                .collect(Collectors.toList());
 
-        String prompt = String.format(
-                "Check if this new expense is a duplicate of any recent expenses.\n\n" +
-                        "New Expense: %s (₹%.2f, %s, %s)\n\n" +
-                        "Recent Expenses:\n%s\n\n" +
-                        "Return ONLY JSON: {\"duplicate\": \"yes/no\", \"reason\": \"...\"}",
-                newExpense.getTitle(), newExpense.getAmount(), newExpense.getDate(), newExpense.getCategory(),
-                recentText);
+                if (recent.isEmpty()) {
+                        return CompletableFuture.completedFuture(AIDTOs.DuplicateDetectionResult.builder()
+                                        .duplicate("no")
+                                        .reason("No previous expenses found.")
+                                        .build());
+                }
 
-        return ollamaService.ask(prompt, "duplicate-detection")
-                .thenApply(aiResponse -> {
-                    if (aiResponse.isFallback()) {
-                        return AIDTOs.DuplicateDetectionResult.builder()
-                                .duplicate("no")
-                                .reason("AI detection unavailable.")
-                                .build();
-                    }
+                String recentText = recent.stream()
+                                .map(e -> String.format("- %s (₹%.2f, %s, %s)", e.getTitle(), e.getAmount(),
+                                                e.getDate(),
+                                                e.getCategory()))
+                                .collect(Collectors.joining("\n"));
 
-                    try {
-                        String json = extractJson(aiResponse.getResult());
-                        return objectMapper.readValue(json, AIDTOs.DuplicateDetectionResult.class);
-                    } catch (Exception e) {
-                        log.error("Failed to parse duplicate detection result: {}", e.getMessage());
-                        return AIDTOs.DuplicateDetectionResult.builder()
-                                .duplicate("no")
-                                .reason("Error in detection logic.")
-                                .build();
-                    }
+                String prompt = String.format(
+                                "Check if this new expense is a duplicate of any recent expenses.\n\n" +
+                                                "New Expense: %s (₹%.2f, %s, %s)\n\n" +
+                                                "Recent Expenses:\n%s\n\n" +
+                                                "Return ONLY JSON: {\"duplicate\": \"yes/no\", \"reason\": \"...\"}",
+                                newExpense.getTitle(), newExpense.getAmount(), newExpense.getDate(),
+                                newExpense.getCategory(),
+                                recentText);
+
+                return ollamaService.ask(prompt, "duplicate-detection").thenApply(aiResponse -> {
+                        if (aiResponse.isFallback()) {
+                                return AIDTOs.DuplicateDetectionResult.builder()
+                                                .duplicate("no")
+                                                .reason("AI detection unavailable.")
+                                                .build();
+                        }
+
+                        try {
+                                String json = extractJson(aiResponse.getResult());
+                                return objectMapper.readValue(json, AIDTOs.DuplicateDetectionResult.class);
+                        } catch (Exception e) {
+                                log.error("Failed to parse duplicate detection result: {}", e.getMessage());
+                                return AIDTOs.DuplicateDetectionResult.builder()
+                                                .duplicate("no")
+                                                .reason("Error in detection logic.")
+                                                .build();
+                        }
                 });
-    }
-
-    private String extractJson(String text) {
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            return text.substring(start, end + 1);
         }
-        return text;
-    }
+
+        private String extractJson(String text) {
+                int start = text.indexOf('{');
+                int end = text.lastIndexOf('}');
+                if (start >= 0 && end > start) {
+                        return text.substring(start, end + 1);
+                }
+                return text;
+        }
 }

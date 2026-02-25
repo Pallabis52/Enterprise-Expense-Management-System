@@ -175,8 +175,8 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                                         <XCircleIcon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-tight">Executive Threshold Exceeded</p>
-                                        <p className="text-xs text-rose-500 mt-0.5 font-medium leading-relaxed opacity-80">Requires direct Admin approval. Forwarding action mandatory.</p>
+                                        <p className="text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-tight">Requires Admin Approval</p>
+                                        <p className="text-xs text-rose-500 mt-0.5 font-medium leading-relaxed opacity-80">Amount is too high for manager approval. Must be forwarded to Admin.</p>
                                     </div>
                                 </div>
                             )}
@@ -187,8 +187,8 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                                         <ArrowUpTrayIcon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-amber-600 dark:text-amber-400 uppercase tracking-tight">Escalation Required</p>
-                                        <p className="text-xs text-amber-500 mt-0.5 font-medium leading-relaxed opacity-80">Amount exceeds manager authority (₹10,001–₹50,000).</p>
+                                        <p className="text-sm font-black text-amber-600 dark:text-amber-400 uppercase tracking-tight">Forwarding Required</p>
+                                        <p className="text-xs text-amber-500 mt-0.5 font-medium leading-relaxed opacity-80">Amount exceeds manager limit (₹10,001–₹50,000). Please forward to Admin.</p>
                                     </div>
                                 </div>
                             )}
@@ -199,8 +199,8 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                                         <ExclamationTriangleIcon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-tight">Duplicate Pattern Detected</p>
-                                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5 font-medium leading-relaxed">Risk analysis identifies high similarity to existing records.</p>
+                                        <p className="text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-tight">Possible Duplicate</p>
+                                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5 font-medium leading-relaxed">This expense looks similar to an existing record. Please verify.</p>
                                     </div>
                                 </div>
                             )}
@@ -234,7 +234,7 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
 
                 {/* ── Personnel Card ── */}
                 <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Operational Representative</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Submitted By</label>
                     <div className="p-6 bg-white dark:bg-slate-900/40 rounded-[24px] border border-slate-200 dark:border-white/10 flex items-center gap-5 group hover:border-indigo-500/30 transition-all duration-500">
                         <div className="relative">
                             <div className="absolute -inset-1.5 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur opacity-20 group-hover:opacity-40 transition" />
@@ -282,11 +282,11 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">
                         <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" />
-                        Executive Brief
+                        Description
                     </div>
                     <div className="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-[24px] border border-slate-100 dark:border-white/5">
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                            "{expense.description || 'No detailed brief provided for this transaction.'}"
+                            "{expense.description || 'No description provided.'}"
                         </p>
                     </div>
 
@@ -294,7 +294,7 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                         <div className="p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-[24px] space-y-2">
                             <div className="flex items-center gap-2 text-[10px] text-indigo-500 font-black uppercase tracking-widest">
                                 <ArrowUpTrayIcon className="w-3.5 h-3.5" />
-                                Escalation Records
+                                Approval Notes
                             </div>
                             <p className="text-sm text-indigo-900 dark:text-indigo-200 font-medium leading-relaxed">{expense.approvalComment}</p>
                         </div>

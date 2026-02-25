@@ -114,4 +114,32 @@ public class ManagerController {
         return ResponseEntity.ok(managerService.getManagerDashboard(manager.getId()));
     }
 
+    // Feature 7: Priority Approvals
+    @GetMapping("/team/expenses/priority")
+    public ResponseEntity<List<Map<String, Object>>> getPriorityExpenses(Authentication authentication) {
+        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        return ResponseEntity.ok(managerService.getPriorityExpenses(manager.getId()));
+    }
+
+    // Feature 8: Team Spending Heatmap
+    @GetMapping("/team/heatmap")
+    public ResponseEntity<List<Map<String, Object>>> getTeamHeatmap(
+            Authentication authentication,
+            @RequestParam int month,
+            @RequestParam int year) {
+        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        return ResponseEntity.ok(managerService.getTeamHeatmap(manager.getId(), month, year));
+    }
+
+    // Feature 9: Bulk Approval
+    @PostMapping("/expenses/bulk-approve")
+    public ResponseEntity<Map<String, Object>> bulkApprove(
+            Authentication authentication,
+            @RequestBody Map<String, Object> body) {
+        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        List<Long> ids = (List<Long>) body.get("expenseIds");
+        String comment = (String) body.getOrDefault("comment", "Bulk approval");
+        return ResponseEntity.ok(managerService.bulkApprove(ids, manager.getId(), comment));
+    }
+
 }

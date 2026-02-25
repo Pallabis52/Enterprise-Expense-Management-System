@@ -9,7 +9,6 @@ import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
 import useTheme from '../../hooks/useTheme';
 import NotificationBell from '../notifications/NotificationBell';
-import UnifiedSearchBar from '../ui/UnifiedSearchBar';
 import { useNavigate } from 'react-router-dom';
 import useManagerExpenseStore from '../../store/managerExpenseStore';
 import useAdminExpenseStore from '../../store/adminExpenseStore';
@@ -20,16 +19,6 @@ const ManagerNavbar = ({ onMenuClick }) => {
     const navigate = useNavigate();
     const { setExpenses: setManagerExpenses } = useManagerExpenseStore();
     const { setExpenses: setAdminExpenses } = useAdminExpenseStore();
-
-    const handleSearchResults = (results, mode, query) => {
-        if (user?.role === 'ADMIN') {
-            setAdminExpenses(results);
-            navigate('/admin/expenses');
-        } else {
-            setManagerExpenses(results);
-            navigate('/manager/expenses');
-        }
-    };
 
     return (
         <header className="sticky top-0 z-40 w-full bg-white/60 dark:bg-slate-950/60 backdrop-blur-3xl border-b border-gray-100 dark:border-white/5 transition-all duration-500">
@@ -48,11 +37,6 @@ const ManagerNavbar = ({ onMenuClick }) => {
                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1">Navigation</span>
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Control Overview</h2>
                     </div>
-                </div>
-
-                {/* Center / Right: Search Bar Integration */}
-                <div className="hidden md:block flex-1 max-w-2xl px-12">
-                    <UnifiedSearchBar onResults={handleSearchResults} />
                 </div>
 
                 {/* Right Side: Global Actions & Profile */}

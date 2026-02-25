@@ -53,4 +53,24 @@ public class AIDTOs {
         private String decision; // "APPROVE" or "REJECT"
         private String reason;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class MoodInsight {
+        private String mood; // stress | routine | celebration | urgent | unknown
+        private String explanation;
+        private String suggestion;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ConfidenceScoreResult {
+        private int score; // 0-100
+        private String riskLevel; // High | Medium | Low
+        private String breakdown;
+    }
 }

@@ -56,10 +56,10 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay }}
-            className="relative group"
+            className="relative group h-full"
         >
             <div className={`absolute -inset-1 bg-gradient-to-r ${color === 'primary' ? 'from-indigo-500 to-purple-500' : color === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-amber-500 to-orange-500'} rounded-[32px] blur opacity-0 group-hover:opacity-20 transition duration-1000`} />
-            <div className="relative bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[32px] p-8 border border-white/60 dark:border-white/10 shadow-xl overflow-hidden">
+            <div className="relative h-full flex flex-col justify-between bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[32px] p-8 border border-white/60 dark:border-white/10 shadow-xl overflow-hidden">
                 <div className="flex justify-between items-start relative z-10">
                     <div>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{title}</p>
@@ -74,54 +74,66 @@ const Reports = () => {
                         <Icon className="w-6 h-6" />
                     </div>
                 </div>
-                {trend && (
-                    <div className="mt-6 flex items-center gap-2 relative z-10">
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                            <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
-                            {trend}
-                        </div>
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Growth Vector</span>
-                    </div>
-                )}
+
+                {/* Always render trend row — keeps all cards the same height */}
+                <div className="mt-6 flex items-center gap-2 relative z-10 min-h-[28px]">
+                    {trend ? (
+                        <>
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                                <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
+                                {trend}
+                            </div>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">vs last month</span>
+                        </>
+                    ) : (
+                        <span className="text-transparent select-none text-[10px]">—</span>
+                    )}
+                </div>
+
                 <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
             </div>
         </motion.div>
     );
 
+
     return (
         <PageTransition>
             <div className="max-w-7xl mx-auto space-y-12 pb-24 px-4 sm:px-6">
 
-                {/* ── Global Matrix Header ── */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 py-4">
-                    <div className="space-y-4">
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-5"
-                        >
-                            <div className="p-5 rounded-[24px] bg-slate-900 dark:bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20">
-                                <GlobeAltIcon className="w-10 h-10" />
-                            </div>
-                            <div>
-                                <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Global Matrix</h1>
-                                <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.3em] mt-4 flex items-center gap-2">
-                                    <CpuChipIcon className="w-4 h-4" />
-                                    System-Wide Analytical Telemetry
-                                </p>
-                            </div>
-                        </motion.div>
-                    </div>
+                {/* ── Header + Filters (title left | filters right) ── */}
+                <div className="flex items-center justify-between gap-6 py-4 flex-wrap">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-5"
+                    >
+                        <div className="p-5 rounded-[24px] bg-slate-900 dark:bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20">
+                            <GlobeAltIcon className="w-10 h-10" />
+                        </div>
+                        <div>
+                            <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Reports</h1>
+                            <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.3em] mt-4 flex items-center gap-2">
+                                <CpuChipIcon className="w-4 h-4" />
+                                System-Wide Analytics
+                            </p>
+                        </div>
+                    </motion.div>
 
-                    <div className="flex items-center gap-4">
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
                         <ReportFilters filters={filters} onChange={setFilters} />
-                    </div>
+                    </motion.div>
                 </div>
+
+
 
                 {/* KPI Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <KPICard
-                        title="Aggregate Expenditure"
+                        title="Total Expenses"
                         value={formatCurrency(stats?.totalExpense || 0)}
                         icon={BanknotesIcon}
                         trend="+12.5%"
@@ -129,14 +141,14 @@ const Reports = () => {
                         delay={0.1}
                     />
                     <KPICard
-                        title="Mean Monthly Volume"
+                        title="Avg Monthly Spend"
                         value={formatCurrency(stats?.avgMonthly || 0)}
                         icon={ArrowTrendingUpIcon}
                         color="emerald"
                         delay={0.2}
                     />
                     <KPICard
-                        title="Dominant Category"
+                        title="Top Category"
                         value={stats?.topCategory || "N/A"}
                         icon={ChartPieIcon}
                         color="amber"
@@ -160,7 +172,7 @@ const Reports = () => {
                                 <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-500">
                                     <PresentationChartLineIcon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Volume Trajectory</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Monthly Spend</h3>
                             </div>
                             <div className="h-[350px]">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -212,7 +224,7 @@ const Reports = () => {
                                 <div className="p-3 rounded-xl bg-purple-500/10 text-purple-500">
                                     <ChartPieIcon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Sector Integrity</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">By Category</h3>
                             </div>
                             <div className="h-[300px] relative">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -236,7 +248,7 @@ const Reports = () => {
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="text-center">
-                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Network Integrity</p>
+                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Coverage</p>
                                         <p className="text-3xl font-black text-emerald-500 mt-1">OPTIMIZED</p>
                                     </div>
                                 </div>

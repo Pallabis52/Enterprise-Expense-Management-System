@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import useAdminExpenseStore from '../../../store/adminExpenseStore';
 import CustomDropdown from '../../../components/ui/CustomDropdown';
+import DatePicker from '../../../components/ui/DatePicker';
 
 const ExpenseFilters = ({ filters, onChange }) => {
     const STATUS_OPTIONS = useMemo(() => [
@@ -49,20 +50,24 @@ const ExpenseFilters = ({ filters, onChange }) => {
 
                     {/* Date Range Section */}
                     <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-[0.2em] mb-1">Date</span>
-                        <div className="flex items-center gap-2 bg-gray-100/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-1 px-3 rounded-[14px]">
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-[10px] focus:ring-0 text-gray-700 dark:text-gray-200 font-black uppercase"
-                                value={filters.startDate || ''}
-                                onChange={(e) => handleChange('startDate', e.target.value)}
+                        <span className="text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-[0.2em] mb-1">Date Range</span>
+                        <div className="flex items-center gap-3 bg-gray-100/50 dark:bg-gray-900/50 p-1 px-1 rounded-[18px] border border-gray-200 dark:border-white/5 shadow-inner">
+                            <DatePicker
+                                value={filters.startDate}
+                                onChange={(val) => handleChange('startDate', val)}
+                                placeholder="Start Date"
+                                className="min-w-[140px]"
                             />
-                            <span className="text-gray-400 text-[9px] font-black">TO</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-[10px] focus:ring-0 text-gray-700 dark:text-gray-200 font-black uppercase"
-                                value={filters.endDate || ''}
-                                onChange={(e) => handleChange('endDate', e.target.value)}
+                            <div className="flex flex-col items-center justify-center opacity-30">
+                                <div className="h-2 w-[1px] bg-gray-400"></div>
+                                <span className="text-[8px] font-black italic">TO</span>
+                                <div className="h-2 w-[1px] bg-gray-400"></div>
+                            </div>
+                            <DatePicker
+                                value={filters.endDate}
+                                onChange={(val) => handleChange('endDate', val)}
+                                placeholder="End Date"
+                                className="min-w-[140px]"
                             />
                         </div>
                     </div>
@@ -73,12 +78,13 @@ const ExpenseFilters = ({ filters, onChange }) => {
                 {/* Search - Right Side */}
                 <div className="w-full xl:w-[500px] p-1">
                     <div className="flex flex-col mb-1 px-1">
-                        <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] xl:text-right">Global Neural Search Engine</span>
+                        <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] xl:text-right">Search</span>
                     </div>
                     <UnifiedSearchBar
                         onResults={handleSearchResults}
-                        placeholder="Search by user, expense, or semantic query..."
+                        placeholder="Search by user, expense, or date..."
                     />
+
                 </div>
             </div>
         </div>

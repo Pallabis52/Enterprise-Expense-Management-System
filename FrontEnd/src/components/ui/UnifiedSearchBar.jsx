@@ -243,18 +243,21 @@ const UnifiedSearchBar = ({
                     </motion.button>
                 </div>
 
-                <div className="relative flex-1">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={placeholder}
-                        autoComplete="off"
-                        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 font-medium"
-                        onKeyDown={(e) => e.key === 'Enter' && handleNormalSearch()}
-                    />
-                </div>
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={isSearching ? "Neural scan in progress..." : placeholder}
+                    autoComplete="off"
+                    className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 font-medium transition-all"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            if (e.shiftKey) handleAISearch();
+                            else handleNormalSearch();
+                        }
+                    }}
+                />
 
                 <AnimatePresence>
                     {query && (

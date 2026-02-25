@@ -64,4 +64,48 @@ public class Expense {
     /** System-flagged as a potential duplicate expense */
     @jakarta.persistence.Column(columnDefinition = "boolean default false")
     private boolean isDuplicate = false;
+
+    // ── Phase 1 additions (all backward-safe with defaults) ────────────────
+
+    /** Draft mode: saved but not submitted */
+    @jakarta.persistence.Column(columnDefinition = "boolean default false")
+    private boolean draft = false;
+
+    /** Vendor / merchant name (for vendor analytics & fraud) */
+    private String vendorName;
+
+    /** AI-computed risk/confidence score 0–100 */
+    @jakarta.persistence.Column(columnDefinition = "float8 default 0")
+    private Double confidenceScore = 0.0;
+
+    /** SLA deadline for manager approval */
+    private java.time.LocalDateTime slaDeadAt;
+
+    @jakarta.persistence.Column(columnDefinition = "boolean default false")
+    private boolean overdue = false;
+
+    // Explicit Getters/Setters for newly added fields to ensure visibility
+    public String getVendorName() {
+        return vendorName;
+    }
+
+    public void setVendorName(String vendorName) {
+        this.vendorName = vendorName;
+    }
+
+    public Double getConfidenceScore() {
+        return confidenceScore != null ? confidenceScore : 0.0;
+    }
+
+    public void setConfidenceScore(Double confidenceScore) {
+        this.confidenceScore = confidenceScore;
+    }
+
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
+    }
 }

@@ -57,6 +57,19 @@ const useCategoryStore = create((set, get) => ({
             set({ error: error.message });
             return false;
         }
+    },
+
+    toggleCategory: async (id) => {
+        try {
+            const updated = await categoryService.toggleCategoryStatus(id);
+            set((state) => ({
+                categories: state.categories.map(cat => cat.id === id ? updated : cat)
+            }));
+            return true;
+        } catch (error) {
+            set({ error: error.message });
+            return false;
+        }
     }
 }));
 

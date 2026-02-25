@@ -35,4 +35,9 @@ public class CategoryController {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok().build();
     }
+
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<Category> toggleCategory(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.toggleCategoryActive(id));
+    }
 }

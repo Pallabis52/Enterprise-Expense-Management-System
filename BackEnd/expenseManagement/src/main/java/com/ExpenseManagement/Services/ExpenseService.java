@@ -40,4 +40,8 @@ public interface ExpenseService {
         public com.expensemanagement.Entities.Expense rejectExpense(Long id, String role);
 
         public List<Expense> searchExpenses(String query, com.expensemanagement.Entities.User user);
+
+        public Expense saveDraft(Expense expense);
+
+        public Expense submitDraft(Long id);
 }

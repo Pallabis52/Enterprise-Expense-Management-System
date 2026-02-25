@@ -39,6 +39,8 @@ public class ExpenseController {
     private final com.expensemanagement.Repository.UserRepository userRepository;
     private final com.expensemanagement.Repository.ExpenseRepository expenseRepository;
     private final com.expensemanagement.Services.UserService userService;
+    private final com.expensemanagement.Services.CategorySuggestionService categorySuggestionService;
+    private final com.expensemanagement.Services.ExpenseSplitService expenseSplitService;
 
     // --- Receipt Upload & Viewing ---
 
@@ -134,6 +136,42 @@ public class ExpenseController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + file.getFilename() + "\"")
                 .body(file);
+    }
+
+    // localhost:8080/api/expenses/draft
+    @Operation(summary = "Save expense as draft")
+    @PostMapping("/draft")
+    public ResponseEntity<?> saveDraft(@RequestBody Expense expense) {
+        Expense saved = expenseService.saveDraft(expense);
+        return ResponseEntity.ok(saved);
+    }
+
+    // localhost:8080/api/expenses/{id}/submit
+    @Operation(summary = "Submit a draft expense")
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<?> submitDraft(@PathVariable Long id) {
+        Expense submitted = expenseService.submitDraft(id);
+        return ResponseEntity.ok(submitted);
+    }
+
+    // localhost:8080/api/expenses/suggest-categories
+    @Operation(summary = "Get category suggestions based on history")
+    @GetMapping("/suggest-categories")
+    public ResponseEntity<?> suggestCategories(@RequestParam(required = false) String title,
+            org.springframework.security.core.Authentication auth) {
+        com.expensemanagement.Entities.User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+        return ResponseEntity.ok(categorySuggestionService.suggestCategories(user, title));
+    }
+
+    // localhost:8080/api/expenses/{id}/split
+    @Operation(summary = "Split an expense with other users")
+    @PostMapping("/{id}/split")
+    public ResponseEntity<?> splitExpense(@PathVariable Long id,
+            @RequestBody List<com.expensemanagement.Services.ExpenseSplitService.UserAmount> splits) {
+        Expense expense = expenseService.getById(id);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(expenseSplitService.splitExpense(expense, splits));
     }
 
     // localhost:8080/expense/add

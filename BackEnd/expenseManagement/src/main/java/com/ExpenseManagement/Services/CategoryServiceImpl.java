@@ -20,6 +20,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category createCategory(Category category) {
+        category.setActive(true);
         return categoryRepository.save(category);
     }
 
@@ -43,5 +44,13 @@ public class CategoryServiceImpl implements CategoryService {
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
+    @Override
+    public Category toggleCategoryActive(Long id) {
+        return categoryRepository.findById(id).map(existing -> {
+            existing.setActive(!existing.isActive());
+            return categoryRepository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("Category not found"));
     }
 }

@@ -39,14 +39,14 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
         <Drawer
             isOpen={isOpen}
             onClose={onClose}
-            title="Strategic Expense Review"
+            title="Expense Review"
             footer={
                 currentStatus === 'PENDING' && (
                     <div className="p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border-t border-white/20 dark:border-gray-700/30">
                         {isRejecting ? (
                             <div className="w-full flex gap-3 animate-in slide-in-from-bottom-4">
                                 <Button variant="ghost" onClick={() => setIsRejecting(false)} className="flex-1 rounded-2xl">
-                                    Abort
+                                    Cancel
                                 </Button>
                                 <Button variant="danger" onClick={handleReject} className="flex-1 rounded-2xl shadow-lg shadow-red-500/20">
                                     Confirm Rejection
@@ -65,7 +65,7 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                                     className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-primary-600 hover:from-emerald-400 hover:to-primary-500 text-white shadow-xl shadow-primary-500/25 border-none transform active:scale-95 transition-all text-xs font-black tracking-widest uppercase"
                                     onClick={handleApprove}
                                 >
-                                    Authorize Flow
+                                    Approve
                                 </Button>
                             </div>
                         )}
@@ -101,7 +101,7 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                 {/* Submitter Operative Card */}
                 <div className="p-6 rounded-[2rem] bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-xl">
                     <h4 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 px-1">
-                        Originating Operative
+                        Submitted By
                     </h4>
                     <div className="flex items-center gap-4">
                         <div className="relative">
@@ -134,10 +134,10 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                     <div>
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
-                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Transaction Abstract</label>
+                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Description</label>
                         </div>
                         <p className="text-gray-700 dark:text-gray-300 text-sm font-medium leading-relaxed italic border-l-2 border-gray-100 dark:border-gray-800 pl-4 py-1">
-                            "{expense.description || "No tactical description provided."}"
+                            "{expense.description || "No description provided."}"
                         </p>
                     </div>
 
@@ -145,7 +145,7 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                         <div className="group/artifact">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="w-1 h-4 bg-accent-500 rounded-full"></div>
-                                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Verified Digital Artifact</label>
+                                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Receipt</label>
                             </div>
                             <button
                                 className="w-full group relative overflow-hidden p-4 rounded-3xl bg-gray-900/5 dark:bg-white/5 border border-gray-100 dark:border-gray-800 transition-all hover:bg-gray-900/10 dark:hover:bg-white/10 flex items-center justify-between"
@@ -165,8 +165,8 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                                         </svg>
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-sm font-black text-gray-900 dark:text-white">receipt_v1.artifact</p>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Binary Integrity Verified</p>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white">receipt.pdf</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">View receipt</p>
                                     </div>
                                 </div>
                                 <div className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -183,12 +183,12 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                 {isRejecting && (
                     <div className="animate-in zoom-in-95 duration-300 p-6 rounded-[2rem] bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 shadow-2xl shadow-red-500/10">
                         <label className="block text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-3 px-1">
-                            Rejection Justification Required
+                            Reason for Rejection
                         </label>
                         <textarea
                             rows={3}
                             className="w-full rounded-2xl border-red-200 dark:border-red-900/50 focus:ring-red-500 focus:border-red-500 dark:bg-gray-900/50 text-gray-900 dark:text-white px-4 py-3 outline-none transition-all resize-none font-medium text-sm"
-                            placeholder="Detail why this entry was aborted..."
+                            placeholder="Enter reason for rejection..."
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                         />

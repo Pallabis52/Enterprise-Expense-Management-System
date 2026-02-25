@@ -145,7 +145,7 @@ const ManagerDashboard = () => {
                             className="flex items-center gap-3 mb-4 justify-center md:justify-start"
                         >
                             <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em]">
-                                Strategic Intelligence Layer
+                                Manager Dashboard
                             </div>
                         </motion.div>
                         <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4 leading-[0.9]">

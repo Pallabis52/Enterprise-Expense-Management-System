@@ -28,6 +28,7 @@ public class VoiceCommandController {
 
         private final VoiceIntentService voiceIntentService;
         private final UserService userService;
+        private final VoiceApprovalService voiceApprovalService;
 
         /**
          * Main voice command endpoint.
@@ -87,6 +88,21 @@ public class VoiceCommandController {
                                                         .processingMs(0)
                                                         .build()));
                 }
+        }
+
+        /**
+         * Manager Voice Approval/Rejection.
+         * Only accessible by ROLE_MANAGER.
+         */
+        @PostMapping("/manager-action")
+        @org.springframework.security.access.prepost.PreAuthorize("hasRole('MANAGER')")
+        public ResponseEntity<Map<String, String>> managerAction(
+                        @RequestBody Map<String, String> body,
+                        Authentication auth) {
+                String text = body.getOrDefault("text", "");
+                User user = userService.getUserByEmail(auth.getName());
+                String reply = voiceApprovalService.processManagerAction(text, user);
+                return ResponseEntity.ok(Map.of("reply", reply));
         }
 
         /**

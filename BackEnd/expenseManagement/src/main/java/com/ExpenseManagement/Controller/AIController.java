@@ -41,6 +41,8 @@ public class AIController {
         private final UserRepository userRepository;
         private final ManagerService managerService;
         private final TeamBudgetService teamBudgetService;
+        private final MoodInsightService moodInsightService;
+        private final ConfidenceScoreService confidenceScoreService;
 
         // ── Auth & Status ────────────────────────────────────────────────────────
 
@@ -140,7 +142,7 @@ public class AIController {
         // ── Manager Features ─────────────────────────────────────────────────────
 
         @GetMapping("/recommendation/{expenseId}")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
         public CompletableFuture<ResponseEntity<AIResponse>> getRecommendation(
                         @PathVariable Long expenseId, Authentication auth) {
                 User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
@@ -151,7 +153,7 @@ public class AIController {
         }
 
         @GetMapping("/risk-score/{expenseId}")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
         public CompletableFuture<ResponseEntity<AIResponse>> riskScore(
                         @PathVariable Long expenseId, Authentication auth) {
                 User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
@@ -162,7 +164,7 @@ public class AIController {
         }
 
         @GetMapping("/team-summary")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
         public CompletableFuture<ResponseEntity<AIResponse>> teamSummary(Authentication auth) {
                 User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
                 com.expensemanagement.Entities.Team team = managerService.getTeam(manager.getId());
@@ -235,5 +237,27 @@ public class AIController {
                 java.time.LocalDate now = java.time.LocalDate.now();
                 List<Expense> all = expenseRepository.findByMonthAndYear(now.getMonthValue(), now.getYear());
                 return aiFacade.auditSummary(all).thenApply(ResponseEntity::ok);
+        }
+
+        // ── Phase 9: Advanced Insights ──────────────────────────────────────────
+
+        @GetMapping("/mood-insight/{expenseId}")
+        @PreAuthorize("isAuthenticated()")
+        public CompletableFuture<ResponseEntity<AIDTOs.MoodInsight>> getMoodInsight(
+                        @PathVariable Long expenseId, Authentication auth) {
+                User user = userService.getUserByEmail(auth.getName());
+                Expense expense = expenseRepository.findById(expenseId).orElse(null);
+                if (expense == null)
+                        return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                return moodInsightService.analyzeExpense(expense, user).thenApply(ResponseEntity::ok);
+        }
+
+        @GetMapping("/confidence-score/{expenseId}")
+        @PreAuthorize("isAuthenticated()")
+        public ResponseEntity<AIDTOs.ConfidenceScoreResult> getConfidenceScore(@PathVariable Long expenseId) {
+                Expense expense = expenseRepository.findById(expenseId).orElse(null);
+                if (expense == null)
+                        return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(confidenceScoreService.calculateScore(expense));
         }
 }

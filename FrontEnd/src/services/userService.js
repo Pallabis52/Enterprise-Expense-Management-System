@@ -23,7 +23,22 @@ const userService = {
     },
 
     deleteExpense: async (id) => {
-        await api.delete(`/user/expenses/${id}`);
+        await api.delete(`/expenses/delete/${id}`);
+    },
+
+    saveDraft: async (expenseData) => {
+        const response = await api.post('/expenses/draft', expenseData);
+        return response.data;
+    },
+
+    submitDraft: async (id) => {
+        const response = await api.post(`/expenses/${id}/submit`);
+        return response.data;
+    },
+
+    suggestCategories: async (title) => {
+        const response = await api.get('/expenses/suggest-categories', { params: { title } });
+        return response.data;
     },
 
     searchExpenses: async (query) => {

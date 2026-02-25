@@ -85,14 +85,10 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSubmit(formData, receiptFile);
+    const handleSubmit = (e, isDraft = false) => {
+        if (e) e.preventDefault();
+        onSubmit(formData, receiptFile, isDraft);
     };
-
-
-
-    // const categories = ['Food', 'Travel', 'Medical', 'Office', 'Entertainment', 'Others'];
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
@@ -122,7 +118,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                    <form onSubmit={(e) => handleSubmit(e, false)} className="px-8 pb-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
                         {!initialData && (
                             <div className="relative p-6 rounded-3xl bg-gradient-to-br from-primary-500/5 to-accent-600/5 border border-dashed border-primary-500/20 flex flex-col items-center gap-3 group/voice transition-all duration-300 hover:bg-primary-500/10">
                                 <div className="absolute inset-0 bg-white/40 dark:bg-black/10 backdrop-blur-[2px] rounded-3xl -z-10"></div>
@@ -240,6 +236,15 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                         </div>
 
                         <div className="flex gap-4 pt-4">
+                            {!initialData && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleSubmit(null, true)}
+                                    className="flex-1 py-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all tracking-widest uppercase"
+                                >
+                                    Draft
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={onClose}

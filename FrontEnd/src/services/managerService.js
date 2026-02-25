@@ -51,6 +51,11 @@ const managerService = {
         return response.data;
     },
 
+    bulkApprove: async (expenseIds, comment = 'Bulk approval') => {
+        const response = await api.post('/manager/expenses/bulk-approve', { expenseIds, comment });
+        return response.data;
+    },
+
     // Feature 7: Manager dashboard
     getDashboard: async () => {
         const response = await api.get('/manager/dashboard');

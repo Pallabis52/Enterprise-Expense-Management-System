@@ -18,7 +18,8 @@ import {
     UserCircleIcon,
     ShieldCheckIcon,
     MagnifyingGlassIcon,
-    CircleStackIcon
+    CircleStackIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 import { formatCurrency } from '../../../utils/helpers';
 import VoiceButton from '../../../components/ui/VoiceButton';
@@ -28,6 +29,7 @@ import UnifiedSearchBar from '../../../components/ui/UnifiedSearchBar';
 import ExpenseApprovalDrawer from './ExpenseApprovalDrawer';
 import { cn } from '../../../utils/helpers';
 import PageTransition from '../../../components/layout/PageTransition';
+import { premiumConfirm, premiumSuccess, premiumError } from '../../../utils/premiumAlerts';
 
 const statusConfig = {
     'APPROVED': { variant: 'success', icon: CheckCircleIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -48,16 +50,20 @@ const ManagerExpenseList = () => {
     const {
         expenses,
         loading,
+        isLoading,
         pagination,
         dashboard,
         fetchExpenses,
         fetchDashboard,
         setCurrentExpense,
         setExpenses,
+        bulkApprove,
     } = useManagerExpenseStore();
 
     const [status, setStatus] = useState('');
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
 
     useEffect(() => {
         fetchExpenses({ status: status || undefined, page: 1 });
@@ -66,6 +72,12 @@ const ManagerExpenseList = () => {
 
     const handleSearchResults = (results) => {
         setExpenses(results);
+        setIsSearchMode(true);
+    };
+
+    const handleClearSearch = () => {
+        setIsSearchMode(false);
+        fetchExpenses({ status: status || undefined, page: 1 });
     };
 
     const handleRowClick = expense => {
@@ -82,6 +94,39 @@ const ManagerExpenseList = () => {
             window.open(url, '_blank');
         } catch (error) {
             console.error('Failed to view receipt', error);
+        }
+    };
+
+    const handleToggleSelect = (e, id) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (selectedIds.length === expenses.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(expenses.map(exp => exp.id));
+        }
+    };
+
+    const handleBulkApprove = async () => {
+        const result = await premiumConfirm(
+            'Bulk Approval',
+            `Are you sure you want to approve ${selectedIds.length} selected expenses?`,
+            'Approve All'
+        );
+
+        if (result.isConfirmed) {
+            try {
+                await bulkApprove(selectedIds, 'Bulk approved via Manager Control Center');
+                premiumSuccess('Approved!', `${selectedIds.length} expenses have been approved.`);
+                setSelectedIds([]);
+            } catch (error) {
+                premiumError('Bulk Action Failed', error.message);
+            }
         }
     };
 
@@ -107,10 +152,10 @@ const ManagerExpenseList = () => {
                                         <ExclamationTriangleIcon className="w-8 h-8" />
                                     </div>
                                     <div className="flex-1 space-y-1">
-                                        <h4 className="text-lg font-black uppercase tracking-tighter">Budget Protocol Violation</h4>
+                                        <h4 className="text-lg font-black uppercase tracking-tighter">Budget Exceeded</h4>
                                         <p className="text-xs font-bold uppercase tracking-widest opacity-70">
-                                            Squad has utilized {formatCurrency(dashboard?.budget?.spent)} of {formatCurrency(dashboard?.budget?.budget)} allocation.
-                                            Global Admin intervention required for further asset distribution.
+                                            Team has used {formatCurrency(dashboard?.budget?.spent)} of {formatCurrency(dashboard?.budget?.budget)} budget.
+                                            Admin approval required for more spending.
                                         </p>
                                     </div>
                                 </div>
@@ -123,10 +168,10 @@ const ManagerExpenseList = () => {
                 <div className="relative pt-8">
                     <div className="flex flex-col xl:flex-row items-center gap-8 justify-between">
                         <div className="space-y-4 text-center xl:text-left">
-                            <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Command Center</h1>
+                            <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Expenses</h1>
                             <p className="text-[11px] text-emerald-500 font-black uppercase tracking-[0.4em] mt-4 flex items-center justify-center xl:justify-start gap-3">
                                 <ShieldCheckIcon className="w-4 h-4" />
-                                Operational Vigilance Interface
+                                Expense Management
                             </p>
                         </div>
 
@@ -158,7 +203,7 @@ const ManagerExpenseList = () => {
                             {/* Status Orbital Filter */}
                             <div className="flex items-center gap-6 pl-4 border-r border-slate-200 dark:border-slate-800 pr-8">
                                 <div className="space-y-2">
-                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em] pl-1">Audit Protocol</span>
+                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em] pl-1">Status</span>
                                     <div className="min-w-[180px] relative">
                                         <CustomDropdown
                                             options={STATUS_OPTIONS}
@@ -169,7 +214,7 @@ const ManagerExpenseList = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-[0.3em] pl-1">Registry</span>
+                                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-[0.3em] pl-1">Count</span>
                                     <div className="flex items-center gap-3">
                                         <div className="px-4 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 text-xs font-black">
                                             {expenses?.length || 0}
@@ -178,13 +223,28 @@ const ManagerExpenseList = () => {
                                 </div>
                             </div>
 
-                            {/* Neural Search */}
+                            {/* Smart Search */}
                             <div className="flex-1 w-full lg:w-auto">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] pl-3 mb-2 block">Manager Intelligence Hub</span>
+                                <div className="flex items-center justify-between pl-3 mb-2">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Search</span>
+                                    {isSearchMode && (
+                                        <button
+                                            onClick={handleClearSearch}
+                                            className="flex items-center gap-1 text-[9px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest transition-all"
+                                        >
+                                            <XMarkIcon className="w-3 h-3" /> Clear
+                                        </button>
+                                    )}
+                                </div>
                                 <UnifiedSearchBar
                                     onResults={handleSearchResults}
-                                    placeholder="Trace employee, entity ID, or pattern..."
+                                    placeholder="Search by employee, amount, or category..."
                                 />
+                                {isSearchMode && (
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-2 pl-3">
+                                        {expenses?.length || 0} result{(expenses?.length || 0) !== 1 ? 's' : ''} found
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </motion.div>
@@ -199,10 +259,10 @@ const ManagerExpenseList = () => {
                             className="grid grid-cols-2 md:grid-cols-4 gap-6"
                         >
                             {[
-                                { label: 'Pending Audit', value: dashboard.pendingCount, icon: ClockIcon, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                                { label: 'Escalated', value: dashboard.forwardedCount, icon: ArrowRightCircleIcon, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                                { label: 'Flagged Assets', value: dashboard.flaggedCount, icon: ExclamationTriangleIcon, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                                { label: 'Total Volume', value: formatCurrency(dashboard.monthlySpend), icon: BanknotesIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                                { label: 'Pending Review', value: dashboard.pendingCount, icon: ClockIcon, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                                { label: 'Forwarded to Admin', value: dashboard.forwardedCount, icon: ArrowRightCircleIcon, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                                { label: 'Flagged', value: dashboard.flaggedCount, icon: ExclamationTriangleIcon, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                                { label: 'Total Spend', value: formatCurrency(dashboard.monthlySpend), icon: BanknotesIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                             ].map((stat, i) => (
                                 <motion.div
                                     key={stat.label}
@@ -223,19 +283,46 @@ const ManagerExpenseList = () => {
 
                 {/* ── Registry Modules (List) ── */}
                 <div className="space-y-6">
+                    <div className="flex items-center justify-between px-6 mb-4">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={handleSelectAll}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                                <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                    selectedIds.length === (expenses?.length || 0) && selectedIds.length > 0
+                                        ? "bg-emerald-500 border-emerald-500"
+                                        : "border-slate-300 dark:border-slate-600"
+                                )}>
+                                    {selectedIds.length === (expenses?.length || 0) && selectedIds.length > 0 &&
+                                        <CheckCircleIcon className="w-3 h-3 text-white" />
+                                    }
+                                </div>
+                                Select All
+                            </button>
+                            {selectedIds.length > 0 && (
+                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                    {selectedIds.length} items selected
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
                     <AnimatePresence mode="popLayout">
-                        {loading ? (
+                        {(loading || isLoading) ? (
                             <div className="py-32 flex flex-col items-center gap-6">
                                 <motion.div
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                     className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full"
                                 />
-                                <span className="text-[11px] font-black uppercase tracking-[0.5em] text-emerald-500 animate-pulse">Initializing Data Stream...</span>
+                                <span className="text-[11px] font-black uppercase tracking-[0.5em] text-emerald-500 animate-pulse">Processing...</span>
                             </div>
                         ) : expenses && expenses.length > 0 ? (
                             expenses.map((row, idx) => {
                                 const cfg = statusConfig[row.status] || { icon: Squares2X2Icon, color: 'text-slate-500', bg: 'bg-slate-500/10' };
+                                const isSelected = selectedIds.includes(row.id);
                                 return (
                                     <motion.div
                                         layout
@@ -245,13 +332,22 @@ const ManagerExpenseList = () => {
                                         transition={{ delay: idx * 0.05 }}
                                         onClick={() => handleRowClick(row)}
                                         className={cn(
-                                            "relative group p-6 md:p-8 rounded-[40px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/60 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden",
-                                            row.isDuplicate && "border-l-8 border-amber-500"
+                                            "relative group p-6 md:p-8 rounded-[40px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/60 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden flex items-center gap-8",
+                                            row.isDuplicate && "border-l-8 border-amber-500",
+                                            isSelected && "ring-2 ring-emerald-500 bg-emerald-500/5"
                                         )}
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                        <div
+                                            onClick={(e) => handleToggleSelect(e, row.id)}
+                                            className={cn(
+                                                "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all group/check",
+                                                isSelected ? "bg-emerald-500 border-emerald-500" : "border-slate-300 dark:border-slate-700 hover:border-emerald-500"
+                                            )}
+                                        >
+                                            {isSelected && <CheckCircleIcon className="w-4 h-4 text-white" />}
+                                        </div>
 
-                                        <div className="relative flex flex-col md:flex-row md:items-center gap-10">
+                                        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-10">
                                             {/* Identity Slot */}
                                             <div className="flex items-center gap-6 min-w-[240px]">
                                                 <div className="relative">
@@ -272,7 +368,7 @@ const ManagerExpenseList = () => {
                                                     <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter leading-tight">{row.title}</h3>
                                                     {row.isDuplicate && (
                                                         <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-widest border border-amber-500/20 flex items-center gap-2">
-                                                            <ExclamationTriangleIcon className="w-3 h-3" /> Duplicate Collision
+                                                            <ExclamationTriangleIcon className="w-3 h-3" /> Duplicate
                                                         </span>
                                                     )}
                                                     {row.status === 'PENDING' && <SmartApprovalBadge expenseId={row.id} />}
@@ -297,7 +393,7 @@ const ManagerExpenseList = () => {
                                                 )}>
                                                     {formatCurrency(row.amount)}
                                                 </p>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3">Asset Value</p>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3">Amount</p>
                                             </div>
 
                                             {/* Status Slot */}
@@ -310,8 +406,8 @@ const ManagerExpenseList = () => {
                                                 <Button
                                                     variant="ghost"
                                                     className="p-4 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                                    onClick={() => handleRowClick(row)}
-                                                    title="View Matrix Details"
+                                                    onClick={(e) => { e.stopPropagation(); handleRowClick(row); }}
+                                                    title="View Details"
                                                 >
                                                     <EyeIcon className="w-6 h-6 text-indigo-500" />
                                                 </Button>
@@ -326,19 +422,58 @@ const ManagerExpenseList = () => {
                                     <MagnifyingGlassIcon className="w-12 h-12 text-slate-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-400 uppercase tracking-tighter">No Entities Matches Matrix</h3>
-                                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest mt-2">Adjust filter protocols for broader scan</p>
+                                    <h3 className="text-2xl font-black text-slate-400 uppercase tracking-tighter">No Results Found</h3>
+                                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest mt-2">Try adjusting your filters</p>
                                 </div>
                             </div>
                         )}
                     </AnimatePresence>
                 </div>
 
+                {/* ── Bulk Action Bar ── */}
+                <AnimatePresence>
+                    {selectedIds.length > 0 && (
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-2xl px-4"
+                        >
+                            <div className="bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/10 p-2 rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] flex items-center justify-between gap-6 overflow-hidden">
+                                <div className="px-6 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20">
+                                        {selectedIds.length}
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Active Selection</p>
+                                        <p className="text-sm font-bold text-white uppercase tracking-tighter">Ready for Consensus</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 pr-2">
+                                    <button
+                                        onClick={() => setSelectedIds([])}
+                                        className="h-14 px-6 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        Clear
+                                    </button>
+                                    <Button
+                                        onClick={handleBulkApprove}
+                                        className="h-14 px-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 border-none"
+                                    >
+                                        Authorize Selection
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* ── Orbital Pagination ── */}
                 {pagination && pagination.totalPages > 1 && (
                     <div className="flex justify-between items-center py-10 px-10 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl rounded-[40px] border border-white/60 dark:border-white/10">
                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                            Matrix Sector <span className="text-emerald-500">{pagination.page}</span> / <span className="text-slate-400">{pagination.totalPages}</span>
+                            Page <span className="text-emerald-500">{pagination.page}</span> / <span className="text-slate-400">{pagination.totalPages}</span>
                         </p>
                         <div className="flex gap-4">
                             <Button
@@ -347,14 +482,14 @@ const ManagerExpenseList = () => {
                                 disabled={pagination.page <= 1}
                                 onClick={() => handlePageChange(pagination.page - 1)}
                             >
-                                Previous Sector
+                                Previous
                             </Button>
                             <Button
                                 className="px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
                                 disabled={pagination.page >= pagination.totalPages}
                                 onClick={() => handlePageChange(pagination.page + 1)}
                             >
-                                Next Sector
+                                Next
                             </Button>
                         </div>
                     </div>
@@ -368,3 +503,4 @@ const ManagerExpenseList = () => {
 };
 
 export default ManagerExpenseList;
+```

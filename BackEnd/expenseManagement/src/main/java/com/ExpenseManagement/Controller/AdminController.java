@@ -45,6 +45,37 @@ public class AdminController {
     private final TeamService teamService;
     private final TeamBudgetService teamBudgetService;
     private final FreezePeriodService freezePeriodService;
+    private final com.expensemanagement.Services.PolicyService policyService;
+    private final com.expensemanagement.Services.VendorAnalyticsService vendorAnalyticsService;
+    private final com.expensemanagement.Services.FraudDetectionService fraudDetectionService;
+
+    // ── Feature 10: Policy Engine ─────────────────────────────────────────────
+
+    @PostMapping("/policies/evaluate/{expenseId}")
+    public ResponseEntity<Map<String, Object>> evaluatePolicy(@PathVariable Long expenseId) {
+        Expense expense = expenseRepository.findById(expenseId).orElseThrow();
+        boolean breached = policyService.evaluatePolicies(expense);
+        return ResponseEntity.ok(Map.of("expenseId", expenseId, "breached", breached));
+    }
+
+    // ── Feature 11: Vendor Analytics ──────────────────────────────────────────
+
+    @GetMapping("/vendors")
+    public ResponseEntity<List<com.expensemanagement.Entities.VendorStat>> getVendors(
+            @RequestParam(required = false) Boolean suspicious) {
+        if (Boolean.TRUE.equals(suspicious)) {
+            return ResponseEntity.ok(vendorAnalyticsService.getSuspiciousVendors());
+        }
+        return ResponseEntity.ok(vendorAnalyticsService.getTopVendors());
+    }
+
+    // ── Feature 12: Fraud Detection ───────────────────────────────────────────
+
+    @GetMapping("/fraud-flags/{expenseId}")
+    public ResponseEntity<List<String>> getFraudFlags(@PathVariable Long expenseId) {
+        Expense expense = expenseRepository.findById(expenseId).orElseThrow();
+        return ResponseEntity.ok(fraudDetectionService.detectFraud(expense));
+    }
 
     // ── Team Management ───────────────────────────────────────────────────────
 

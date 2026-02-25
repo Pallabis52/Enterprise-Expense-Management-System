@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '../../../components/ui/Button';
 import Skeleton from '../../../components/ui/Skeleton';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 import { formatCurrency } from '../../../utils/helpers';
 import PageTransition from '../../../components/layout/PageTransition';
 
@@ -24,6 +25,13 @@ const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#EC4899'
 const ManagerReports = () => {
     const { stats, fetchTeamStats, isLoading } = useTeamStore();
     const [dateRange, setDateRange] = useState('this_month');
+
+    const rangeOptions = [
+        { label: 'This Month', value: 'this_month', icon: <CalendarIcon />, iconColor: 'text-emerald-500' },
+        { label: 'Last Month', value: 'last_month', icon: <CalendarIcon />, iconColor: 'text-emerald-500' },
+        { label: 'Last 3 Months', value: 'last_3_months', icon: <TableCellsIcon />, iconColor: 'text-emerald-500' },
+        { label: 'This Year', value: 'this_year', icon: <ChartPieIcon />, iconColor: 'text-emerald-500' }
+    ];
 
     useEffect(() => {
         fetchTeamStats({ range: dateRange });
@@ -83,30 +91,23 @@ const ManagerReports = () => {
                                 <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Team Insight</h1>
                                 <p className="text-[11px] text-emerald-500 dark:text-emerald-400 font-black uppercase tracking-[0.3em] mt-4 flex items-center gap-2">
                                     <CalendarIcon className="w-4 h-4" />
-                                    Operational Command Telemetry
+                                    Team Spending Reports
                                 </p>
                             </div>
                         </motion.div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4">
-                        <div className="relative group">
-                            <select
+                        <div className="flex flex-col min-w-[180px]">
+                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1.5 px-1">Date Range</span>
+                            <CustomDropdown
+                                options={rangeOptions}
                                 value={dateRange}
-                                onChange={(e) => setDateRange(e.target.value)}
-                                className="appearance-none rounded-[20px] px-6 py-4 bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500 pr-12 transition-all cursor-pointer hover:bg-white/60 dark:hover:bg-white/10"
-                            >
-                                <option value="this_month">This Month</option>
-                                <option value="last_month">Last Month</option>
-                                <option value="last_3_months">Last 3 Months</option>
-                                <option value="this_year">This Year</option>
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-                            </div>
+                                onChange={setDateRange}
+                            />
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 self-end">
                             <button className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-emerald-500 transition-all shadow-sm">
                                 <ArrowDownTrayIcon className="w-5 h-5" />
                             </button>
@@ -133,7 +134,7 @@ const ManagerReports = () => {
                                     <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500">
                                         <ArrowTrendingUpIcon className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Aggregate Volume Flow</h3>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Monthly Spending</h3>
                                 </div>
                                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -192,7 +193,7 @@ const ManagerReports = () => {
                                 <div className="p-3 rounded-xl bg-purple-500/10 text-purple-500">
                                     <ChartPieIcon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Sector Allocation</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">By Category</h3>
                             </div>
                             <div className="h-[300px] relative">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -216,7 +217,7 @@ const ManagerReports = () => {
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="text-center">
-                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Diversity Index</p>
+                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Spread</p>
                                         <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">High</p>
                                     </div>
                                 </div>
@@ -245,7 +246,7 @@ const ManagerReports = () => {
                                 <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
                                     <TableCellsIcon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Precision Matrix</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Expense Breakdown</h3>
                             </div>
                             <div className="h-[350px]">
                                 <ResponsiveContainer width="100%" height="100%">

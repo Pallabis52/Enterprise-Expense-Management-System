@@ -19,6 +19,7 @@ import com.expensemanagement.Exception.FreezePeriodException;
 import com.expensemanagement.Notification.Notification;
 import com.expensemanagement.Notification.NotificationService;
 import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.Repository.ExpenseSplitRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,14 @@ public class ExpenseServiceImple implements ExpenseService {
     private final CategoryResolver categoryResolver;
     private final DuplicateDetectionService duplicateDetectionService;
     private final FreezePeriodService freezePeriodService;
+    private final AuditLogService auditLogService;
+    private final SlaService slaService;
+    private final BudgetGuardService budgetGuardService;
+    private final CategorySuggestionService categorySuggestionService;
+    private final ExpenseSplitRepository expenseSplitRepository;
+    private final PolicyService policyService;
+    private final VendorAnalyticsService vendorAnalyticsService;
+    private final ConfidenceScoreService confidenceScoreService;
 
     // ── basic reads ───────────────────────────────────────────────────────────
 
@@ -52,7 +61,8 @@ public class ExpenseServiceImple implements ExpenseService {
         return expenseRepository.findById(id).orElse(null);
     }
 
-    // ── save (Feature 4, 5, 6, 9) ─────────────────────────────────────────────
+    // ── save (Feature 4, 5, 6, 9, 17, 19)
+    // ─────────────────────────────────────────────
 
     public Expense saveExpense(Expense expense) {
         if (expense == null) {
@@ -68,9 +78,29 @@ public class ExpenseServiceImple implements ExpenseService {
                             "Contact your administrator to unlock.");
         }
 
+        // Setup for submitted expenses
+        if (expense.getStatus() == null || expense.getStatus() == Approval_Status.DRAFT) {
+            expense.setStatus(Approval_Status.PENDING);
+            expense.setDraft(false);
+        }
+
+        // Feature 19: Assign SLA on submission
+        slaService.assignSla(expense);
+
+        // Feature 1: Budget Guard (Warning only, non-blocking)
+        if (expense.getUser() != null) {
+            BudgetGuardService.BudgetWarning warning = budgetGuardService.checkBudget(expense.getUser(),
+                    expense.getAmount());
+            if (warning != null && warning.exceeded()) {
+                log.warn("Budget Exceeded (₹{} > ₹{}) for user: {}",
+                        warning.currentSpend() + expense.getAmount(), warning.limit(), expense.getUser().getName());
+            }
+        }
+
         // Feature 5: Auto-categorize if category is blank
         if (expense.getCategory() == null || expense.getCategory().isBlank()) {
             expense.setCategory(categoryResolver.resolve(expense.getTitle(), expense.getDescription()));
+            log.info("Auto-categorized expense to: {}", expense.getCategory());
         }
 
         // Feature 6: Duplicate detection (flag, do not block)
@@ -83,11 +113,6 @@ public class ExpenseServiceImple implements ExpenseService {
             }
         }
 
-        // Default status
-        if (expense.getStatus() == null) {
-            expense.setStatus(Approval_Status.PENDING);
-        }
-
         // Feature 1: Set initial approval stage based on amount
         if (expense.getApprovalStage() == null) {
             if (expense.getAmount() > 50_000) {
@@ -98,6 +123,12 @@ public class ExpenseServiceImple implements ExpenseService {
         }
 
         Expense saved = expenseRepository.save(expense);
+
+        // Feature 17: Audit Log
+        auditLogService.log("EXPENSE", saved.getId(), "SUBMITTED",
+                saved.getUser() != null ? saved.getUser().getName() : "SYSTEM",
+                saved.getUser() != null ? saved.getUser().getRole().name() : "USER",
+                "Expense amount: " + saved.getAmount());
 
         // Feature 9: Notify Team Manager
         User user = saved.getUser();
@@ -135,7 +166,46 @@ public class ExpenseServiceImple implements ExpenseService {
                     Notification.NotificationCategory.EXPENSE);
         }
 
+        // Feature 10: Policy Evaluation (Directly affects stage)
+        if (policyService.evaluatePolicies(expense)) {
+            saved.setApprovalStage("ADMIN"); // Escalation
+            expenseRepository.save(saved);
+            log.info("Expense #{} escalated to ADMIN due to policy breach", saved.getId());
+        }
+
+        // Feature 11: Vendor Analytics
+        vendorAnalyticsService.updateVendorStats(saved);
+
+        // Feature 16: Confidence Score
+        saved.setConfidenceScore(confidenceScoreService.calculate(saved));
+        expenseRepository.save(saved);
+
         return saved;
+    }
+
+    // Feature 4: Save as Draft
+    @Override
+    public Expense saveDraft(Expense expense) {
+        expense.setStatus(Approval_Status.DRAFT);
+        expense.setDraft(true);
+        Expense saved = expenseRepository.save(expense);
+
+        auditLogService.log("EXPENSE", saved.getId(), "DRAFT_SAVED",
+                saved.getUser() != null ? saved.getUser().getName() : "SYSTEM",
+                "USER", "Draft payload saved");
+        return saved;
+    }
+
+    // Feature 4: Submit Draft
+    @Override
+    @Transactional
+    public Expense submitDraft(Long id) {
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Draft not found"));
+        if (expense.getStatus() != Approval_Status.DRAFT) {
+            throw new IllegalStateException("Only drafts can be submitted");
+        }
+        return saveExpense(expense);
     }
 
     // ── crud ──────────────────────────────────────────────────────────────────
@@ -144,6 +214,7 @@ public class ExpenseServiceImple implements ExpenseService {
         Optional<Expense> getexpense = expenseRepository.findById(id);
         if (getexpense.isPresent()) {
             expenseRepository.deleteById(id);
+            auditLogService.log("EXPENSE", id, "DELETED", "UNKNOWN", "ADMIN", "Soft delete simulated");
             return true;
         }
         return false;
@@ -158,11 +229,12 @@ public class ExpenseServiceImple implements ExpenseService {
             expenseToUpdate.setDate(expense.getDate());
             expenseToUpdate.setCategory(expense.getCategory());
             expenseToUpdate.setDescription(expense.getDescription());
-            // Preserve/Update receiptUrl if provided in the DTO
             if (expense.getReceiptUrl() != null) {
                 expenseToUpdate.setReceiptUrl(expense.getReceiptUrl());
             }
-            return expenseRepository.save(expenseToUpdate);
+            Expense updated = expenseRepository.save(expenseToUpdate);
+            auditLogService.log("EXPENSE", id, "UPDATED", "OWNER", "USER", "Fields modified");
+            return updated;
         }
         return null;
     }
@@ -209,7 +281,10 @@ public class ExpenseServiceImple implements ExpenseService {
 
         expense.setStatus(Approval_Status.APPROVED);
         expense.setApprovalStage(role.toUpperCase());
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+
+        auditLogService.log("EXPENSE", id, "APPROVED", "APPROVER", role, "Approved at stage: " + role);
+        return saved;
     }
 
     @Transactional
@@ -227,7 +302,10 @@ public class ExpenseServiceImple implements ExpenseService {
 
         expense.setStatus(Approval_Status.REJECTED);
         expense.setApprovalStage(role.toUpperCase());
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+
+        auditLogService.log("EXPENSE", id, "REJECTED", "APPROVER", role, "Rejected at stage: " + role);
+        return saved;
     }
 
     @Override

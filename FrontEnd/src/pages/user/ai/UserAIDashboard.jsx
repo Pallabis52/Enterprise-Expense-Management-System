@@ -85,7 +85,7 @@ const AIResultBox = ({ result, loading, onRetry }) => {
                         <div className="flex items-center justify-between mb-4">
                             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
                                 <ShieldExclamationIcon className="w-4 h-4" />
-                                Fallback Matrix Active
+                                AI Unavailable
                             </p>
                             {onRetry && (
                                 <button
@@ -101,11 +101,11 @@ const AIResultBox = ({ result, loading, onRetry }) => {
                     <div className="mt-6 flex items-center justify-between border-t border-indigo-500/10 pt-4 opacity-50">
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">{result.model || 'Neural Engine'}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{result.model || 'AI Engine'}</span>
                         </div>
                         {result.processingMs && (
                             <span className="text-[9px] font-black uppercase tracking-widest">
-                                {result.processingMs >= 1000 ? `${(result.processingMs / 1000).toFixed(1)}s` : `${result.processingMs}ms`} Interface Lag
+                                {result.processingMs >= 1000 ? `${(result.processingMs / 1000).toFixed(1)}s` : `${result.processingMs}ms`} Response Time
                             </span>
                         )}
                     </div>
@@ -134,7 +134,7 @@ const UserAIDashboard = () => {
             const data = await getSpendingInsights();
             setInsightsResult(data);
         } catch {
-            setInsightsResult({ result: 'Failed to access neural patterns. Link unstable.', fallback: true });
+            setInsightsResult({ result: 'AI is currently unavailable. Please try again later.', fallback: true });
         } finally {
             setInsightsLoading(false);
         }
@@ -148,7 +148,7 @@ const UserAIDashboard = () => {
             const data = await categorizeExpense(catState.title, catState.desc, parseFloat(catState.amount) || 0);
             setCatResult(data);
         } catch {
-            setCatResult({ result: 'Categorization matrix failure. Retrying…', fallback: true });
+            setCatResult({ result: 'Categorization failed. Please try again.', fallback: true });
         } finally {
             setCatLoading(false);
         }
@@ -163,7 +163,7 @@ const UserAIDashboard = () => {
             const data = await explainRejection(rejectId);
             setRejectResult(data);
         } catch {
-            setRejectResult({ result: 'Could not access rejection protocols for the specified ID.', fallback: true });
+            setRejectResult({ result: 'Could not load rejection details for the given ID.', fallback: true });
         } finally {
             setRejectLoading(false);
         }
@@ -200,7 +200,7 @@ const UserAIDashboard = () => {
                                     <h1 className="text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Aether</h1>
                                     <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.4em] mt-5 flex items-center gap-3">
                                         <SparklesIcon className="w-4 h-4 animate-spin-slow" />
-                                        Neural Sync Nexus
+                                        AI Assistant
                                     </p>
                                 </div>
                             </motion.div>
@@ -220,13 +220,13 @@ const UserAIDashboard = () => {
 
                     {/* Feature 1: Spending Insights */}
                     <AICard
-                        title="Neural Patterns"
+                        title="Spending Insights"
                         icon={BeakerIcon}
-                        description="Deep-Level Expenditure Decoding"
+                        description="Analyze your spending patterns"
                         delay={0.1}
                     >
                         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                            Initialize a system-wide audit of your operational spending. Our synthetic engine identifies anomalies and cost-reduction vectors.
+                            Analyze your spending data to find patterns and potential savings.
                         </p>
                         <div className="pt-4 flex flex-col">
                             <Button
@@ -237,7 +237,7 @@ const UserAIDashboard = () => {
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:scale-105 transition-transform duration-500" />
                                 <span className="relative z-10 flex items-center justify-center gap-3">
                                     {insightsLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <SparklesIcon className="w-4 h-4" />}
-                                    {insightsLoading ? 'Decoding…' : 'Execute Insight Protocol'}
+                                    {insightsLoading ? 'Loading…' : 'Get Spending Insights'}
                                 </span>
                             </Button>
                             <AIResultBox result={insightsResult} loading={insightsLoading} />
@@ -246,15 +246,15 @@ const UserAIDashboard = () => {
 
                     {/* Feature 2: Smart Categorize */}
                     <AICard
-                        title="Categorization Matrix"
+                        title="Categorize Expense"
                         icon={TagIcon}
-                        description="Sector-Aligned Asset Labeling"
+                        description="Automatically find the right category"
                         delay={0.2}
                     >
                         <form onSubmit={handleCategorize} className="space-y-4">
                             <input
                                 className={inputCls}
-                                placeholder="Entity Descriptor (e.g. Travel Vector)"
+                                placeholder="Expense Title (e.g. Taxi)"
                                 value={catState.title}
                                 onChange={e => setCatState({ ...catState, title: e.target.value })}
                                 required
@@ -262,14 +262,14 @@ const UserAIDashboard = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <input
                                     className={inputCls}
-                                    placeholder="Sub-Trace"
+                                    placeholder="Description (optional)"
                                     value={catState.desc}
                                     onChange={e => setCatState({ ...catState, desc: e.target.value })}
                                 />
                                 <input
                                     className={inputCls}
                                     type="number"
-                                    placeholder="Value Units"
+                                    placeholder="Amount"
                                     value={catState.amount}
                                     onChange={e => setCatState({ ...catState, amount: e.target.value })}
                                 />
@@ -282,7 +282,7 @@ const UserAIDashboard = () => {
                             >
                                 <span className="flex items-center justify-center gap-3 text-indigo-500">
                                     {catLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <TagIcon className="w-4 h-4" />}
-                                    {catLoading ? 'Mapping…' : 'Determine Sector'}
+                                    {catLoading ? 'Categorizing…' : 'Suggest Category'}
                                 </span>
                             </Button>
                         </form>
@@ -291,16 +291,16 @@ const UserAIDashboard = () => {
 
                     {/* Feature 3: Explain Rejection */}
                     <AICard
-                        title="Anomaly Explanation"
+                        title="Explain Rejection"
                         icon={ShieldExclamationIcon}
-                        description="Root-Cause Protocol Verification"
+                        description="Understand why an expense was rejected"
                         delay={0.3}
                     >
                         <form onSubmit={handleExplainRejection} className="space-y-4">
                             <input
                                 className={inputCls}
                                 type="number"
-                                placeholder="Entity Reference ID"
+                                placeholder="Expense ID"
                                 value={rejectId}
                                 onChange={e => setRejectId(e.target.value)}
                                 required
@@ -313,7 +313,7 @@ const UserAIDashboard = () => {
                             >
                                 <span className="flex items-center justify-center gap-3 text-emerald-500">
                                     {rejectLoading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <ShieldExclamationIcon className="w-4 h-4" />}
-                                    {rejectLoading ? 'Tracing…' : 'Trace Discrepancy'}
+                                    {rejectLoading ? 'Loading…' : 'Explain Rejection'}
                                 </span>
                             </Button>
                         </form>
@@ -322,21 +322,21 @@ const UserAIDashboard = () => {
 
                     {/* Voice Interface Hub */}
                     <AICard
-                        title="Auditory Interface"
+                        title="Voice Commands"
                         icon={MicrophoneIcon}
-                        description="Non-Manual Control Vectors"
+                        description="Use your voice to interact with the system"
                         delay={0.4}
                     >
                         <div className="space-y-6">
                             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                                Auditory processing is active within the primary operational grid. Access commands via verbal initialization:
+                                Speak commands to quickly add expenses and navigate the system.
                             </p>
                             <div className="grid gap-3">
                                 {[
-                                    'Pending travel telemetry sub-set',
-                                    'Rejected entity audit log',
-                                    'Initialize taxi asset — value 500',
-                                    'Aggregate spending overview'
+                                    'Show pending expenses',
+                                    'Show rejected expenses',
+                                    'Add taxi expense - 500',
+                                    'Show spending summary'
                                 ].map((hint, i) => (
                                     <div key={i} className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 group-hover:bg-indigo-500/10 transition-colors">
                                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />

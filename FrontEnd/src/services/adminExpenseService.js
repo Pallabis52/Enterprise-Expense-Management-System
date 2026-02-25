@@ -21,8 +21,18 @@ const adminExpenseService = {
     },
 
     // Reject expense
-    rejectExpense: async (id, reason) => {
-        const response = await api.put(`/admin/expenses/${id}/reject`, { reason });
+    rejectExpense: async (id, body) => {
+        const response = await api.put(`/admin/expenses/${id}/reject`, body);
+        return response.data;
+    },
+
+    getVendors: async (suspicious = false) => {
+        const response = await api.get('/admin/vendors', { params: { suspicious } });
+        return response.data;
+    },
+
+    getFraudFlags: async (expenseId) => {
+        const response = await api.get(`/admin/fraud-flags/${expenseId}`);
         return response.data;
     },
 

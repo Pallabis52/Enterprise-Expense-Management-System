@@ -23,6 +23,8 @@ import Reports from './pages/admin/reports/Reports';
 import AdminProfile from './pages/admin/profile/AdminProfile';
 import AdminTeamManagement from './pages/admin/teams/AdminTeamManagement';
 import AdminAIDashboard from './pages/admin/ai/AdminAIDashboard';
+import VendorAnalytics from './pages/admin/analytics/VendorAnalytics';
+import FraudFlags from './pages/admin/expenses/FraudFlags';
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/dashboard/ManagerDashboard';
@@ -74,6 +76,8 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <AdminDashboard /> },
       { path: 'expenses', element: <ExpenseList /> },
       { path: 'teams', element: <AdminTeamManagement /> },
+      { path: 'vendors', element: <VendorAnalytics /> },
+      { path: 'fraud-flags', element: <FraudFlags /> },
       { path: 'categories', element: <CategoryList /> },
       { path: 'reports', element: <Reports /> },
       { path: 'ai', element: <AdminAIDashboard /> },

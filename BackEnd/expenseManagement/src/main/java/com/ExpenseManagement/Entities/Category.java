@@ -1,5 +1,6 @@
 package com.expensemanagement.Entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -21,8 +22,11 @@ public class Category {
 
     private String name;
     private String description;
-    private String color; // Hex code for UI badge
+    private String color;
 
     @Enumerated(EnumType.STRING)
-    private Role allowedRole; // Role that can view/use this category (e.g., ADMIN, MANAGER, USER)
+    private Role allowedRole;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
 }

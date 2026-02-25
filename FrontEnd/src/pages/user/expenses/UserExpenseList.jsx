@@ -26,6 +26,7 @@ import ExpenseModal from '../../../components/expenses/ExpenseModal';
 const UserExpenseList = () => {
     const STATUS_OPTIONS = useMemo(() => [
         { label: 'All Status', value: 'all', icon: <Squares2X2Icon />, iconColor: 'text-indigo-500' },
+        { label: 'Drafts', value: 'DRAFT', icon: <PencilSquareIcon />, iconColor: 'text-gray-500' },
         { label: 'Pending', value: 'PENDING', icon: <ClockIcon />, iconColor: 'text-amber-500' },
         { label: 'Approved', value: 'APPROVED', icon: <CheckCircleIcon />, iconColor: 'text-emerald-500' },
         { label: 'Rejected', value: 'REJECTED', icon: <XCircleIcon />, iconColor: 'text-rose-500' }
@@ -38,8 +39,10 @@ const UserExpenseList = () => {
         deleteExpense,
         addExpense,
         updateExpense,
+        saveDraft,
+        submitDraft,
         setExpenses,
-        isSearchMode
+        isSearchMode,
     } = useUserExpenseStore();
     const [statusFilter, setStatusFilter] = useState('all');
     const [aiFilters, setAiFilters] = useState({});
@@ -81,10 +84,13 @@ const UserExpenseList = () => {
         setIsModalOpen(true);
     };
 
-    const handleSaveExpense = async (data, receiptFile) => {
+    const handleSaveExpense = async (data, receiptFile, isDraft = false) => {
         setIsSubmitting(true);
         try {
-            if (modalData) {
+            if (isDraft) {
+                await saveDraft(data, receiptFile);
+                premiumSuccess('Draft Saved!', 'You can find it in your drafts.');
+            } else if (modalData) {
                 // Update
                 await updateExpense(modalData.id, data, receiptFile);
                 premiumSuccess('Updated!', 'Expense updated successfully.');
@@ -98,6 +104,15 @@ const UserExpenseList = () => {
             premiumError('Error', error.message || 'Failed to save expense');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleSubmitDraftAction = async (id) => {
+        try {
+            await submitDraft(id);
+            premiumSuccess('Submitted!', 'Expense submitted for approval.');
+        } catch (error) {
+            premiumError('Error', 'Failed to submit draft');
         }
     };
 
@@ -115,6 +130,7 @@ const UserExpenseList = () => {
             case 'APPROVED': return 'success';
             case 'PENDING': return 'warning';
             case 'REJECTED': return 'error';
+            case 'DRAFT': return 'default';
             default: return 'default';
         }
     };
@@ -151,6 +167,15 @@ const UserExpenseList = () => {
             className: 'text-right',
             render: row => (
                 <div className="flex items-center justify-end gap-2 px-2">
+                    {row.status === 'DRAFT' && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleSubmitDraftAction(row.id); }}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                            title="Submit Draft"
+                        >
+                            <CheckCircleIcon className="w-5 h-5" />
+                        </button>
+                    )}
                     {row.receiptUrl && (
                         <button
                             onClick={(e) => { e.stopPropagation(); handleViewReceipt(row.id); }}
@@ -212,7 +237,7 @@ const UserExpenseList = () => {
                             <div className="h-12 w-[1px] bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-700 to-transparent mx-2" />
 
                             <div className="flex flex-col min-w-[120px]">
-                                <span className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Intelligence</span>
+                                <span className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Count</span>
                                 <div className="flex items-center gap-2">
                                     <div className="relative">
                                         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full blur opacity-25 animate-pulse"></div>
@@ -234,7 +259,7 @@ const UserExpenseList = () => {
                         <div className="w-full lg:w-[500px] p-1">
                             <div className="flex flex-col mb-1 px-1">
                                 <div className="flex justify-between items-center w-full">
-                                    <span className="text-[9px] font-black text-purple-500 dark:text-purple-400 uppercase tracking-[0.2em]">Unified Search Engine</span>
+                                    <span className="text-[9px] font-black text-purple-500 dark:text-purple-400 uppercase tracking-[0.2em]">Search</span>
                                     {isSearchMode && (
                                         <button
                                             onClick={() => fetchMyExpenses(1, statusFilter)}
@@ -247,7 +272,7 @@ const UserExpenseList = () => {
                             </div>
                             <UnifiedSearchBar
                                 onResults={(results) => setExpenses(results, true)}
-                                placeholder="Search by details or try AI commands..."
+                                placeholder="Search by title, category, or amount..."
                             />
                         </div>
                     </div>

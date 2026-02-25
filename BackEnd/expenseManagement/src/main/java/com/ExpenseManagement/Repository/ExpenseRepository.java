@@ -21,6 +21,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
 
         List<Expense> findByUser(User user);
 
+        List<Expense> findByUserId(Long userId);
+
         java.util.Optional<Expense> findByIdAndUser(Long id, User user);
 
         // Find by Team (Users managed by Manager)
@@ -39,6 +41,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
 
         // Admin: All expenses
         Page<Expense> findByStatus(Approval_Status status, Pageable pageable);
+
+        List<Expense> findByStatus(Approval_Status status);
 
         // Missing methods for Service Impl
         @Query("SELECT e FROM Expense e WHERE MONTH(e.date) = :month AND YEAR(e.date) = :year")
@@ -128,7 +132,15 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                         "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
         List<Expense> searchByKeywordAndUser(@Param("query") String query, @Param("user") User user);
 
+        @Query("SELECT e.date, SUM(e.amount) FROM Expense e WHERE e.user IN :users " +
+                        "AND MONTH(e.date) = :month AND YEAR(e.date) = :year " +
+                        "GROUP BY e.date ORDER BY e.date ASC")
+        List<Object[]> findHeatmapByTeamAndMonth(@Param("users") List<User> users,
+                        @Param("month") int month,
+                        @Param("year") int year);
+
         @Query("SELECT e FROM Expense e WHERE (e.user IN :users OR e.user = :manager) AND " +
+
                         "(LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
                         "LOWER(e.category) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
                         "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")

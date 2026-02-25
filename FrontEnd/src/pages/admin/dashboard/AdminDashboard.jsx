@@ -42,9 +42,9 @@ const AdminDashboard = () => {
     useEffect(() => {
         fetchDashboardData();
         const hour = new Date().getHours();
-        if (hour < 12) setGreeting('System Online');
-        else if (hour < 18) setGreeting('Operations Active');
-        else setGreeting('Night Watch');
+        if (hour < 12) setGreeting('Good Morning');
+        else if (hour < 18) setGreeting('Good Afternoon');
+        else setGreeting('Good Evening');
     }, []);
 
     // Enterprise mock data for global trends
@@ -103,8 +103,8 @@ const AdminDashboard = () => {
                     transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                     className="relative p-12 rounded-[48px] overflow-hidden group shadow-[0_32px_80px_-20px_rgba(0,0,0,0.15)]"
                 >
-                    {/* Dark Enterprise Background */}
-                    <div className="absolute inset-0 bg-slate-950" />
+                    {/* Adaptive Background — light: vivid teal-cyan, dark: slate-950 */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-teal-400 via-cyan-500 to-sky-600 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950" />
                     <div className="absolute inset-0 opacity-40">
                         <motion.div
                             animate={{
@@ -127,21 +127,21 @@ const AdminDashboard = () => {
                                 transition={{ delay: 0.2 }}
                                 className="flex items-center gap-3 mb-6 justify-center lg:justify-start"
                             >
-                                <div className="px-4 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-[10px] font-black uppercase tracking-[0.4em]">
+                                <div className="px-4 py-1.5 rounded-full bg-white/20 dark:bg-primary-500/10 border border-white/30 dark:border-primary-500/20 text-white dark:text-primary-400 text-[10px] font-black uppercase tracking-[0.4em]">
                                     Enterprise Core v2.4
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-widest">Global Sync Active</span>
+                                    <span className="text-[10px] font-black text-emerald-300 dark:text-emerald-500/80 uppercase tracking-widest">System Active</span>
                                 </div>
                             </motion.div>
 
                             <h1 className="text-6xl lg:text-7xl font-black text-white tracking-tighter mb-6 leading-[0.85]">
-                                {greeting}, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-indigo-400">{user?.name?.split(' ')[0]}</span>
+                                {greeting}, <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-white dark:from-primary-400 dark:to-indigo-400">{user?.name?.split(' ')[0]}</span>
                             </h1>
 
-                            <p className="text-slate-400 text-xl font-medium max-w-xl mb-10 leading-relaxed">
-                                System integrity is at <span className="text-white font-bold">100%</span>. You are overseeing <span className="text-primary-400 font-bold">{stats?.userCount || 0} users</span> across <span className="text-indigo-400 font-bold">{stats?.teamCount || 0} enterprise teams</span>.
+                            <p className="text-white/75 dark:text-slate-400 text-xl font-medium max-w-xl mb-10 leading-relaxed">
+                                System integrity is at <span className="text-white font-bold">100%</span>. You are overseeing <span className="text-yellow-200 dark:text-primary-400 font-bold">{stats?.userCount || 0} users</span> across <span className="text-white/90 dark:text-indigo-400 font-bold">{stats?.teamCount || 0} enterprise teams</span>.
                             </p>
 
                             <div className="flex flex-wrap gap-5 justify-center lg:justify-start">
@@ -150,12 +150,12 @@ const AdminDashboard = () => {
                                     whileTap={{ scale: 0.95 }}
                                     className="px-10 py-5 rounded-[24px] bg-primary-600 text-white font-black text-sm shadow-2xl shadow-primary-600/30 hover:bg-primary-500 transition-all flex items-center gap-3"
                                 >
-                                    Global Intelligence <SparklesIcon className="w-5 h-5" />
+                                    Reports & Insights <SparklesIcon className="w-5 h-5" />
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-10 py-5 rounded-[24px] bg-white/5 backdrop-blur-xl text-white font-black text-sm border border-white/10 transition-all hover:bg-white/10"
+                                    className="px-10 py-5 rounded-[24px] bg-white/20 dark:bg-white/5 backdrop-blur-xl text-white font-black text-sm border border-white/30 dark:border-white/10 transition-all hover:bg-white/30 dark:hover:bg-white/10"
                                 >
                                     System Settings
                                 </motion.button>
@@ -164,13 +164,13 @@ const AdminDashboard = () => {
 
                         {/* Interactive Global Pulse */}
                         <div className="hidden xl:flex flex-col gap-4">
-                            <Card3D className="p-8 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[32px] w-80 shadow-2xl">
+                            <Card3D className="p-8 bg-white/20 dark:bg-white/5 backdrop-blur-3xl border border-white/30 dark:border-white/10 rounded-[32px] w-80 shadow-2xl">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="p-3 rounded-2xl bg-primary-500/20 text-primary-400">
                                         <ServerIcon className="w-8 h-8" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Global Compute</p>
+                                        <p className="text-[10px] font-black text-white/70 dark:text-primary-400 uppercase tracking-widest">System Health</p>
                                         <p className="text-3xl font-black text-white">99.9%</p>
                                     </div>
                                 </div>
@@ -193,15 +193,15 @@ const AdminDashboard = () => {
                 {/* System KPI Architecture */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                     <KPICard
-                        title="Global Spend"
+                        title="Total Spend"
                         value={formatCurrency(stats?.totalSpent || 0)}
                         icon={BanknotesIcon}
                         color="primary"
                         delay={0.3}
-                        subtext="Aggregated Real-time"
+                        subtext="All time"
                     />
                     <KPICard
-                        title="Avg Spend Velocity"
+                        title="Avg Monthly Spend"
                         value={formatCurrency(stats?.avgMonthlySpend || 0)}
                         icon={ArrowTrendingUpIcon}
                         color="emerald"
@@ -209,28 +209,28 @@ const AdminDashboard = () => {
                         subtext="↑ 4.2% Growth"
                     />
                     <KPICard
-                        title="Schema Domains"
+                        title="Categories"
                         value={stats?.categoryCount || "0"}
                         icon={ChartPieIcon}
                         color="amber"
                         delay={0.5}
-                        subtext="Active Taxonomies"
+                        subtext="Active"
                     />
                     <KPICard
-                        title="Global Directory"
+                        title="Users"
                         value={stats?.userCount || "0"}
                         icon={UsersIcon}
                         color="purple"
                         delay={0.6}
-                        subtext="Verified Identities"
+                        subtext="Total"
                     />
                     <KPICard
-                        title="Strategic Teams"
+                        title="Teams"
                         value={stats?.teamCount || "0"}
                         icon={UserGroupIcon}
                         color="indigo"
                         delay={0.7}
-                        subtext="Enterprise Units"
+                        subtext="Total"
                     />
                 </div>
 
@@ -246,8 +246,8 @@ const AdminDashboard = () => {
                     >
                         <div className="flex justify-between items-center mb-10">
                             <div>
-                                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Enterprise Volume Matrix</h3>
-                                <p className="text-slate-500 font-medium">Multi-dimensional spend analysis across all operational units</p>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Spending Overview</h3>
+                                <p className="text-slate-500 font-medium">Monthly spending across all teams</p>
                             </div>
                             <div className="p-3 rounded-2xl bg-primary-500/10 text-primary-600">
                                 <CpuChipIcon className="w-6 h-6" />

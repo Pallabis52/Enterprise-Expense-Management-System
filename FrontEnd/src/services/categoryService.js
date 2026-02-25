@@ -7,7 +7,6 @@ const categoryService = {
     },
 
     createCategory: async (data) => {
-        // data: { name, color, icon, description }
         const response = await api.post('/categories', data);
         return response.data;
     },
@@ -22,9 +21,9 @@ const categoryService = {
         return response.data;
     },
 
-    toggleCategoryStatus: async (id, isActive) => {
-        // Backend doesn't support patch status yet, implementing as full update or skipping
-        throw new Error("Toggle status not supported by backend");
+    toggleCategoryStatus: async (id) => {
+        const response = await api.patch(`/categories/${id}/toggle`);
+        return response.data;
     }
 };
 
