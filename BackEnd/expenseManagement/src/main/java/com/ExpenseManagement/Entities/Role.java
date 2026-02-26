@@ -1,4 +1,4 @@
-package com.expensemanagement.Entities;
+package com.expensemanagement.entities;
 
 public enum Role {
     ADMIN,

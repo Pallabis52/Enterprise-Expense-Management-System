@@ -1,11 +1,11 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Exception.UnauthorizedAccessException;
-import com.expensemanagement.Repository.TeamRepository;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.exception.UnauthorizedAccessException;
+import com.expensemanagement.repository.TeamRepository;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,6 +1,6 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Category;
+import com.expensemanagement.entities.Category;
 import java.util.List;
 
 public interface CategoryService {

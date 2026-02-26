@@ -1,9 +1,9 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.DTO.AuthResponse;
-import com.expensemanagement.DTO.LoginRequest;
-import com.expensemanagement.DTO.RegisterRequest;
-import com.expensemanagement.Services.AuthService;
+import com.expensemanagement.dto.AuthResponse;
+import com.expensemanagement.dto.LoginRequest;
+import com.expensemanagement.dto.RegisterRequest;
+import com.expensemanagement.services.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

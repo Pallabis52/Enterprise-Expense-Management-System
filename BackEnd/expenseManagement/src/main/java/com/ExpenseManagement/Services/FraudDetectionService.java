@@ -1,7 +1,7 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,9 +1,9 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Services.ReportExportService;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.services.ReportExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;

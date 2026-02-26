@@ -1,6 +1,6 @@
-package com.expensemanagement.DTO.Invite;
+package com.expensemanagement.dto.Invite;
 
-import com.expensemanagement.Entities.Role;
+import com.expensemanagement.entities.Role;
 import lombok.Data;
 
 @Data

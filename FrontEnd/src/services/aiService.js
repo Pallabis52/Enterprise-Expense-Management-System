@@ -110,6 +110,18 @@ export const naturalSearch = (query) =>
 export const parseVoiceExpense = (text) =>
     withRetry(() => aiApi.post('/ai/voice-parse', { text }));
 
+// ── Feature 21: Mood Insight ────────────────────────────────────────────────
+export const getMoodInsight = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/mood-insight/${expenseId}`));
+
+// ── Feature 22: Confidence Score ───────────────────────────────────────────
+export const getConfidenceScore = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/confidence-score/${expenseId}`));
+
+// ── Feature 23: Manager Voice Action ────────────────────────────────────────
+export const managerVoiceAction = (text) =>
+    withRetry(() => aiApi.post('/voice/manager-action', { text }));
+
 // ── Ollama health check ──────────────────────────────────────────────────────
 // GET /api/ai/status
 export const getAIStatus = () =>

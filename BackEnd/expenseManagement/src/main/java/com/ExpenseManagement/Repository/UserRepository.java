@@ -1,8 +1,8 @@
-package com.expensemanagement.Repository;
+package com.expensemanagement.repository;
 
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

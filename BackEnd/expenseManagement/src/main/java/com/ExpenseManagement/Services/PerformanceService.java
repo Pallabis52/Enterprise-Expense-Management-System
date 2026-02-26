@@ -1,12 +1,12 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.DTO.Performance.TeamPerformanceDTO;
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.TeamRepository;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.dto.Performance.TeamPerformanceDTO;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.TeamRepository;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

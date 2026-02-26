@@ -1,7 +1,7 @@
-package com.expensemanagement.Security;
+package com.expensemanagement.security;
 
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         @Override
         public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                com.expensemanagement.Entities.User user = userRepository.findByEmail(username)
+                com.expensemanagement.entities.User user = userRepository.findByEmail(username)
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found with email: " + username));
 

@@ -1,12 +1,12 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.DTO.AuthResponse;
-import com.expensemanagement.DTO.LoginRequest;
-import com.expensemanagement.DTO.RegisterRequest;
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.UserRepository;
-import com.expensemanagement.Security.JwtUtils;
+import com.expensemanagement.dto.AuthResponse;
+import com.expensemanagement.dto.LoginRequest;
+import com.expensemanagement.dto.RegisterRequest;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.UserRepository;
+import com.expensemanagement.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -1,6 +1,6 @@
-package com.expensemanagement.Notification;
+package com.expensemanagement.notification;
 
-import com.expensemanagement.Entities.Role;
+import com.expensemanagement.entities.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

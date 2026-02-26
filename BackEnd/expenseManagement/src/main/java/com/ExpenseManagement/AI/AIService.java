@@ -1,8 +1,8 @@
 package com.expensemanagement.AI;
 
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.*;
+import com.expensemanagement.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,11 +71,11 @@ public class AIService {
                 List<Expense> all = expenseRepository.findByUser(user);
                 double totalSpent = all.stream().mapToDouble(Expense::getAmount).sum();
                 double approved = all.stream()
-                                .filter(e -> com.expensemanagement.Entities.Approval_Status.APPROVED
+                                .filter(e -> com.expensemanagement.entities.Approval_Status.APPROVED
                                                 .equals(e.getStatus()))
                                 .mapToDouble(Expense::getAmount).sum();
                 double pending = all.stream()
-                                .filter(e -> com.expensemanagement.Entities.Approval_Status.PENDING
+                                .filter(e -> com.expensemanagement.entities.Approval_Status.PENDING
                                                 .equals(e.getStatus()))
                                 .mapToDouble(Expense::getAmount).sum();
                 String topCat = all.stream()
@@ -131,9 +131,9 @@ public class AIService {
                         double budget, String teamName) {
 
                 long pendingCount = expenseRepository.countByUserInAndStatus(members,
-                                com.expensemanagement.Entities.Approval_Status.PENDING);
+                                com.expensemanagement.entities.Approval_Status.PENDING);
                 long approvedCount = expenseRepository.countByUserInAndStatus(members,
-                                com.expensemanagement.Entities.Approval_Status.APPROVED);
+                                com.expensemanagement.entities.Approval_Status.APPROVED);
 
                 List<Object[]> catData = expenseRepository.sumAmountByCategoryByUserIn(members);
                 String topCat = catData.stream()

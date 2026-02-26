@@ -1,4 +1,4 @@
-package com.expensemanagement.Exception;
+package com.expensemanagement.exception;
 
 public class TeamNotFoundException extends RuntimeException {
     public TeamNotFoundException(String message) {

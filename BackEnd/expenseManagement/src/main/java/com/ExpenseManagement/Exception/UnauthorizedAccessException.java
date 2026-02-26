@@ -1,4 +1,4 @@
-package com.expensemanagement.Exception;
+package com.expensemanagement.exception;
 
 public class UnauthorizedAccessException extends RuntimeException {
     public UnauthorizedAccessException(String message) {

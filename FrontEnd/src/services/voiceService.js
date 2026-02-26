@@ -22,6 +22,17 @@ export const sendVoiceCommand = async (text, context = '') => {
 };
 
 /**
+ * Manager-specific voice action (Approve/Reject).
+ * POST /api/voice/manager-action
+ */
+export const managerVoiceAction = async (text) => {
+    const response = await api.post('/voice/manager-action', { text }, {
+        suppressGlobalError: true
+    });
+    return response.data;
+};
+
+/**
  * Fetch role-specific example voice phrases for the hints panel.
  * @returns {Promise<{ role: string, hints: string[], tip: string }>}
  */

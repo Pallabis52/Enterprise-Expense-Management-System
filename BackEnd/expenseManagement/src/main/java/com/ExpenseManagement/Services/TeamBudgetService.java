@@ -1,14 +1,14 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.TeamBudget;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Notification.Notification;
-import com.expensemanagement.Notification.NotificationService;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.TeamBudgetRepository;
-import com.expensemanagement.Repository.TeamRepository;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.TeamBudget;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.notification.NotificationService;
+import com.expensemanagement.notification.Notification;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.TeamBudgetRepository;
+import com.expensemanagement.repository.TeamRepository;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class TeamBudgetService {
     public TeamBudget setBudget(Long teamId, int month, int year, Double budgetAmount) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(
-                        () -> new com.expensemanagement.Exception.TeamNotFoundException("Team not found: " + teamId));
+                        () -> new com.expensemanagement.exception.TeamNotFoundException("Team not found: " + teamId));
 
         TeamBudget budget = teamBudgetRepository.findByTeamAndMonthAndYear(team, month, year)
                 .orElse(TeamBudget.builder().team(team).month(month).year(year).build());
@@ -103,7 +103,7 @@ public class TeamBudgetService {
      */
     public void notifyBudgetExceeded(Team team, double spent, double budget) {
         notificationService.notifyRole(
-                com.expensemanagement.Entities.Role.ADMIN,
+                com.expensemanagement.entities.Role.ADMIN,
                 "Budget Exceeded: " + team.getName(),
                 String.format("Team '%s' has exceeded its monthly budget. Spent: ₹%.2f / Budget: ₹%.2f",
                         team.getName(), spent, budget),

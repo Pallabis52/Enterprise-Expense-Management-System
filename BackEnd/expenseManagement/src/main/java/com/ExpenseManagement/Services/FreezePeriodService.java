@@ -1,7 +1,7 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.FreezePeriod;
-import com.expensemanagement.Repository.FreezePeriodRepository;
+import com.expensemanagement.entities.FreezePeriod;
+import com.expensemanagement.repository.FreezePeriodRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

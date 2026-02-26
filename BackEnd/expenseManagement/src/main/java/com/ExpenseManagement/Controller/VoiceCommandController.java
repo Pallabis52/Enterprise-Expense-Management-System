@@ -1,9 +1,7 @@
 package com.expensemanagement.Controller;
 
 import com.expensemanagement.AI.VoiceResponse;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Services.UserService;
-import com.expensemanagement.Services.VoiceIntentService;
+import com.expensemanagement.entities.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import com.expensemanagement.services.VoiceIntentService;
+import com.expensemanagement.services.UserService;
+import com.expensemanagement.services.VoiceApprovalService;
 
 /**
  * Voice command controller — accessible to all authenticated roles.

@@ -1,7 +1,7 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.Category;
-import com.expensemanagement.Services.CategoryService;
+import com.expensemanagement.entities.Category;
+import com.expensemanagement.services.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

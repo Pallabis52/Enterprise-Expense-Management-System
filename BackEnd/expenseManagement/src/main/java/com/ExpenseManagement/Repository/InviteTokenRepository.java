@@ -1,6 +1,6 @@
-package com.expensemanagement.Repository;
+package com.expensemanagement.repository;
 
-import com.expensemanagement.Entities.InviteToken;
+import com.expensemanagement.entities.InviteToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

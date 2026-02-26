@@ -1,7 +1,7 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
 import java.util.List;
 
 public interface TeamService {

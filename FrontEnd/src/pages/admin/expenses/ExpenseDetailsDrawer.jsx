@@ -5,6 +5,8 @@ import Button from '../../../components/ui/Button';
 import { formatCurrency } from '../../../utils/helpers';
 import useAdminExpenseStore from '../../../store/adminExpenseStore';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import MoodInsightBadge from '../../../components/ai/MoodInsightBadge';
+import ConfidenceIndicator from '../../../components/ai/ConfidenceIndicator';
 
 const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
     const { currentExpense: expense, approveExpense, rejectExpense } = useAdminExpenseStore();
@@ -90,12 +92,19 @@ const ExpenseDetailsDrawer = ({ isOpen, onClose }) => {
                                 <Badge variant={statusVariant} className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest border-none ring-1 ring-white/20">
                                     {currentStatus}
                                 </Badge>
-                                <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                                <MoodInsightBadge expenseId={expense.id} />
+                                <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-auto">
                                     #{expense.id?.toString().padStart(5, '0')}
                                 </span>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* AI Auditing Strategy (Confidence Score) */}
+                <div className="p-8 rounded-[2rem] bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/20 dark:to-gray-800/40 border border-white/20 dark:border-gray-700/30 shadow-2xl">
+                    <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-widest mb-6">AI Transaction Integrity</h4>
+                    <ConfidenceIndicator expenseId={expense.id} />
                 </div>
 
                 {/* Submitter Operative Card */}

@@ -1,25 +1,27 @@
 package com.expensemanagement.Controller;
 
 import com.expensemanagement.AI.AIResponse;
-import com.expensemanagement.DTO.AIDTOs;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Services.*;
+import com.expensemanagement.dto.AIDTOs;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.services.*;
+import com.expensemanagement.services.MoodInsightService;
+import com.expensemanagement.services.ConfidenceScoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.AI.AIService;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.UserRepository;
-import com.expensemanagement.Services.NaturalSearchService;
-import com.expensemanagement.Services.ChatAssistantService;
-import com.expensemanagement.Services.VoiceParsingService;
-import com.expensemanagement.Services.ApprovalAIService;
-import com.expensemanagement.Services.UserService;
-import com.expensemanagement.Services.ManagerService;
-import com.expensemanagement.Services.TeamBudgetService;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.UserRepository;
+import com.expensemanagement.services.NaturalSearchService;
+import com.expensemanagement.services.ChatAssistantService;
+import com.expensemanagement.services.VoiceParsingService;
+import com.expensemanagement.services.ApprovalAIService;
+import com.expensemanagement.services.UserService;
+import com.expensemanagement.services.ManagerService;
+import com.expensemanagement.services.TeamBudgetService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +169,7 @@ public class AIController {
         @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
         public CompletableFuture<ResponseEntity<AIResponse>> teamSummary(Authentication auth) {
                 User manager = userRepository.findByEmail(auth.getName()).orElseThrow();
-                com.expensemanagement.Entities.Team team = managerService.getTeam(manager.getId());
+                com.expensemanagement.entities.Team team = managerService.getTeam(manager.getId());
                 if (team == null)
                         return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
                 List<User> members = team.getMembers();

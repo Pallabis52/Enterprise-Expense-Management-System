@@ -1,10 +1,10 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Expense;
+import com.expensemanagement.entities.Expense;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.expensemanagement.DTO.AIDTOs;
+import com.expensemanagement.dto.AIDTOs;
 
 import java.time.DayOfWeek;
 

@@ -1,7 +1,7 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.ExpensePolicy;
-import com.expensemanagement.Services.ExpensePolicyService;
+import com.expensemanagement.entities.ExpensePolicy;
+import com.expensemanagement.services.ExpensePolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

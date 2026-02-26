@@ -1,25 +1,25 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import java.util.List;
 import java.util.Optional;
-import com.expensemanagement.DTO.AIDTOs;
+import com.expensemanagement.dto.AIDTOs;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Exception.ApprovalNotAllowedException;
-import com.expensemanagement.Exception.FreezePeriodException;
-import com.expensemanagement.Notification.Notification;
-import com.expensemanagement.Notification.NotificationService;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.ExpenseSplitRepository;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.exception.ApprovalNotAllowedException;
+import com.expensemanagement.exception.FreezePeriodException;
+import com.expensemanagement.notification.Notification;
+import com.expensemanagement.notification.NotificationService;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.ExpenseSplitRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -177,7 +177,7 @@ public class ExpenseServiceImple implements ExpenseService {
         vendorAnalyticsService.updateVendorStats(saved);
 
         // Feature 16: Confidence Score
-        saved.setConfidenceScore(confidenceScoreService.calculate(saved));
+        saved.setConfidenceScore((double) confidenceScoreService.calculateScore(saved).getScore());
         expenseRepository.save(saved);
 
         return saved;

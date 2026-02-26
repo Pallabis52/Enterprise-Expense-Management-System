@@ -1,10 +1,10 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Notification.NotificationService;
-import com.expensemanagement.Notification.Notification;
-import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.notification.NotificationService;
+import com.expensemanagement.notification.Notification;
+import com.expensemanagement.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

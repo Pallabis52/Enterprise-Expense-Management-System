@@ -1,6 +1,6 @@
-package com.expensemanagement.Repository;
+package com.expensemanagement.repository;
 
-import com.expensemanagement.Entities.VendorStat;
+import com.expensemanagement.entities.VendorStat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

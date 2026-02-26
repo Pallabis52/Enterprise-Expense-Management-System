@@ -1,4 +1,4 @@
-package com.expensemanagement.DTO;
+package com.expensemanagement.dto;
 
 import lombok.Data;
 

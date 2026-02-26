@@ -1,4 +1,4 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

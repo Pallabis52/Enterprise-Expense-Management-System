@@ -1,7 +1,7 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.AuditLog;
-import com.expensemanagement.Repository.AuditLogRepository;
+import com.expensemanagement.entities.AuditLog;
+import com.expensemanagement.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Services.ApprovalService;
-import com.expensemanagement.Services.ExpenseService;
-import com.expensemanagement.Services.FileService;
-import com.expensemanagement.Services.ReceiptStorageService;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.services.ApprovalService;
+import com.expensemanagement.services.ExpenseService;
+import com.expensemanagement.services.FileService;
+import com.expensemanagement.services.ReceiptStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,11 +36,11 @@ public class ExpenseController {
     private final FileService fileService;
     private final ApprovalService approvalService;
     private final ReceiptStorageService receiptStorageService;
-    private final com.expensemanagement.Repository.UserRepository userRepository;
-    private final com.expensemanagement.Repository.ExpenseRepository expenseRepository;
-    private final com.expensemanagement.Services.UserService userService;
-    private final com.expensemanagement.Services.CategorySuggestionService categorySuggestionService;
-    private final com.expensemanagement.Services.ExpenseSplitService expenseSplitService;
+    private final com.expensemanagement.repository.UserRepository userRepository;
+    private final com.expensemanagement.repository.ExpenseRepository expenseRepository;
+    private final com.expensemanagement.services.UserService userService;
+    private final com.expensemanagement.services.CategorySuggestionService categorySuggestionService;
+    private final com.expensemanagement.services.ExpenseSplitService expenseSplitService;
 
     // --- Receipt Upload & Viewing ---
 
@@ -81,7 +81,7 @@ public class ExpenseController {
         }
 
         String currentUserEmail = auth.getName();
-        com.expensemanagement.Entities.User currentUser = userRepository.findByEmail(currentUserEmail).orElseThrow();
+        com.expensemanagement.entities.User currentUser = userRepository.findByEmail(currentUserEmail).orElseThrow();
         String role = currentUser.getRole().name();
 
         boolean authorized = false;
@@ -95,7 +95,7 @@ public class ExpenseController {
         // MANAGER -> team members
         else if ("MANAGER".equals(role)) {
             // Check if expense owner is in manager's team
-            com.expensemanagement.Entities.User expenseOwner = expense.getUser();
+            com.expensemanagement.entities.User expenseOwner = expense.getUser();
             if (expenseOwner.getTeam() != null && expenseOwner.getTeam().getManager() != null
                     && expenseOwner.getTeam().getManager().getEmail().equals(currentUserEmail)) {
                 authorized = true;
@@ -159,7 +159,7 @@ public class ExpenseController {
     @GetMapping("/suggest-categories")
     public ResponseEntity<?> suggestCategories(@RequestParam(required = false) String title,
             org.springframework.security.core.Authentication auth) {
-        com.expensemanagement.Entities.User user = userRepository.findByEmail(auth.getName()).orElseThrow();
+        com.expensemanagement.entities.User user = userRepository.findByEmail(auth.getName()).orElseThrow();
         return ResponseEntity.ok(categorySuggestionService.suggestCategories(user, title));
     }
 
@@ -167,7 +167,7 @@ public class ExpenseController {
     @Operation(summary = "Split an expense with other users")
     @PostMapping("/{id}/split")
     public ResponseEntity<?> splitExpense(@PathVariable Long id,
-            @RequestBody List<com.expensemanagement.Services.ExpenseSplitService.UserAmount> splits) {
+            @RequestBody List<com.expensemanagement.services.ExpenseSplitService.UserAmount> splits) {
         Expense expense = expenseService.getById(id);
         if (expense == null)
             return ResponseEntity.notFound().build();
@@ -241,7 +241,7 @@ public class ExpenseController {
     @GetMapping("/search")
     public ResponseEntity<?> searchExpenses(@RequestParam String query,
             org.springframework.security.core.Authentication auth) {
-        com.expensemanagement.Entities.User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow();
+        com.expensemanagement.entities.User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow();
         List<Expense> results = expenseService.searchExpenses(query, currentUser);
         return ResponseEntity.ok(results);
     }

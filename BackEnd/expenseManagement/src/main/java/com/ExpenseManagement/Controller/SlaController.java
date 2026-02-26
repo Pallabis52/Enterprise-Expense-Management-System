@@ -1,7 +1,7 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Services.SlaService;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.services.SlaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

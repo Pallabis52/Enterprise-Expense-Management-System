@@ -1,5 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { sendVoiceCommand, getVoiceHints } from '../../services/voiceService';
+import { sendVoiceCommand, getVoiceHints, managerVoiceAction } from '../../services/voiceService';
 import VoiceResultPanel from './VoiceResultPanel';
 import './VoiceButton.css';
 
@@ -40,7 +39,23 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
         setState('processing');
         setError('');
         try {
-            const response = await sendVoiceCommand(text);
+            let response;
+            const lowerText = text.toLowerCase();
+
+            // Feature 23: Specialized Manager Voice Actions
+            if (role === 'MANAGER' && (lowerText.includes('approve') || lowerText.includes('reject'))) {
+                const data = await managerVoiceAction(text);
+                response = {
+                    intent: lowerText.includes('approve') ? 'APPROVE_EXPENSE' : 'REJECT_EXPENSE',
+                    reply: data.reply,
+                    params: {},
+                    fallback: false,
+                    processingMs: 0
+                };
+            } else {
+                response = await sendVoiceCommand(text);
+            }
+
             setResult(response);
             setState('result');
             if (onResult) onResult(response);

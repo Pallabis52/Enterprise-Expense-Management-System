@@ -1,6 +1,6 @@
-package com.expensemanagement.Repository;
+package com.expensemanagement.repository;
 
-import com.expensemanagement.Entities.AuditLog;
+import com.expensemanagement.entities.AuditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

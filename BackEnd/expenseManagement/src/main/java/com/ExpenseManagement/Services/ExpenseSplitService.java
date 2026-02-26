@@ -1,9 +1,9 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.ExpenseSplit;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseSplitRepository;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.ExpenseSplit;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.ExpenseSplitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

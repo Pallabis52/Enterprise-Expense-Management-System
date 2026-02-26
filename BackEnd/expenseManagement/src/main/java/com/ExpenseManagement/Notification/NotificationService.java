@@ -1,8 +1,8 @@
-package com.expensemanagement.Notification;
+package com.expensemanagement.notification;
 
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;

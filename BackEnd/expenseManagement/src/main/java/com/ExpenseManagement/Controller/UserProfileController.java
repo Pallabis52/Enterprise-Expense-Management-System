@@ -1,7 +1,7 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Services.UserService;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;

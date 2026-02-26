@@ -1,6 +1,6 @@
-package com.expensemanagement.Repository;
+package com.expensemanagement.repository;
 
-import com.expensemanagement.Entities.FraudRule;
+import com.expensemanagement.entities.FraudRule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

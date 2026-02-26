@@ -1,9 +1,9 @@
-package com.expensemanagement.Security;
+package com.expensemanagement.security;
 
-import com.expensemanagement.DTO.AIDTOs;
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.User;
+import com.expensemanagement.dto.AIDTOs;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.User;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;

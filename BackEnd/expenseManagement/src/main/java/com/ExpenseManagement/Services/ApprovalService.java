@@ -1,12 +1,12 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.repository.ExpenseRepository;
 
 import lombok.RequiredArgsConstructor;
 

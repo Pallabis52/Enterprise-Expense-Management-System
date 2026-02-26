@@ -1,4 +1,4 @@
-package com.expensemanagement.DTO.Performance;
+package com.expensemanagement.dto.Performance;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

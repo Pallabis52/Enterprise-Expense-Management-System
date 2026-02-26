@@ -1,4 +1,4 @@
-package com.expensemanagement.Security;
+package com.expensemanagement.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

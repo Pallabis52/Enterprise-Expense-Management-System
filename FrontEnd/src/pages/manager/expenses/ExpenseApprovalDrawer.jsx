@@ -16,6 +16,8 @@ import {
     ChatBubbleLeftRightIcon,
     BanknotesIcon
 } from '@heroicons/react/24/outline';
+import MoodInsightBadge from '../../../components/ai/MoodInsightBadge';
+import ConfidenceIndicator from '../../../components/ai/ConfidenceIndicator';
 
 const MANAGER_APPROVE_LIMIT = 10_000;
 const ADMIN_ONLY_LIMIT = 50_000;
@@ -225,11 +227,18 @@ const ExpenseApprovalDrawer = ({ isOpen, onClose }) => {
                             <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mt-1">
                                 {formatCurrency(expense.amount)}
                             </p>
-                            <div className="mt-3">
+                            <div className="mt-3 flex items-center justify-end gap-2">
+                                <MoodInsightBadge expenseId={expense.id} />
                                 <Badge variant={statusVariant} className="font-black text-[10px] tracking-widest uppercase px-4 py-1.5 rounded-full">{currentStatus}</Badge>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* AI Auditing Strategy (Confidence Score) */}
+                <div className="p-8 rounded-[2rem] bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/20 shadow-xl">
+                    <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-6">AI Transaction Identity Verification</h4>
+                    <ConfidenceIndicator expenseId={expense.id} />
                 </div>
 
                 {/* ── Personnel Card ── */}

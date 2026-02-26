@@ -1,10 +1,10 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import com.expensemanagement.AI.OllamaService;
-import com.expensemanagement.DTO.AIDTOs;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseRepository;
+import com.expensemanagement.dto.AIDTOs;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.ExpenseRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

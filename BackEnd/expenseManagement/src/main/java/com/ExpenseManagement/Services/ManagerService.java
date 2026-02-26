@@ -1,14 +1,14 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.TeamRepository;
-import com.expensemanagement.Repository.UserRepository;
-import com.expensemanagement.Notification.Notification;
-import com.expensemanagement.Notification.NotificationService;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.TeamRepository;
+import com.expensemanagement.repository.UserRepository;
+import com.expensemanagement.notification.NotificationService;
+import com.expensemanagement.notification.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -79,13 +79,13 @@ public class ManagerService {
 
         if (expense.getUser().getTeam() == null ||
                 !expense.getUser().getTeam().getId().equals(team.getId())) {
-            throw new com.expensemanagement.Exception.UnauthorizedAccessException(
+            throw new com.expensemanagement.exception.UnauthorizedAccessException(
                     "Unauthorized to approve this expense");
         }
 
         // Feature 1: amount rule enforcement
         if (expense.getAmount() > 10_000) {
-            throw new com.expensemanagement.Exception.ApprovalNotAllowedException(
+            throw new com.expensemanagement.exception.ApprovalNotAllowedException(
                     "Managers can only approve expenses up to ₹10,000. " +
                             "Use 'Forward to Admin' for amounts between ₹10,001–₹50,000.");
         }
@@ -140,12 +140,12 @@ public class ManagerService {
 
         if (expense.getUser().getTeam() == null ||
                 !expense.getUser().getTeam().getId().equals(team.getId())) {
-            throw new com.expensemanagement.Exception.UnauthorizedAccessException(
+            throw new com.expensemanagement.exception.UnauthorizedAccessException(
                     "Unauthorized to forward this expense");
         }
 
         if (expense.getAmount() <= 10_000) {
-            throw new com.expensemanagement.Exception.ApprovalNotAllowedException(
+            throw new com.expensemanagement.exception.ApprovalNotAllowedException(
                     "Expense is within manager approval limit (≤ ₹10,000). No need to forward.");
         }
 
@@ -156,7 +156,7 @@ public class ManagerService {
 
         // Notify Admin role
         notificationService.notifyRole(
-                com.expensemanagement.Entities.Role.ADMIN,
+                com.expensemanagement.entities.Role.ADMIN,
                 "Expense Forwarded for Approval",
                 String.format("Manager '%s' forwarded expense '%s' (₹%.2f) for admin approval. Note: %s",
                         manager.getName(), saved.getTitle(), saved.getAmount(), comment),

@@ -1,16 +1,16 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.AI.VoicePromptTemplates;
 import com.expensemanagement.AI.VoiceResponse;
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.UserRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

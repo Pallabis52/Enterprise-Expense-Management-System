@@ -1,8 +1,8 @@
-package com.expensemanagement.Config;
+package com.expensemanagement.config;
 
-import com.expensemanagement.Security.JwtAuthenticationFilter;
-import com.expensemanagement.Security.JwtUtils;
-import com.expensemanagement.Security.UserDetailsServiceImpl;
+import com.expensemanagement.security.JwtAuthenticationFilter;
+import com.expensemanagement.security.JwtUtils;
+import com.expensemanagement.security.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

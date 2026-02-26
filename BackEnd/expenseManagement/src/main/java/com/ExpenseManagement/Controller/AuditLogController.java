@@ -1,7 +1,7 @@
 package com.expensemanagement.Controller;
 
-import com.expensemanagement.Entities.AuditLog;
-import com.expensemanagement.Services.AuditLogService;
+import com.expensemanagement.entities.AuditLog;
+import com.expensemanagement.services.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

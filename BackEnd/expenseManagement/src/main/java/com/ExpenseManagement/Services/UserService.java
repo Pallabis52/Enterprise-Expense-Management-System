@@ -1,9 +1,9 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
-import com.expensemanagement.DTO.RegisterRequest;
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.dto.RegisterRequest;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

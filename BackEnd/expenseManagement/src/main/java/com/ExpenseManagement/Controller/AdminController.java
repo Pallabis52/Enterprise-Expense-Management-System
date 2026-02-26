@@ -14,19 +14,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.expensemanagement.DTO.AdminStatsDTO;
-import com.expensemanagement.Entities.Approval_Status;
-import com.expensemanagement.Entities.Expense;
-import com.expensemanagement.Entities.FreezePeriod;
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.Team;
-import com.expensemanagement.Entities.TeamBudget;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.ExpenseRepository;
-import com.expensemanagement.Repository.UserRepository;
-import com.expensemanagement.Services.FreezePeriodService;
-import com.expensemanagement.Services.TeamBudgetService;
-import com.expensemanagement.Services.TeamService;
+import com.expensemanagement.dto.AdminStatsDTO;
+import com.expensemanagement.entities.Approval_Status;
+import com.expensemanagement.entities.Expense;
+import com.expensemanagement.entities.FreezePeriod;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.Team;
+import com.expensemanagement.entities.TeamBudget;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.UserRepository;
+import com.expensemanagement.service.*;
+import com.expensemanagement.services.FreezePeriodService;
+import com.expensemanagement.services.TeamBudgetService;
+import com.expensemanagement.services.TeamService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -45,9 +46,9 @@ public class AdminController {
     private final TeamService teamService;
     private final TeamBudgetService teamBudgetService;
     private final FreezePeriodService freezePeriodService;
-    private final com.expensemanagement.Services.PolicyService policyService;
-    private final com.expensemanagement.Services.VendorAnalyticsService vendorAnalyticsService;
-    private final com.expensemanagement.Services.FraudDetectionService fraudDetectionService;
+    private final com.expensemanagement.services.PolicyService policyService;
+    private final com.expensemanagement.services.VendorAnalyticsService vendorAnalyticsService;
+    private final com.expensemanagement.services.FraudDetectionService fraudDetectionService;
 
     // ── Feature 10: Policy Engine ─────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ public class AdminController {
     // ── Feature 11: Vendor Analytics ──────────────────────────────────────────
 
     @GetMapping("/vendors")
-    public ResponseEntity<List<com.expensemanagement.Entities.VendorStat>> getVendors(
+    public ResponseEntity<List<com.expensemanagement.entities.VendorStat>> getVendors(
             @RequestParam(required = false) Boolean suspicious) {
         if (Boolean.TRUE.equals(suspicious)) {
             return ResponseEntity.ok(vendorAnalyticsService.getSuspiciousVendors());

@@ -1,6 +1,6 @@
-package com.expensemanagement.Notification;
+package com.expensemanagement.notification;
 
-import com.expensemanagement.Entities.Role;
+import com.expensemanagement.entities.*;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,9 +1,9 @@
-package com.expensemanagement.Services;
+package com.expensemanagement.services;
 
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.OllamaService;
-import com.expensemanagement.DTO.AIDTOs;
-import com.expensemanagement.Entities.User;
+import com.expensemanagement.dto.AIDTOs;
+import com.expensemanagement.entities.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

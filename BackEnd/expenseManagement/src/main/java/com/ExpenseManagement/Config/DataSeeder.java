@@ -1,8 +1,8 @@
-package com.expensemanagement.Config;
+package com.expensemanagement.config;
 
-import com.expensemanagement.Entities.Role;
-import com.expensemanagement.Entities.User;
-import com.expensemanagement.Repository.UserRepository;
+import com.expensemanagement.entities.Role;
+import com.expensemanagement.entities.User;
+import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
