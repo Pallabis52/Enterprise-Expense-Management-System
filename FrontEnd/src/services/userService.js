@@ -23,16 +23,16 @@ const userService = {
     },
 
     deleteExpense: async (id) => {
-        await api.delete(`/expenses/delete/${id}`);
+        await api.delete(`/user/expenses/${id}`);
     },
 
     saveDraft: async (expenseData) => {
-        const response = await api.post('/expenses/draft', expenseData);
+        const response = await api.post('/user/expenses/draft', expenseData);
         return response.data;
     },
 
     submitDraft: async (id) => {
-        const response = await api.post(`/expenses/${id}/submit`);
+        const response = await api.post(`/user/expenses/${id}/submit`);
         return response.data;
     },
 
@@ -42,7 +42,7 @@ const userService = {
     },
 
     searchExpenses: async (query) => {
-        const response = await api.get('/expenses/search', { params: { query } });
+        const response = await api.get('/user/expenses/search', { params: { query } });
         return response.data;
     },
 
@@ -66,7 +66,7 @@ const userService = {
     uploadReceipt: async (id, file) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post(`/expenses/${id}/upload-receipt`, formData, {
+        const response = await api.post(`/user/expenses/${id}/upload-receipt`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -75,7 +75,7 @@ const userService = {
     },
 
     viewReceipt: async (id) => {
-        const response = await api.get(`/expenses/${id}/receipt`, {
+        const response = await api.get(`/user/expenses/${id}/receipt`, {
             responseType: 'blob'
         });
         const contentType = response.headers['content-type'];

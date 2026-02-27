@@ -7,6 +7,7 @@ import {
     ChartBarIcon,
     UserIcon,
     SparklesIcon,
+    MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
     Squares2X2Icon
 } from '@heroicons/react/24/outline';
@@ -27,6 +28,7 @@ const UserSidebar = ({ isOpen, toggleSidebar }) => {
         { name: 'My Expenses', href: '/user/expenses', icon: BanknotesIcon },
         { name: 'Reports', href: '/user/reports', icon: ChartBarIcon },
         { name: 'AI Tools', href: '/user/ai', icon: SparklesIcon },
+        { name: 'Voice Assistant', href: '/user/voice', icon: MicrophoneIcon },
         { name: 'Profile', href: '/user/profile', icon: UserIcon },
     ];
 

@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackages = { "com.expensemanagement.repository", "com.expensemanagement.Repository" })
-@EntityScan(basePackages = { "com.expensemanagement.entities", "com.expensemanagement.Entities" })
+@EnableJpaRepositories(basePackages = { "com.expensemanagement.repository", "com.expensemanagement.notification" })
+@EntityScan(basePackages = { "com.expensemanagement.entities", "com.expensemanagement.notification" })
 public class ExpenseManagementApplication {
 
 	public static void main(String[] args) {

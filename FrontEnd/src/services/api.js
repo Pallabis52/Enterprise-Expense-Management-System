@@ -11,16 +11,43 @@ const api = axios.create({
 // Request Interceptor
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const tokenPreview = token.substring(0, 10) + '...';
-            console.log(`[API] Attaching token (${tokenPreview}) to ${config.method.toUpperCase()} ${config.url}`);
+        let token = localStorage.getItem('token');
 
-            // Standard Header Auth
-            config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            console.warn(`[API] NO TOKEN FOUND for ${config.method.toUpperCase()} ${config.url}`);
+        // Robust Fallback: Check Zustand's persistent storage if direct token is missing/empty
+        if (!token || token === 'null' || token === 'undefined') {
+            try {
+                const authStorage = localStorage.getItem('auth-storage');
+                if (authStorage) {
+                    const parsed = JSON.parse(authStorage);
+                    token = parsed.state?.token;
+                }
+            } catch (err) {
+                console.error('[API] Auth Storage Parse Error:', err);
+            }
         }
+
+        if (token && token !== 'null' && token !== 'undefined') {
+            const cleanToken = token.trim();
+            const tokenPreview = cleanToken.substring(0, 10) + '...';
+
+            // Log exactly what we are doing to help debug the 401
+            console.log(`[API] Attaching Token to ${config.method.toUpperCase()} ${config.url} (${tokenPreview})`);
+
+            // Apply to headers using standard and modern methods for bulletproof compatibility
+            if (config.headers.set) {
+                config.headers.set('Authorization', `Bearer ${cleanToken}`);
+            } else {
+                config.headers.Authorization = `Bearer ${cleanToken}`;
+            }
+        } else {
+            console.warn(`[API] MISSION CRITICAL: No token found for ${config.method.toUpperCase()} ${config.url}`);
+        }
+
+        // Final sanity check for 401 debugging
+        if (config.url.includes('/voice/command')) {
+            console.log('[API] Final Voice Headers:', config.headers);
+        }
+
         return config;
     },
     (error) => {

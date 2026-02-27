@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { sendVoiceCommand, getVoiceHints, managerVoiceAction } from '../../services/voiceService';
 import VoiceResultPanel from './VoiceResultPanel';
 import './VoiceButton.css';

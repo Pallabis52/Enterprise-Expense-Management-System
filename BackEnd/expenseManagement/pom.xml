@@ -40,12 +40,6 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -83,12 +77,6 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.0.2</version>
 		</dependency>
 
 
@@ -140,8 +128,9 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<jvmArguments>-Xmx512m -Xms256m -XX:MaxDirectMemorySize=256m
-						-XX:MaxMetaspaceSize=128m</jvmArguments>
+					<jvmArguments>-Xmx320m -Xms128m -XX:+UseSerialGC -Xss228k
+						-XX:MaxDirectMemorySize=64m -XX:MaxMetaspaceSize=96m
+						-XX:ReservedCodeCacheSize=48m -XX:+ExitOnOutOfMemoryError</jvmArguments>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

@@ -222,4 +222,21 @@ public final class PromptTemplates {
                                 """
                                 .formatted(expensesJson);
         }
+
+        public static String voiceParse(String transcript) {
+                return """
+                                Instruction: Convert the following voice transcript into a JSON object for an expense.
+                                Transcript: "%s"
+
+                                JSON Format:
+                                {
+                                  "title": "Short descriptive title",
+                                  "amount": 0.0,
+                                  "category": "One of [Travel, Food, Supplies, Medical, Other]",
+                                  "description": "Any extra details mentioned"
+                                }
+
+                                Output: Reply with ONLY the valid JSON object. No other text.
+                                """.formatted(transcript);
+        }
 }

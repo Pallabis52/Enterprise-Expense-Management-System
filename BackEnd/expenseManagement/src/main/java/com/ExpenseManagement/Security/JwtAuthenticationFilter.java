@@ -11,7 +11,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -21,7 +20,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
-    private final UserDetailsServiceImpl userDetailsService;
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -29,21 +28,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("No Bearer token found in Authorization header for: {}", request.getRequestURI());
+            log.warn("AUTH-DIAGNOSTIC: No Bearer token found for URI: {}. Method: {}",
+                    request.getRequestURI(), request.getMethod());
+
+            // Log ALL headers to see if Authorization was renamed or stripped
+            java.util.Enumeration<String> headerNames = request.getHeaderNames();
+            StringBuilder headersFound = new StringBuilder();
+            while (headerNames.hasMoreElements()) {
+                String name = headerNames.nextElement();
+                headersFound.append(name).append(", ");
+            }
+            log.info("AUTH-DIAGNOSTIC: Headers actually received for {}: [{}]", request.getRequestURI(), headersFound);
+
             filterChain.doFilter(request, response);
             return;
         }
 
         jwt = authHeader.substring(7);
+        log.info("AUTH-DIAGNOSTIC: Bearer token detected for URI: {}. Extracting identity...", request.getRequestURI());
 
         try {
             userEmail = jwtUtils.extractUsername(jwt);
-            log.debug("JWT Token found for user: {} on path: {}", userEmail, request.getRequestURI());
+            log.info("AUTH-DIAGNOSTIC: Extracted user: {} from token.", userEmail);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
@@ -56,9 +72,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("User {} authenticated successfully on path: {}", userEmail, request.getRequestURI());
+                    log.info("AUTH-DIAGNOSTIC: Successfully authenticated user: {} for {}", userEmail,
+                            request.getRequestURI());
                 } else {
-                    log.error("JWT token validation failed for user: {}", userEmail);
+                    log.error("AUTH-DIAGNOSTIC: Token valid check FAILED for user: {}", userEmail);
                     request.setAttribute("authError", "Token validation failed (expired or invalid). Please re-login.");
                 }
             } else if (userEmail == null) {

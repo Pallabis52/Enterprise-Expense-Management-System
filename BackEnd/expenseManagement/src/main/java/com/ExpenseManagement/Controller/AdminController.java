@@ -1,353 +1,271 @@
-package com.expensemanagement.Controller;
+package com.expensemanagement.controller;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
+import com.expensemanagement.entities.*;
+import com.expensemanagement.services.*;
+import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.expensemanagement.dto.AdminStatsDTO;
-import com.expensemanagement.entities.Approval_Status;
-import com.expensemanagement.entities.Expense;
-import com.expensemanagement.entities.FreezePeriod;
-import com.expensemanagement.entities.Role;
-import com.expensemanagement.entities.Team;
-import com.expensemanagement.entities.TeamBudget;
-import com.expensemanagement.entities.User;
-import com.expensemanagement.repository.ExpenseRepository;
-import com.expensemanagement.repository.UserRepository;
-import com.expensemanagement.service.*;
-import com.expensemanagement.services.FreezePeriodService;
-import com.expensemanagement.services.TeamBudgetService;
-import com.expensemanagement.services.TeamService;
+import java.util.List;
+import java.util.Map;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
+/**
+ * Handles all /api/admin/* endpoints for users with ADMIN role.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
+    private final ExpenseService expenseService;
+    private final TeamService teamService;
+    private final UserService userService;
+    private final ExpensePolicyService policyService;
+    private final VendorAnalyticsService vendorAnalyticsService;
+    private final FraudDetectionService fraudDetectionService;
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
-    private final TeamService teamService;
-    private final TeamBudgetService teamBudgetService;
-    private final FreezePeriodService freezePeriodService;
-    private final com.expensemanagement.services.PolicyService policyService;
-    private final com.expensemanagement.services.VendorAnalyticsService vendorAnalyticsService;
-    private final com.expensemanagement.services.FraudDetectionService fraudDetectionService;
 
-    // ── Feature 10: Policy Engine ─────────────────────────────────────────────
+    // ── Expense Management ──────────────────────────────────────────────────────
 
-    @PostMapping("/policies/evaluate/{expenseId}")
-    public ResponseEntity<Map<String, Object>> evaluatePolicy(@PathVariable Long expenseId) {
-        Expense expense = expenseRepository.findById(expenseId).orElseThrow();
-        boolean breached = policyService.evaluatePolicies(expense);
-        return ResponseEntity.ok(Map.of("expenseId", expenseId, "breached", breached));
-    }
-
-    // ── Feature 11: Vendor Analytics ──────────────────────────────────────────
-
-    @GetMapping("/vendors")
-    public ResponseEntity<List<com.expensemanagement.entities.VendorStat>> getVendors(
-            @RequestParam(required = false) Boolean suspicious) {
-        if (Boolean.TRUE.equals(suspicious)) {
-            return ResponseEntity.ok(vendorAnalyticsService.getSuspiciousVendors());
+    /**
+     * GET /api/admin/expenses?page=1&limit=10&status=PENDING
+     */
+    @GetMapping("/expenses")
+    public ResponseEntity<Page<Expense>> getAllExpenses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) Approval_Status status,
+            Authentication auth) {
+        PageRequest pageable = PageRequest.of(Math.max(0, page - 1), limit,
+                Sort.by(Sort.Direction.DESC, "date"));
+        Page<Expense> expenses;
+        if (status != null) {
+            expenses = expenseRepository.findByStatus(status, pageable);
+        } else {
+            expenses = expenseRepository.findAll(pageable);
         }
-        return ResponseEntity.ok(vendorAnalyticsService.getTopVendors());
+        return ResponseEntity.ok(expenses);
     }
 
-    // ── Feature 12: Fraud Detection ───────────────────────────────────────────
-
-    @GetMapping("/fraud-flags/{expenseId}")
-    public ResponseEntity<List<String>> getFraudFlags(@PathVariable Long expenseId) {
-        Expense expense = expenseRepository.findById(expenseId).orElseThrow();
-        return ResponseEntity.ok(fraudDetectionService.detectFraud(expense));
+    /**
+     * GET /api/expenses/getbyid/{id} (used by both manager and admin frontend
+     * services)
+     */
+    @GetMapping("/expenses/{id}")
+    public ResponseEntity<Expense> getExpenseById(@PathVariable Long id) {
+        Expense expense = expenseService.getById(id);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(expense);
     }
 
-    // ── Team Management ───────────────────────────────────────────────────────
-
-    @PostMapping("/teams")
-    public ResponseEntity<Team> createTeam(@RequestBody Map<String, Object> body) {
-        String name = (String) body.get("name");
-        Long managerId = Long.valueOf(body.get("managerId").toString());
-        return ResponseEntity.ok(teamService.createTeam(name, managerId));
+    /**
+     * PUT /api/admin/expenses/{id}/approve
+     */
+    @PutMapping("/expenses/{id}/approve")
+    public ResponseEntity<Expense> approveExpense(@PathVariable Long id) {
+        Expense expense = expenseService.approveExpense(id, "ADMIN");
+        return ResponseEntity.ok(expense);
     }
 
-    @PutMapping("/teams/{teamId}/manager")
-    public ResponseEntity<Team> assignManager(@PathVariable Long teamId, @RequestBody Map<String, Long> body) {
-        Long managerId = body.get("managerId");
-        return ResponseEntity.ok(teamService.assignManager(teamId, managerId));
+    /**
+     * PUT /api/admin/expenses/{id}/reject
+     */
+    @PutMapping("/expenses/{id}/reject")
+    public ResponseEntity<Expense> rejectExpense(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        Expense expense = expenseService.rejectExpense(id, "ADMIN");
+        return ResponseEntity.ok(expense);
     }
 
-    @PutMapping("/teams/{teamId}/members")
-    public ResponseEntity<Team> addMember(@PathVariable Long teamId, @RequestBody Map<String, Long> body) {
-        Long userId = body.get("userId");
-        return ResponseEntity.ok(teamService.addMember(teamId, userId));
+    /**
+     * DELETE /api/expenses/delete/{id} – shared with user-level delete
+     */
+    @DeleteMapping("/expenses/delete/{id}")
+    public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
+        expenseService.deleteExpense(id);
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/teams")
-    public ResponseEntity<List<Team>> getAllTeams() {
-        return ResponseEntity.ok(teamService.getAllTeams());
-    }
+    // ── Users ───────────────────────────────────────────────────────────────────
 
+    /**
+     * GET /api/admin/users?role=USER
+     */
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsersByRole(@RequestParam(required = false) Role role) {
+    public ResponseEntity<List<User>> getUsers(@RequestParam(required = false) Role role) {
         if (role != null) {
             return ResponseEntity.ok(userRepository.findByRole(role));
         }
         return ResponseEntity.ok(userRepository.findAll());
     }
 
-    // ── Global Expense Oversight ──────────────────────────────────────────────
+    // ── Teams ───────────────────────────────────────────────────────────────────
 
-    @GetMapping("/expenses")
-    public ResponseEntity<Page<Expense>> getAllExpenses(
-            @RequestParam(required = false) Approval_Status status,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit) {
-
-        log.info("Fetching all expenses for admin. Page: {}, Limit: {}, Status: {}", page, limit, status);
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        if (status != null) {
-            return ResponseEntity.ok(expenseRepository.findByStatus(status, pageable));
-        }
-        return ResponseEntity.ok(expenseRepository.findAll(pageable));
+    /**
+     * GET /api/admin/teams
+     */
+    @GetMapping("/teams")
+    public ResponseEntity<List<Team>> getAllTeams() {
+        return ResponseEntity.ok(teamService.getAllTeams());
     }
 
-    /** Feature 1: Admin views all forwarded-to-admin expenses */
-    @GetMapping("/expenses/forwarded")
-    public ResponseEntity<Page<Expense>> getForwardedExpenses(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit) {
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        return ResponseEntity.ok(expenseRepository.findByStatusIn(
-                List.of(Approval_Status.FORWARDED_TO_ADMIN), pageable));
+    /**
+     * POST /api/admin/teams
+     */
+    @PostMapping("/teams")
+    public ResponseEntity<Team> createTeam(@RequestBody Map<String, Object> body) {
+        String name = (String) body.get("name");
+        Long managerId = body.containsKey("managerId") ? Long.valueOf(body.get("managerId").toString()) : null;
+        Team team = teamService.createTeam(name, managerId);
+        return ResponseEntity.ok(team);
     }
 
-    /** Feature 1 & 8: Admin approves with optional comment */
-    @PutMapping("/expenses/{id}/approve")
-    public ResponseEntity<Expense> approveExpense(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expense not found"));
-        expense.setStatus(Approval_Status.APPROVED);
-        expense.setApprovalStage("ADMIN");
-        if (body != null && body.containsKey("approvalComment")) {
-            expense.setApprovalComment(body.get("approvalComment"));
-        }
-        Expense saved = expenseRepository.save(expense);
-        // Notify user
-        notifyUser(saved, "approved");
-        return ResponseEntity.ok(saved);
-    }
-
-    /** Feature 1 & 8: Admin rejects with rejection reason and optional comment */
-    @PutMapping("/expenses/{id}/reject")
-    public ResponseEntity<Expense> rejectExpense(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expense not found"));
-        expense.setStatus(Approval_Status.REJECTED);
-        expense.setApprovalStage("ADMIN");
-        if (body != null) {
-            String reason = body.getOrDefault("reason", "Rejected by admin");
-            expense.setRejectionReason(reason);
-            expense.setApprovalComment(body.getOrDefault("approvalComment", reason));
-        }
-        Expense saved = expenseRepository.save(expense);
-        notifyUser(saved, "rejected");
-        return ResponseEntity.ok(saved);
-    }
-
-    // ── Existing Reports ──────────────────────────────────────────────────────
-
-    @GetMapping("/reports/stats")
-    public ResponseEntity<AdminStatsDTO> getAdminStats() {
-        Double total = expenseRepository.sumTotalAmount();
-        Long approved = expenseRepository.countByStatus(Approval_Status.APPROVED);
-        Long rejected = expenseRepository.countByStatus(Approval_Status.REJECTED);
-        Long pending = expenseRepository.countByStatus(Approval_Status.PENDING);
-        Long categories = expenseRepository.countDistinctCategories();
-
-        Double totalSpent = total != null ? total : 0.0;
-        Double avgMonthly = totalSpent / 12;
-
-        return ResponseEntity.ok(AdminStatsDTO.builder()
-                .totalSpent(totalSpent)
-                .avgMonthlySpend(avgMonthly)
-                .categoryCount(categories != null ? categories : 0L)
-                .userCount(userRepository.count())
-                .teamCount(teamService.getTeamCount())
-                .pendingCount(pending != null ? pending : 0L)
-                .approvedCount(approved != null ? approved : 0L)
-                .rejectedCount(rejected != null ? rejected : 0L)
-                .build());
-    }
-
-    @GetMapping("/reports/monthly")
-    public ResponseEntity<List<Map<String, Object>>> getMonthlyExpenses(
-            @RequestParam(defaultValue = "2024") int year) {
-        List<Object[]> results = expenseRepository.sumAmountByMonth(year);
-        List<Map<String, Object>> response = new ArrayList<>();
-        String[] months = { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-        for (Object[] row : results) {
-            Map<String, Object> item = new HashMap<>();
-            int monthIndex = row[0] instanceof Number ? ((Number) row[0]).intValue() : 0;
-            Double amount = row[1] instanceof Number ? ((Number) row[1]).doubleValue() : 0.0;
-            if (monthIndex >= 1 && monthIndex <= 12) {
-                item.put("month", months[monthIndex]);
-                item.put("amount", amount);
-                response.add(item);
-            }
-        }
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/reports/category")
-    public ResponseEntity<List<Map<String, Object>>> getCategoryDistribution() {
-        List<Object[]> results = expenseRepository.sumAmountByCategory();
-        List<Map<String, Object>> response = new ArrayList<>();
-        for (Object[] row : results) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", (String) row[0]);
-            item.put("value", row[1] instanceof Number ? ((Number) row[1]).doubleValue() : 0.0);
-            response.add(item);
-        }
-        return ResponseEntity.ok(response);
-    }
-
-    // ── Feature 3: Budget Management ─────────────────────────────────────────
-
-    @PostMapping("/budgets")
-    public ResponseEntity<TeamBudget> setBudget(@RequestBody Map<String, Object> body) {
-        Long teamId = Long.valueOf(body.get("teamId").toString());
-        int month = Integer.parseInt(body.get("month").toString());
-        int year = Integer.parseInt(body.get("year").toString());
-        Double amount = Double.valueOf(body.get("budgetAmount").toString());
-        return ResponseEntity.ok(teamBudgetService.setBudget(teamId, month, year, amount));
-    }
-
-    @GetMapping("/budgets")
-    public ResponseEntity<List<Map<String, Object>>> getAllBudgets(
-            @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year) {
-        LocalDate now = LocalDate.now();
-        int m = month != null ? month : now.getMonthValue();
-        int y = year != null ? year : now.getYear();
-        return ResponseEntity.ok(teamBudgetService.getAllBudgetStatuses(m, y));
-    }
-
-    @GetMapping("/budgets/team/{teamId}")
-    public ResponseEntity<Map<String, Object>> getTeamBudget(
+    /**
+     * PUT /api/admin/teams/{teamId}/manager
+     */
+    @PutMapping("/teams/{teamId}/manager")
+    public ResponseEntity<Team> assignManager(
             @PathVariable Long teamId,
-            @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year) {
-        LocalDate now = LocalDate.now();
-        int m = month != null ? month : now.getMonthValue();
-        int y = year != null ? year : now.getYear();
-        return ResponseEntity.ok(teamBudgetService.getBudgetStatus(teamId, m, y));
+            @RequestBody Map<String, Long> body) {
+        Team team = teamService.assignManager(teamId, body.get("managerId"));
+        return ResponseEntity.ok(team);
     }
 
-    // ── Feature 4: Freeze Period Management ──────────────────────────────────
-
-    @PostMapping("/freeze")
-    public ResponseEntity<FreezePeriod> lockMonth(@RequestBody(required = false) Map<String, Object> body) {
-        if (body != null && body.containsKey("month") && body.containsKey("year")) {
-            int month = Integer.parseInt(body.get("month").toString());
-            int year = Integer.parseInt(body.get("year").toString());
-            return ResponseEntity.ok(freezePeriodService.lockMonth(month, year));
-        }
-        return ResponseEntity.ok(freezePeriodService.lockCurrentMonth());
+    /**
+     * PUT /api/admin/teams/{teamId}/members
+     */
+    @PutMapping("/teams/{teamId}/members")
+    public ResponseEntity<Team> addMember(
+            @PathVariable Long teamId,
+            @RequestBody Map<String, Long> body) {
+        Team team = teamService.addMember(teamId, body.get("userId"));
+        return ResponseEntity.ok(team);
     }
 
-    @DeleteMapping("/freeze/{month}/{year}")
-    public ResponseEntity<Void> unlockMonth(@PathVariable int month, @PathVariable int year) {
-        freezePeriodService.unlockMonth(month, year);
-        return ResponseEntity.ok().build();
+    /**
+     * DELETE /api/admin/teams/{teamId}/members/{userId}
+     */
+    @DeleteMapping("/teams/{teamId}/members/{userId}")
+    public ResponseEntity<Team> removeMember(
+            @PathVariable Long teamId,
+            @PathVariable Long userId) {
+        Team team = teamService.removeMember(teamId, userId);
+        return ResponseEntity.ok(team);
     }
 
-    @GetMapping("/freeze/status")
-    public ResponseEntity<Map<String, Object>> getFreezeStatus() {
-        LocalDate now = LocalDate.now();
-        Map<String, Object> status = new HashMap<>();
-        status.put("frozen", freezePeriodService.isCurrentMonthFrozen());
-        status.put("month", now.getMonthValue());
-        status.put("year", now.getYear());
-        status.put("periods", freezePeriodService.getAllFreezePeriods());
-        return ResponseEntity.ok(status);
+    // ── Policies ────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/admin/policies
+     */
+    @GetMapping("/policies")
+    public ResponseEntity<List<ExpensePolicy>> getAllPolicies() {
+        return ResponseEntity.ok(policyService.getAllPolicies());
     }
 
-    // ── Feature 7: Advanced Admin Dashboard ───────────────────────────────────
+    /**
+     * POST /api/admin/policies
+     */
+    @PostMapping("/policies")
+    public ResponseEntity<ExpensePolicy> createPolicy(@RequestBody ExpensePolicy policy) {
+        return ResponseEntity.ok(policyService.createPolicy(policy));
+    }
 
-    @GetMapping("/dashboard/advanced")
-    public ResponseEntity<Map<String, Object>> getAdvancedDashboard() {
-        LocalDate now = LocalDate.now();
-        int month = now.getMonthValue();
-        int year = now.getYear();
+    /**
+     * PUT /api/admin/policies/{id}
+     */
+    @PutMapping("/policies/{id}")
+    public ResponseEntity<ExpensePolicy> updatePolicy(
+            @PathVariable Long id,
+            @RequestBody ExpensePolicy policy) {
+        return ResponseEntity.ok(policyService.updatePolicy(id, policy));
+    }
 
-        // Total company spend
+    /**
+     * DELETE /api/admin/policies/{id}
+     */
+    @DeleteMapping("/policies/{id}")
+    public ResponseEntity<Void> deletePolicy(@PathVariable Long id) {
+        policyService.deletePolicy(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Reports ─────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/admin/reports/stats
+     */
+    @GetMapping("/reports/stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        long totalExpenses = expenseRepository.count();
+        long pendingCount = expenseRepository.countByStatus(Approval_Status.PENDING);
+        long approvedCount = expenseRepository.countByStatus(Approval_Status.APPROVED);
+        long rejectedCount = expenseRepository.countByStatus(Approval_Status.REJECTED);
         Double totalSpend = expenseRepository.sumTotalAmount();
+        long totalUsers = userRepository.count();
+        long totalTeams = teamService.getTeamCount();
 
-        // Pending count
-        Long pending = expenseRepository.countByStatus(Approval_Status.PENDING);
-        Long forwarded = expenseRepository.countByStatus(Approval_Status.FORWARDED_TO_ADMIN);
-
-        // Top teams by spending this month
-        List<Object[]> topTeamsRaw = expenseRepository.findTopTeamsByMonth(month, year);
-        List<Map<String, Object>> topTeams = new ArrayList<>();
-        for (Object[] row : topTeamsRaw) {
-            Map<String, Object> t = new HashMap<>();
-            t.put("teamName", row[0]);
-            t.put("spent", row[1] instanceof Number ? ((Number) row[1]).doubleValue() : 0.0);
-            topTeams.add(t);
-        }
-
-        // Budget alerts (exceeded teams)
-        List<Map<String, Object>> allBudgets = teamBudgetService.getAllBudgetStatuses(month, year);
-        List<Map<String, Object>> budgetAlerts = allBudgets.stream()
-                .filter(b -> Boolean.TRUE.equals(b.get("exceeded")))
-                .toList();
-
-        Map<String, Object> dashboard = new HashMap<>();
-        dashboard.put("companyTotalSpend", totalSpend != null ? totalSpend : 0.0);
-        dashboard.put("pendingCount", pending != null ? pending : 0L);
-        dashboard.put("forwardedCount", forwarded != null ? forwarded : 0L);
-        dashboard.put("topTeams", topTeams);
-        dashboard.put("budgetAlerts", budgetAlerts);
-        dashboard.put("freezeStatus", freezePeriodService.isCurrentMonthFrozen());
-        dashboard.put("month", month);
-        dashboard.put("year", year);
-        return ResponseEntity.ok(dashboard);
+        return ResponseEntity.ok(Map.of(
+                "totalExpenses", totalExpenses,
+                "pendingCount", pendingCount,
+                "approvedCount", approvedCount,
+                "rejectedCount", rejectedCount,
+                "totalSpend", totalSpend != null ? totalSpend : 0.0,
+                "totalUsers", totalUsers,
+                "totalTeams", totalTeams));
     }
 
-    // ── private helpers ────────────────────────────────────────────────────────
-
-    private void notifyUser(Expense expense, String action) {
-        if (expense.getUser() != null) {
-            try {
-                // Notification fired inline via injected bean if needed.
-                // For now, this is a placeholder that the NotificationService handles via
-                // service events.
-                log.info("Admin {} expense id={} for user={}", action, expense.getId(), expense.getUser().getEmail());
-            } catch (Exception ignored) {
-            }
-        }
+    /**
+     * GET /api/admin/reports/monthly?year=2024
+     */
+    @GetMapping("/reports/monthly")
+    public ResponseEntity<List<Object[]>> getMonthlyExpenses(
+            @RequestParam(defaultValue = "2024") int year) {
+        return ResponseEntity.ok(expenseRepository.sumAmountByMonth(year));
     }
 
+    /**
+     * GET /api/admin/reports/category
+     */
+    @GetMapping("/reports/category")
+    public ResponseEntity<List<Object[]>> getCategoryDistribution() {
+        return ResponseEntity.ok(expenseRepository.sumAmountByCategory());
+    }
+
+    // ── Vendor & Fraud ──────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/admin/vendors?suspicious=false
+     */
+    @GetMapping("/vendors")
+    public ResponseEntity<?> getVendors(
+            @RequestParam(defaultValue = "false") boolean suspicious) {
+        if (suspicious) {
+            return ResponseEntity.ok(vendorAnalyticsService.getSuspiciousVendors());
+        }
+        return ResponseEntity.ok(vendorAnalyticsService.getTopVendors());
+    }
+
+    /**
+     * GET /api/admin/fraud-flags/{expenseId}
+     */
+    @GetMapping("/fraud-flags/{expenseId}")
+    public ResponseEntity<?> getFraudFlags(@PathVariable Long expenseId) {
+        Expense expense = expenseService.getById(expenseId);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        List<String> flags = fraudDetectionService.detectFraud(expense);
+        return ResponseEntity.ok(Map.of("expenseId", expenseId, "flags", flags));
+    }
 }

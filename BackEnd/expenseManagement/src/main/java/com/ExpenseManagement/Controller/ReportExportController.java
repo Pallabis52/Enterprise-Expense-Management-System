@@ -1,57 +1,69 @@
-package com.expensemanagement.Controller;
+package com.expensemanagement.controller;
 
-import com.expensemanagement.entities.Approval_Status;
 import com.expensemanagement.entities.Expense;
-import com.expensemanagement.repository.ExpenseRepository;
+import com.expensemanagement.services.ExpenseService;
 import com.expensemanagement.services.ReportExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * CSV report export endpoint — ADMIN only.
+ * GET /api/reports/export/csv
+ */
 @RestController
-@RequestMapping("/api/reports/export")
+@RequestMapping("/api/reports")
 @RequiredArgsConstructor
 public class ReportExportController {
 
     private final ReportExportService reportExportService;
-    private final ExpenseRepository expenseRepository;
+    private final ExpenseService expenseService;
 
-    @GetMapping("/csv")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    public ResponseEntity<InputStreamResource> exportAllToCsv() {
-        List<Expense> expenses = expenseRepository.findAll();
-        ByteArrayInputStream bis = reportExportService.exportExpensesToCsv(expenses);
+    /**
+     * GET /api/reports/export/csv?month=1&year=2025
+     * Streams a CSV file download of all (or monthly) expenses.
+     */
+    @GetMapping("/export/csv")
+    public ResponseEntity<InputStreamResource> exportCsv(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        List<Expense> expenses;
+        if (month != null && year != null) {
+            expenses = expenseService.getbymonthandyear(month, year);
+        } else {
+            expenses = expenseService.getallExpenses();
+        }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=expenses_report.csv");
+        var csvStream = reportExportService.exportExpensesToCsv(expenses);
+        String filename = "expenses_" + LocalDate.now() + ".csv";
 
         return ResponseEntity.ok()
-                .headers(headers)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.parseMediaType("text/csv"))
-                .body(new InputStreamResource(bis));
+                .body(new InputStreamResource(csvStream));
     }
 
-    @GetMapping("/user/csv")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<InputStreamResource> exportUserExpensesToCsv(@RequestParam Long userId) {
-        // In a real scenario, we'd verify userId matches current user or requester is
-        // MANAGER/ADMIN
-        List<Expense> expenses = expenseRepository.findByUserId(userId);
-        ByteArrayInputStream bis = reportExportService.exportExpensesToCsv(expenses);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=my_expenses.csv");
+    /**
+     * GET /api/reports/export/csv/month?month=1&year=2025
+     * Alias for monthly export — used by admin frontend report page.
+     */
+    @GetMapping("/export/csv/month")
+    public ResponseEntity<InputStreamResource> exportMonthCsv(
+            @RequestParam int month,
+            @RequestParam int year) {
+        List<Expense> expenses = expenseService.getbymonthandyear(month, year);
+        var csvStream = reportExportService.exportExpensesToCsv(expenses);
+        String filename = "expenses_" + year + "_" + month + ".csv";
 
         return ResponseEntity.ok()
-                .headers(headers)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.parseMediaType("text/csv"))
-                .body(new InputStreamResource(bis));
+                .body(new InputStreamResource(csvStream));
     }
 }

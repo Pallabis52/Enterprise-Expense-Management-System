@@ -9,6 +9,7 @@ import {
     UserCircleIcon,
     UsersIcon,
     SparklesIcon,
+    MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
     CpuChipIcon,
     ExclamationTriangleIcon
@@ -25,6 +26,7 @@ const navigation = [
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
     { name: 'AI Tools', href: '/admin/ai', icon: SparklesIcon },
+    { name: 'Voice Assistant', href: '/admin/voice', icon: MicrophoneIcon },
     { name: 'Profile', href: '/admin/profile', icon: UserCircleIcon },
 ];
 

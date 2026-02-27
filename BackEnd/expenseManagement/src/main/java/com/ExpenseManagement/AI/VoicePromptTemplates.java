@@ -112,10 +112,12 @@ public final class VoicePromptTemplates {
                 An admin spoke the following voice command. Detect their intent.
 
                 Allowed intents:
-                - BUDGET_QUERY  → admin asks about team budgets or overruns (extract optional teamName)
-                - FRAUD_QUERY   → admin wants to run fraud/anomaly detection on recent expenses
-                - VENDOR_ROI    → admin wants vendor spend analysis and cost-saving suggestions
-                - UNKNOWN       → intent is unclear
+                - BUDGET_QUERY   → admin asks about team budgets or overruns (extract optional teamName)
+                - FRAUD_ALERTS   → admin wants to run fraud/anomaly detection on recent expenses
+                - FRAUD_QUERY    → alias for FRAUD_ALERTS
+                - VENDOR_ROI     → admin wants vendor spend analysis and cost-saving suggestions
+                - AUDIT_REPORT   → admin requests audit log / audit trail / audit history
+                - UNKNOWN        → intent is unclear
 
                 Allowed params for BUDGET_QUERY: teamName (string, optional)
 

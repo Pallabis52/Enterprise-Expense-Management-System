@@ -503,4 +503,3 @@ const ManagerExpenseList = () => {
 };
 
 export default ManagerExpenseList;
-```

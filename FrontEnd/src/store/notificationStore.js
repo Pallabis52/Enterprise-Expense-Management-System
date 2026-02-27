@@ -71,15 +71,20 @@ const useNotificationStore = create((set, get) => ({
         if (!user || get().isConnected || get().isConnecting) return;
 
         set({ isConnecting: true });
+        const token = localStorage.getItem('token');
         const socket = new SockJS('http://localhost:8081/ws');
         const client = Stomp.over(socket);
         client.debug = null; // Disable debug logs
 
-        client.connect({}, () => {
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        client.connect(headers, () => {
             set({ isConnected: true, isConnecting: false, stompClient: client });
 
-            // Subscribe to User User Queue (if using convertAndSendToUser)
-            // Or typically manually mapped: /topic/user/{id}
+            // Subscribe to User Queue
             client.subscribe(`/topic/user/${user.id}`, (message) => {
                 const note = JSON.parse(message.body);
                 get().addNotification(note);
@@ -95,8 +100,14 @@ const useNotificationStore = create((set, get) => ({
 
         }, (error) => {
             console.error('WebSocket Error:', error);
-            set({ isConnected: false });
-            // Retry logic could go here
+            set({ isConnected: false, isConnecting: false });
+
+            // Auto-reconnect after 5 seconds if connection lost
+            setTimeout(() => {
+                if (useAuthStore.getState().isAuthenticated) {
+                    get().connectWebSocket();
+                }
+            }, 5000);
         });
     },
 

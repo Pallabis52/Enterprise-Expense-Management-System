@@ -8,6 +8,7 @@ import {
     ChartPieIcon,
     UserCircleIcon,
     SparklesIcon,
+    MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
     ShieldCheckIcon
 } from '@heroicons/react/24/outline';
@@ -20,6 +21,7 @@ const navigation = [
     { name: 'My Team', href: '/manager/team', icon: UsersIcon },
     { name: 'Reports', href: '/manager/reports', icon: ChartPieIcon },
     { name: 'AI Tools', href: '/manager/ai', icon: SparklesIcon },
+    { name: 'Voice Assistant', href: '/manager/voice', icon: MicrophoneIcon },
     { name: 'Profile', href: '/manager/profile', icon: UserCircleIcon },
 ];
 

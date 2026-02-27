@@ -253,4 +253,9 @@ public class AIService {
                 String prompt = PromptTemplates.auditSummary(sb.toString());
                 return ollamaService.ask(prompt, "audit-summary");
         }
+
+        public CompletableFuture<AIResponse> voiceParse(String text) {
+                String prompt = PromptTemplates.voiceParse(text);
+                return ollamaService.askLightweight(prompt, "voice-parse");
+        }
 }

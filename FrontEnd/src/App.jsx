@@ -36,6 +36,7 @@ import ManagerAIDashboard from './pages/manager/ai/ManagerAIDashboard';
 
 // Shared Pages
 import Chatbot from './pages/ai/Chatbot';
+import VoiceAssistantPage from './pages/ai/VoiceAssistantPage';
 
 import './index.css';
 import useAuthStore from './store/authStore';
@@ -82,6 +83,7 @@ const router = createBrowserRouter([
       { path: 'reports', element: <Reports /> },
       { path: 'ai', element: <AdminAIDashboard /> },
       { path: 'chatbot', element: <Chatbot /> },
+      { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <AdminProfile /> },
     ]
   },
@@ -101,6 +103,7 @@ const router = createBrowserRouter([
       { path: 'reports', element: <ManagerReports /> },
       { path: 'ai', element: <ManagerAIDashboard /> },
       { path: 'chatbot', element: <Chatbot /> },
+      { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <ManagerProfile /> },
     ]
   },
@@ -119,6 +122,7 @@ const router = createBrowserRouter([
       { path: 'reports', element: <UserReports /> },
       { path: 'ai', element: <UserAIDashboard /> },
       { path: 'chatbot', element: <Chatbot /> },
+      { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <UserProfile /> },
     ]
   },

@@ -1,145 +1,189 @@
-package com.expensemanagement.Controller;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+package com.expensemanagement.controller;
 
 import com.expensemanagement.entities.Approval_Status;
 import com.expensemanagement.entities.Expense;
 import com.expensemanagement.entities.Team;
 import com.expensemanagement.entities.User;
-import com.expensemanagement.repository.UserRepository;
+import com.expensemanagement.entities.ExpensePolicy;
 import com.expensemanagement.services.ManagerService;
+import com.expensemanagement.services.UserService;
+import com.expensemanagement.services.ExpensePolicyService;
 import com.expensemanagement.services.PerformanceService;
-import com.expensemanagement.dto.Performance.TeamPerformanceDTO;
-
+import com.expensemanagement.services.ExpenseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Handles all /api/manager/* endpoints for users with MANAGER role.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/manager")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('MANAGER')")
 public class ManagerController {
 
-    private final UserRepository userRepository;
     private final ManagerService managerService;
+    private final UserService userService;
+    private final ExpensePolicyService policyService;
     private final PerformanceService performanceService;
+    private final ExpenseService expenseService;
 
-    // ── team info ─────────────────────────────────────────────────────────────
-
-    @GetMapping("/team")
-    public ResponseEntity<Team> getTeam(Authentication authentication) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.getTeam(manager.getId()));
+    private User getCurrentManager(Authentication auth) {
+        return userService.getUserByEmail(auth.getName());
     }
 
-    @GetMapping("/team/members")
-    public ResponseEntity<List<User>> getTeamMembers(Authentication authentication) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.getTeamMembers(manager.getId()));
-    }
+    // ── Team Expenses ───────────────────────────────────────────────────────────
 
-    // ── expense list ──────────────────────────────────────────────────────────
-
+    /**
+     * GET /api/manager/team/expenses?page=1&limit=10&status=PENDING
+     */
     @GetMapping("/team/expenses")
     public ResponseEntity<Page<Expense>> getTeamExpenses(
-            Authentication authentication,
-            @RequestParam(required = false) Approval_Status status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit) {
-
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        return ResponseEntity.ok(managerService.getTeamExpenses(manager.getId(), status, pageable));
-    }
-
-    // ── approval actions ──────────────────────────────────────────────────────
-
-    @PutMapping("/expenses/{id}/approve")
-    public ResponseEntity<Expense> approveExpense(
-            Authentication authentication,
-            @PathVariable Long id) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.approveExpense(id, manager.getId()));
-    }
-
-    @PutMapping("/expenses/{id}/reject")
-    public ResponseEntity<Expense> rejectExpense(
-            Authentication authentication,
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        String reason = (body != null) ? body.getOrDefault("reason", "No reason provided") : "No reason provided";
-        return ResponseEntity.ok(managerService.rejectExpense(id, reason));
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) Approval_Status status,
+            Authentication auth) {
+        User manager = getCurrentManager(auth);
+        PageRequest pageable = PageRequest.of(Math.max(0, page - 1), limit,
+                Sort.by(Sort.Direction.DESC, "date"));
+        Page<Expense> expenses = managerService.getTeamExpenses(manager.getId(), status, pageable);
+        return ResponseEntity.ok(expenses);
     }
 
     /**
-     * Feature 1 & 8: Forward mid/high-tier expense to Admin with an optional
-     * comment.
-     * Valid for amounts > ₹10,000.
+     * PUT /api/manager/expenses/{id}/approve
+     */
+    @PutMapping("/expenses/{id}/approve")
+    public ResponseEntity<Expense> approveExpense(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication auth) {
+        User manager = getCurrentManager(auth);
+        Expense expense = managerService.approveExpense(id, manager.getId());
+        return ResponseEntity.ok(expense);
+    }
+
+    /**
+     * PUT /api/manager/expenses/{id}/reject
+     */
+    @PutMapping("/expenses/{id}/reject")
+    public ResponseEntity<Expense> rejectExpense(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        String reason = body.getOrDefault("reason", "Rejected by manager");
+        Expense expense = managerService.rejectExpense(id, reason);
+        return ResponseEntity.ok(expense);
+    }
+
+    /**
+     * PUT /api/manager/expenses/{id}/forward
      */
     @PutMapping("/expenses/{id}/forward")
     public ResponseEntity<Expense> forwardToAdmin(
-            Authentication authentication,
             @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        String comment = (body != null) ? body.getOrDefault("comment", "Forwarded for admin review")
-                : "Forwarded for admin review";
-        return ResponseEntity.ok(managerService.forwardToAdmin(id, manager.getId(), comment));
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        User manager = getCurrentManager(auth);
+        String comment = body.getOrDefault("comment", "Forwarded to admin for review");
+        Expense expense = managerService.forwardToAdmin(id, manager.getId(), comment);
+        return ResponseEntity.ok(expense);
     }
 
-    // ── performance ───────────────────────────────────────────────────────────
+    /**
+     * POST /api/manager/expenses/bulk-approve
+     */
+    @PostMapping("/expenses/bulk-approve")
+    public ResponseEntity<Map<String, Object>> bulkApprove(
+            @RequestBody Map<String, Object> body,
+            Authentication auth) {
+        User manager = getCurrentManager(auth);
+        @SuppressWarnings("unchecked")
+        List<Long> expenseIds = (List<Long>) body.get("expenseIds");
+        String comment = (String) body.getOrDefault("comment", "Bulk approved");
+        Map<String, Object> result = managerService.bulkApprove(expenseIds, manager.getId(), comment);
+        return ResponseEntity.ok(result);
+    }
 
+    // ── Team Info ───────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/manager/team
+     */
+    @GetMapping("/team")
+    public ResponseEntity<Team> getTeam(Authentication auth) {
+        User manager = getCurrentManager(auth);
+        Team team = managerService.getTeam(manager.getId());
+        if (team == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(team);
+    }
+
+    /**
+     * GET /api/manager/team/members
+     */
+    @GetMapping("/team/members")
+    public ResponseEntity<List<User>> getTeamMembers(Authentication auth) {
+        User manager = getCurrentManager(auth);
+        List<User> members = managerService.getTeamMembers(manager.getId());
+        return ResponseEntity.ok(members);
+    }
+
+    /**
+     * GET /api/manager/team/performance
+     */
     @GetMapping("/team/performance")
-    public ResponseEntity<TeamPerformanceDTO> getTeamPerformance(Authentication authentication) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
+    public ResponseEntity<?> getTeamPerformance(Authentication auth) {
+        User manager = getCurrentManager(auth);
         return ResponseEntity.ok(performanceService.getTeamPerformance(manager.getId()));
     }
 
-    // ── dashboard (Feature 7) ─────────────────────────────────────────────────
-
+    /**
+     * GET /api/manager/dashboard
+     */
     @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> getManagerDashboard(Authentication authentication) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.getManagerDashboard(manager.getId()));
+    public ResponseEntity<Map<String, Object>> getDashboard(Authentication auth) {
+        User manager = getCurrentManager(auth);
+        Map<String, Object> dashboard = managerService.getManagerDashboard(manager.getId());
+        return ResponseEntity.ok(dashboard);
     }
 
-    // Feature 7: Priority Approvals
-    @GetMapping("/team/expenses/priority")
-    public ResponseEntity<List<Map<String, Object>>> getPriorityExpenses(Authentication authentication) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.getPriorityExpenses(manager.getId()));
+    /**
+     * GET /api/expenses/getbyid/{id} – used by manager & admin frontend services
+     */
+    @GetMapping("/api/expenses/getbyid/{id}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ResponseEntity<Expense> getExpenseByIdLegacy(@PathVariable Long id) {
+        Expense expense = expenseService.getById(id);
+        if (expense == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(expense);
     }
 
-    // Feature 8: Team Spending Heatmap
-    @GetMapping("/team/heatmap")
-    public ResponseEntity<List<Map<String, Object>>> getTeamHeatmap(
-            Authentication authentication,
-            @RequestParam int month,
-            @RequestParam int year) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        return ResponseEntity.ok(managerService.getTeamHeatmap(manager.getId(), month, year));
+    // ── Policies ────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/manager/policies
+     */
+    @GetMapping("/policies")
+    public ResponseEntity<List<ExpensePolicy>> getActivePolicies() {
+        return ResponseEntity.ok(policyService.getActivePolicies());
     }
 
-    // Feature 9: Bulk Approval
-    @PostMapping("/expenses/bulk-approve")
-    public ResponseEntity<Map<String, Object>> bulkApprove(
-            Authentication authentication,
-            @RequestBody Map<String, Object> body) {
-        User manager = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        List<Long> ids = (List<Long>) body.get("expenseIds");
-        String comment = (String) body.getOrDefault("comment", "Bulk approval");
-        return ResponseEntity.ok(managerService.bulkApprove(ids, manager.getId(), comment));
+    /**
+     * POST /api/manager/policies
+     */
+    @PostMapping("/policies")
+    public ResponseEntity<ExpensePolicy> createPolicy(@RequestBody ExpensePolicy policy, Authentication auth) {
+        return ResponseEntity.ok(policyService.createPolicy(policy));
     }
-
 }

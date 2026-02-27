@@ -33,6 +33,9 @@ import java.util.concurrent.CompletableFuture;
  * 3. Route to existing services to fetch live data.
  * 4. Generate a friendly spoken reply via a second AI call.
  * 5. Return VoiceResponse containing intent, reply and structured data.
+ *
+ * Fail-safe: if Ollama is unavailable at step 1, VoiceKeywordService
+ * provides a pure keyword-based fallback so the feature always works.
  */
 @Slf4j
 @Service
@@ -45,6 +48,8 @@ public class VoiceIntentService {
     private final UserRepository userRepository;
     private final ManagerService managerService;
     private final TeamBudgetService teamBudgetService;
+    private final AuditLogService auditLogService;
+    private final VoiceKeywordService voiceKeywordService;
     private final ObjectMapper objectMapper;
 
     // ── Entry point ────────────────────────────────────────────────────────────
@@ -59,8 +64,30 @@ public class VoiceIntentService {
         return ollamaService.ask(intentPrompt, "voice-intent")
                 .thenCompose(intentResponse -> {
                     if (intentResponse.isFallback()) {
-                        return CompletableFuture.completedFuture(
-                                VoiceResponse.offline(System.currentTimeMillis() - start));
+                        // ── AI offline → keyword fallback ─────────────────────
+                        log.warn("Ollama unavailable for user={}, falling back to keyword parser", user.getEmail());
+                        Map<String, Object> kw = voiceKeywordService.parse(transcript);
+                        String kwIntent = (String) kw.get("intent");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> kwParams = (Map<String, Object>) kw.getOrDefault("params", Map.of());
+
+                        if ("UNKNOWN".equals(kwIntent)) {
+                            return CompletableFuture.completedFuture(
+                                    VoiceResponse.builder()
+                                            .intent("UNKNOWN")
+                                            .params(Map.of())
+                                            .reply("Sorry, I didn't understand. Try saying 'show my expenses', 'approve expense 42', or 'team summary'.")
+                                            .fallback(true)
+                                            .processingMs(System.currentTimeMillis() - start)
+                                            .build());
+                        }
+
+                        return routeIntentAsync(kwIntent, kwParams, user, role)
+                                .thenApply(data -> VoiceResponse.success(
+                                        kwIntent, kwParams,
+                                        buildFallbackReply(kwIntent, data),
+                                        data,
+                                        System.currentTimeMillis() - start));
                     }
 
                     // Step 2: parse JSON
@@ -235,9 +262,98 @@ public class VoiceIntentService {
                         .thenApply(roi -> Map.of("insightText", roi.getResult(), "fallback", roi.isFallback()));
             }
 
+            // ── ADMIN: Audit Report ───────────────────────────────────────────
+
+            case "SHOW_EXPENSES" -> {
+                List<Expense> allExp;
+                String statusStr = (String) params.get("status");
+                if (statusStr != null) {
+                    try {
+                        Approval_Status s = Approval_Status.valueOf(statusStr.toUpperCase());
+                        allExp = expenseRepository.findByStatus(s);
+                    } catch (IllegalArgumentException ex) {
+                        allExp = expenseRepository.findAll();
+                    }
+                } else {
+                    allExp = expenseRepository.findByUser(user);
+                }
+                yield CompletableFuture.completedFuture(allExp.stream().limit(10).toList());
+            }
+
+            case "FRAUD_ALERTS" -> {
+                List<Expense> recent3 = expenseRepository.findByMonthAndYear(
+                        now.getMonthValue(), now.getYear());
+                yield aiService.fraudInsights(recent3)
+                        .thenApply(fraud -> Map.of(
+                                "insightText", fraud.getResult(),
+                                "fallback", fraud.isFallback(),
+                                "scannedCount", recent3.size()));
+            }
+
+            case "AUDIT_REPORT" -> {
+                // Return last 20 audit entries (ADMIN-triggered)
+                var auditPage = auditLogService.getAll(
+                        org.springframework.data.domain.PageRequest.of(0, 20));
+                yield CompletableFuture.completedFuture(
+                        Map.of("entries", auditPage.getContent(),
+                                "totalRecords", auditPage.getTotalElements()));
+            }
+
+            // ── MANAGER: Risk Insights ─────────────────────────────────────────────
+            case "RISK_INSIGHTS" -> {
+                List<Expense> recentExpenses = expenseRepository.findByMonthAndYear(
+                        now.getMonthValue(), now.getYear());
+                yield aiService.fraudInsights(recentExpenses)
+                        .thenApply(risk -> Map.of(
+                                "insightText", risk.getResult(),
+                                "fallback", risk.isFallback(),
+                                "type", "RISK_ANALYSIS",
+                                "count", recentExpenses.size()));
+            }
+
+            // ── ALL: AI Chat ───────────────────────────────────────────────────────
+            case "AI_CHAT" -> {
+                // params may carry a "query" key from AI extraction; fall back to empty string
+                String question = (String) params.getOrDefault("query", "");
+                yield aiService.spendingInsights(user)
+                        .thenApply(chat -> Map.of(
+                                "insightText", chat.getResult(),
+                                "fallback", chat.isFallback(),
+                                "type", "AI_CHAT"));
+            }
+
+            // ── ALL: Natural Language Search ───────────────────────────────────────
+            case "SEARCH" -> {
+                String query = (String) params.getOrDefault("query", "");
+                String statusStr = (String) params.get("status");
+                List<Expense> searchResults = expenseRepository.findByUser(user)
+                        .stream()
+                        .filter(e -> query.isBlank() || (e.getTitle() != null
+                                && e.getTitle().toLowerCase().contains(query.toLowerCase()))
+                                || (e.getCategory() != null
+                                        && e.getCategory().toLowerCase().contains(query.toLowerCase())))
+                        .filter(e -> statusStr == null || (e.getStatus() != null
+                                && e.getStatus().name().equalsIgnoreCase(statusStr)))
+                        .limit(10)
+                        .toList();
+                yield CompletableFuture.completedFuture(searchResults);
+            }
+
+            // ── ADMIN: Policy Insights ─────────────────────────────────────────────
+            case "POLICY_INSIGHTS" -> {
+                List<Expense> all = expenseRepository.findByMonthAndYear(
+                        now.getMonthValue(), now.getYear());
+                yield aiService.vendorROI(all)
+                        .thenApply(policy -> Map.of(
+                                "insightText", policy.getResult(),
+                                "fallback", policy.isFallback(),
+                                "type", "POLICY_INSIGHTS",
+                                "period", now.getMonth().name() + " " + now.getYear()));
+            }
+
             default -> CompletableFuture.completedFuture(
-                    Map.of("message", "I understood your voice command but couldn't match it to a system action. " +
-                            "Try phrasing like: 'show my pending expenses' or 'summarize team spending'."));
+                    Map.of("message", "Sorry, I didn't understand. Try again.",
+                            "suggestion", "Try: 'show my expenses', 'approve expense 42', or 'team summary'"));
         };
     }
 

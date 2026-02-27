@@ -19,6 +19,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -37,22 +39,46 @@ public class SecurityConfig {
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
+    @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtils, (UserDetailsServiceImpl) userDetailsService);
+        return new JwtAuthenticationFilter(jwtUtils, userDetailsService);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter)
+            throws Exception {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/ws/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/ws/**", "/ws").permitAll()
                 .requestMatchers("/api/ai/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/categories/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/expenses/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/invites/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/performance/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/notifications/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/voice/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/profile/**").hasAnyRole("USER", "MANAGER", "ADMIN")
+                .requestMatchers("/api/sla/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/policies/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/freeze/**").hasRole("ADMIN")
+                .requestMatchers("/api/budgets/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/reports/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/audit-logs/**").hasRole("ADMIN")
+                .requestMatchers("/api/debug/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // Required for SockJS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex
@@ -74,7 +100,7 @@ public class SecurityConfig {
                             response.getWriter().write(
                                     "{\"error\":\"Forbidden\",\"message\":\"You do not have permission to access this resource.\"}");
                         }))
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
