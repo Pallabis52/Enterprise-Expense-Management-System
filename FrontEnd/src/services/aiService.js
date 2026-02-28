@@ -109,6 +109,10 @@ export const categorizeExpense = (title, description, amount) =>
 export const getSpendingInsights = () =>
     withRetry(() => aiApi.get("/ai/spending-insights"));
 
+// 2.1️⃣ Explain rejection
+export const explainRejection = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/explain-rejection/${expenseId}`));
+
 // 3️⃣ Enhance description
 export const enhanceDescription = (title, amount, category) =>
     withRetry(() =>
@@ -158,6 +162,18 @@ export const chatWithAI = (message, role = "USER") =>
 // 1️⃣2️⃣ Natural language search
 export const naturalSearch = (query) =>
     withRetry(() => aiApi.get("/ai/search", { params: { query } }));
+
+// 1️⃣3️⃣ Mood insight
+export const getMoodInsight = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/mood-insight/${expenseId}`));
+
+// 1️⃣4️⃣ Confidence score
+export const getConfidenceScore = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/confidence-score/${expenseId}`));
+
+// 1️⃣5️⃣ Manager voice action
+export const managerVoiceAction = (text) =>
+    withRetry(() => aiApi.post('/voice/manager-action', { text }));
 
 /* ─────────────────────────────────────────────────────────────
    HEALTH CHECK
