@@ -96,7 +96,7 @@ const Table = ({
                                             rowClassName && rowClassName(row)
                                         )}
                                     >
-                                        {columns.map((column) => (
+                                        {columns.map((column, colIdx) => (
                                             <td
                                                 key={column.key}
                                                 className={cn(
@@ -107,10 +107,12 @@ const Table = ({
                                                 <div className="relative z-10">
                                                     {column.render ? column.render(row) : row[column.key]}
                                                 </div>
+                                                {/* Subtle Left Border Accent on Hover - Moved inside first TD for DOM valid nesting */}
+                                                {colIdx === 0 && (
+                                                    <div className="absolute inset-y-0 left-0 w-[3px] bg-indigo-500 scale-y-0 opacity-0 group-hover:scale-y-100 group-hover:opacity-100 transition-all duration-300 rounded-r-full" />
+                                                )}
                                             </td>
                                         ))}
-                                        {/* Subtle Left Border Accent on Hover */}
-                                        <div className="absolute inset-y-0 left-0 w-[3px] bg-indigo-500 scale-y-0 opacity-0 group-hover:scale-y-100 group-hover:opacity-100 transition-all duration-300 rounded-r-full" />
                                     </motion.tr>
                                 ))
                             ) : (

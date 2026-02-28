@@ -54,6 +54,16 @@ public class AIResponse {
                                 .build();
         }
 
+        public static AIResponse error(String message) {
+                return AIResponse.builder()
+                                .feature("error")
+                                .result(message)
+                                .model("system")
+                                .processingMs(0)
+                                .fallback(true)
+                                .build();
+        }
+
         /** Safe default messages shown when AI is offline */
         static final class FallbackMessages {
                 private static final java.util.Map<String, String> MAP = java.util.Map.ofEntries(
