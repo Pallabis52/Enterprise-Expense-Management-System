@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { sendVoiceCommand, getVoiceHints, managerVoiceAction } from '../../services/voiceService';
 import VoiceResultPanel from './VoiceResultPanel';
+import { showVoiceSearchModal } from '../../utils/VoiceModal';
 import './VoiceButton.css';
 
 /**
@@ -78,51 +79,21 @@ const VoiceButton = ({ role = 'USER', onResult, className = '' }) => {
     };
 
     // ── Start listening ───────────────────────────────────────────────────────
-    const startListening = useCallback(() => {
-        if (!isSupported) return;
-        setError('');
-        setResult(null);
-        setTranscript('');
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-IN';
-        recognition.interimResults = true; // Use interim for real-time feedback
-        recognition.maxAlternatives = 1;
-        recognitionRef.current = recognition;
-
-        recognition.onstart = () => setState('listening');
-
-        recognition.onresult = (event) => {
-            const text = Array.from(event.results)
-                .map(res => res[0].transcript)
-                .join('');
-
-            setTranscript(text);
-
-            if (event.results[0].isFinal) {
-                sendCommand(text);
+    const startListening = async () => {
+        try {
+            const transcript = await showVoiceSearchModal();
+            if (transcript) {
+                setTranscript(transcript);
+                sendCommand(transcript);
             }
-        };
-
-        recognition.onerror = (event) => {
-            if (event.error !== 'no-speech') {
-                setError(`Mic error: ${event.error}. Please try again.`);
-                setState('idle');
+        } catch (error) {
+            if (error !== 'No speech detected' && !error.includes('aborted')) {
+                setError(error);
             }
-        };
-
-        recognition.onend = () => {
-            if (state === 'listening') setState('idle');
-        };
-
-        recognition.start();
-    }, [isSupported, state, sendCommand]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // ── Stop listening early ──────────────────────────────────────────────────
-    const stopListening = () => {
-        recognitionRef.current?.stop();
-        setState('idle');
+        }
     };
+
+    // ── Legacy Stop listening removed ──────────────────────────────────────────
 
     // ── Handle text submit (Manual Typing) ────────────────────────────────────
     const handleManualSubmit = (e) => {

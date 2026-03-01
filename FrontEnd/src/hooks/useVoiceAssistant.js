@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { sendVoiceCommand, getVoiceHints } from '../services/voiceService';
+import { showVoiceSearchModal } from '../utils/VoiceModal';
+
 
 /**
  * useVoiceAssistant
@@ -11,72 +13,28 @@ import { sendVoiceCommand, getVoiceHints } from '../services/voiceService';
  *  - Session history (last 10 interactions)
  */
 const useVoiceAssistant = () => {
-  const [isListening, setIsListening]         = useState(false);
-  const [isProcessing, setIsProcessing]       = useState(false);
-  const [transcript, setTranscript]           = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
-  const [response, setResponse]               = useState(null);
-  const [error, setError]                     = useState(null);
-  const [hints, setHints]                     = useState([]);
-  const [history, setHistory]                 = useState([]);
-  const [isSpeaking, setIsSpeaking]           = useState(false);
-  const [isSupported, setIsSupported]         = useState(true);
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [hints, setHints] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSupported, setIsSupported] = useState(true);
 
   const recognitionRef = useRef(null);
-  const synthRef       = useRef(window.speechSynthesis);
+  const synthRef = useRef(window.speechSynthesis);
 
   // ── Browser support check ─────────────────────────────────────────────────
+  // ── Browser support check (legacy initialization removed) ─────────────────
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsSupported(false);
-      return;
     }
-
-    const rec = new SpeechRecognition();
-    rec.continuous      = false;
-    rec.interimResults  = true;
-    rec.lang            = 'en-IN';
-    rec.maxAlternatives = 1;
-
-    rec.onstart = () => {
-      setIsListening(true);
-      setError(null);
-      setInterimTranscript('');
-    };
-
-    rec.onresult = (event) => {
-      let interim = '';
-      let final   = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          final += result[0].transcript;
-        } else {
-          interim += result[0].transcript;
-        }
-      }
-      setInterimTranscript(interim);
-      if (final) setTranscript(final);
-    };
-
-    rec.onend = () => {
-      setIsListening(false);
-    };
-
-    rec.onerror = (event) => {
-      setIsListening(false);
-      if (event.error === 'no-speech') {
-        setError('No speech detected. Please try again.');
-      } else if (event.error === 'not-allowed') {
-        setError('Microphone permission denied. Please allow microphone access.');
-      } else {
-        setError(`Voice error: ${event.error}`);
-      }
-    };
-
-    recognitionRef.current = rec;
   }, []);
 
   // ── Load role-based hints on mount ────────────────────────────────────────
@@ -93,26 +51,32 @@ const useVoiceAssistant = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript, isListening]);
 
-  // ── Start / stop listening ────────────────────────────────────────────────
-  const toggleListening = useCallback(() => {
+  // ── Start listening via VoiceModal ────────────────────────────────────────
+  const toggleListening = useCallback(async () => {
     if (!isSupported) {
       setError('Voice recognition is not supported in this browser. Please use Chrome or Edge.');
       return;
     }
-    if (isListening) {
-      recognitionRef.current?.stop();
-    } else {
-      setTranscript('');
-      setInterimTranscript('');
-      setResponse(null);
-      setError(null);
-      try {
-        recognitionRef.current?.start();
-      } catch (e) {
-        setError('Could not start microphone. Is it already in use?');
+
+    setTranscript('');
+    setInterimTranscript('');
+    setResponse(null);
+    setError(null);
+    setIsListening(true);
+
+    try {
+      const result = await showVoiceSearchModal();
+      if (result) {
+        setTranscript(result); // This will trigger processTranscript via useEffect
       }
+    } catch (e) {
+      if (e !== 'No speech detected' && !e.includes('aborted')) {
+        setError(e);
+      }
+    } finally {
+      setIsListening(false);
     }
-  }, [isListening, isSupported]);
+  }, [isSupported]);
 
   // ── Manually set a transcript (e.g. from hint chip click) ────────────────
   const setManualTranscript = useCallback((text) => {
@@ -120,8 +84,7 @@ const useVoiceAssistant = () => {
     setInterimTranscript('');
     setResponse(null);
     setError(null);
-    processTranscript(text);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // processTranscript(text); // REMOVED: setTranscript(text) already triggers the useEffect
   }, []);
 
   // ── Core processing ───────────────────────────────────────────────────────
@@ -137,10 +100,10 @@ const useVoiceAssistant = () => {
       setHistory(prev => [
         {
           transcript: text,
-          intent:     res.intent,
-          message:    res.message || res.reply,
-          timestamp:  new Date(),
-          fallback:   res.fallback,
+          intent: res.intent,
+          message: res.message || res.reply,
+          timestamp: new Date(),
+          fallback: res.fallback,
         },
         ...prev.slice(0, 9), // keep last 10
       ]);
@@ -159,14 +122,14 @@ const useVoiceAssistant = () => {
   const speakText = (text) => {
     if (!text || !synthRef.current) return;
     synthRef.current.cancel();
-    const utterance       = new SpeechSynthesisUtterance(text);
-    utterance.lang        = 'en-IN';
-    utterance.rate        = 0.95;
-    utterance.pitch       = 1.0;
-    utterance.volume      = 1.0;
-    utterance.onstart     = () => setIsSpeaking(true);
-    utterance.onend       = () => setIsSpeaking(false);
-    utterance.onerror     = () => setIsSpeaking(false);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-IN';
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
     synthRef.current.speak(utterance);
   };
 

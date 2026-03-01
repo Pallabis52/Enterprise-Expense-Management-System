@@ -11,7 +11,7 @@ const SmartApprovalBadge = ({ expenseId }) => {
         const fetchRisk = async () => {
             try {
                 const response = await getRiskScore(expenseId);
-                if (response && !response.isFallback) {
+                if (response && !response.fallback) {
                     // Expecting result format: "[LOW] Reason..." or "[HIGH] Reason..."
                     const text = response.result;
                     const level = text.includes('[HIGH]') ? 'HIGH' : text.includes('[MEDIUM]') ? 'MEDIUM' : 'LOW';

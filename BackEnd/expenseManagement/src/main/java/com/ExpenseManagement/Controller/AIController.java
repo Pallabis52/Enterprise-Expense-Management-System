@@ -8,21 +8,24 @@ import com.expensemanagement.entities.Team;
 import com.expensemanagement.entities.User;
 import com.expensemanagement.services.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 public class AIController {
+
+    private static final Logger log = LoggerFactory.getLogger(AIController.class);
 
     private final AIService aiService;
     private final ExpenseService expenseService;
@@ -32,17 +35,27 @@ public class AIController {
     private final ManagerService managerService;
 
     private User me(Authentication auth) {
+        if (auth == null || auth.getName() == null)
+            return null;
         return userService.getUserByEmail(auth.getName());
     }
 
     // ───────────────── STATUS ─────────────────
 
     @GetMapping("/status")
-    public Map<String, Object> status() {
+    public Map<String, Object> status(HttpServletRequest request) {
+        Map<String, String> receivedHeaders = new HashMap<>();
+        java.util.Enumeration<String> names = request.getHeaderNames();
+        while (names.hasMoreElements()) {
+            String name = names.nextElement();
+            receivedHeaders.put(name, request.getHeader(name));
+        }
+
         return Map.of(
-                "ollamaAvailable", true,
-                "model", "phi3",
-                "status", "AI Engine Running");
+                "engine", "OpenRouter",
+                "model", aiService.getAiModelName(),
+                "status", "AI Engine Ready",
+                "receivedHeaders", receivedHeaders);
     }
 
     // ───────────────── USER FEATURES ─────────────────
@@ -57,7 +70,16 @@ public class AIController {
 
     @GetMapping("/spending-insights")
     public CompletableFuture<AIResponse> spendingInsights(Authentication auth) {
-        return aiService.spendingInsights(me(auth));
+        log.info("AI-REQUEST [spending-insights] user={} role={}",
+                auth != null ? auth.getName() : "anonymous",
+                auth != null ? auth.getAuthorities() : "none");
+
+        User user = me(auth);
+        if (user == null) {
+            log.warn("AI-FALLBACK: User context missing for spending-insights");
+            return CompletableFuture.completedFuture(AIResponse.error("User profile not found."));
+        }
+        return aiService.spendingInsights(user);
     }
 
     @PostMapping("/enhance-description")
@@ -98,21 +120,49 @@ public class AIController {
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     @GetMapping("/recommendation/{expenseId}")
     public CompletableFuture<AIResponse> recommendation(@PathVariable Long expenseId, Authentication auth) {
+        log.info("AI-REQUEST [recommendation] user={} role={}", auth.getName(), auth.getAuthorities());
+
         Expense expense = expenseService.getById(expenseId);
-        if (expense == null)
-            return CompletableFuture.completedFuture(AIResponse.error("Expense not found"));
+        if (expense == null) {
+            log.warn("AI-FALLBACK: Expense {} not found for recommendation", expenseId);
+            return CompletableFuture.completedFuture(AIResponse.error("Expense not found."));
+        }
+
         User owner = expense.getUser() != null ? expense.getUser() : me(auth);
+        if (owner == null)
+            return CompletableFuture.completedFuture(AIResponse.error("User context missing."));
+
         return aiService.approvalRecommendation(expense, owner);
     }
 
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     @GetMapping("/risk-score/{expenseId}")
     public CompletableFuture<AIResponse> riskScore(@PathVariable Long expenseId, Authentication auth) {
+        log.info("AI-REQUEST [risk-score] user={} role={}", auth.getName(), auth.getAuthorities());
+
         Expense expense = expenseService.getById(expenseId);
-        if (expense == null)
-            return CompletableFuture.completedFuture(AIResponse.error("Expense not found"));
+        if (expense == null) {
+            log.warn("AI-FALLBACK: Expense {} not found for risk-score", expenseId);
+            return CompletableFuture.completedFuture(AIResponse.error("Expense not found."));
+        }
+
         User owner = expense.getUser() != null ? expense.getUser() : me(auth);
+        if (owner == null)
+            return CompletableFuture.completedFuture(AIResponse.error("User context missing."));
+
         return aiService.riskScore(expense, owner);
+    }
+
+    @GetMapping("/explain-rejection/{expenseId}")
+    public CompletableFuture<AIResponse> explainRejection(@PathVariable Long expenseId, Authentication auth) {
+        log.info("AI-REQUEST [explain-rejection] user={} role={}", auth.getName(), auth.getAuthorities());
+
+        Expense expense = expenseService.getById(expenseId);
+        if (expense == null) {
+            log.warn("AI-FALLBACK: Expense {} not found for explain-rejection", expenseId);
+            return CompletableFuture.completedFuture(AIResponse.error("Expense not found."));
+        }
+        return aiService.explainRejection(expense);
     }
 
     // ───────────────── ADMIN FEATURES ─────────────────
@@ -142,8 +192,13 @@ public class AIController {
             @RequestBody AIDTOs.ChatRequest req,
             Authentication auth) {
 
+        log.info("AI-REQUEST [chat] user={} role={}", auth.getName(), auth.getAuthorities());
+
         User user = me(auth);
-        String role = user.getRole().name().replace("ROLE_", "");
+        if (user == null)
+            return CompletableFuture.completedFuture(AIResponse.error("User not found."));
+
+        String role = (user.getRole() != null) ? user.getRole().name().replace("ROLE_", "") : "USER";
 
         return aiService.chat(role, user.getName(), req.getMessage(), "");
     }

@@ -27,20 +27,27 @@ api.interceptors.request.use(
         }
 
         if (token && token !== 'null' && token !== 'undefined') {
-            const cleanToken = token.trim();
+            const cleanToken = token.trim().replace(/[\n\r]/g, '');
             const tokenPreview = cleanToken.substring(0, 10) + '...';
 
-            // Log exactly what we are doing to help debug the 401
             console.log(`[API] Attaching Token to ${config.method.toUpperCase()} ${config.url} (${tokenPreview})`);
 
-            // Apply to headers using standard and modern methods for bulletproof compatibility
-            if (config.headers.set) {
-                config.headers.set('Authorization', `Bearer ${cleanToken}`);
-            } else {
-                config.headers.Authorization = `Bearer ${cleanToken}`;
+            // FORCE headers to be a plain object to avoid AxiosHeaders encapsulation bugs
+            // Some environments/axios versions struggle with the custom object type
+            const rawHeaders = { ...config.headers };
+            rawHeaders['Authorization'] = `Bearer ${cleanToken}`;
+            rawHeaders['authorization'] = `Bearer ${cleanToken}`; // Case-insensitive redundancy
+
+            config.headers = rawHeaders;
+
+            if (config.url.includes('/voice/')) {
+                console.log('[API] HARDENED Voice Headers:', config.headers);
             }
         } else {
-            console.warn(`[API] MISSION CRITICAL: No token found for ${config.method.toUpperCase()} ${config.url}`);
+            // Optional: Only warn for non-auth endpoints to avoid noise during login/register
+            if (!config.url.includes('/auth/')) {
+                console.warn(`[API] MISSION CRITICAL: No token found for ${config.method.toUpperCase()} ${config.url}`);
+            }
         }
 
         // Final sanity check for 401 debugging
@@ -67,11 +74,14 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || 'Something went wrong. Please try again.';
 
         if (status === 401) {
-            // Unauthenticated — skip popup if the caller suppressed it (e.g. voice commands)
-            if (!error.config?.suppressGlobalError) {
+            // Unauthenticated — skip popup if the caller suppressed it (e.g. for voice background calls)
+            if (error.config?.suppressGlobalError) {
+                console.warn('[API] 401 Unauthorized (Suppressed Popup) for:', error.config.url);
+            } else {
                 premiumWarning('Session Expired', 'Please log in again.', null).then((result) => {
                     if (result.isConfirmed) {
                         localStorage.removeItem('token');
+                        localStorage.removeItem('auth-storage');
                         window.location.href = '/login';
                     }
                 });

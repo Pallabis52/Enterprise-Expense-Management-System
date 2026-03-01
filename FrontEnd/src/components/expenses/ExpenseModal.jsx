@@ -6,6 +6,7 @@ import VoiceExpenseButton from '../ai/VoiceExpenseButton';
 import { enhanceDescription } from '../../services/aiService';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import CustomDropdown from '../ui/CustomDropdown';
 
 const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
     const [formData, setFormData] = useState({
@@ -38,9 +39,11 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
         setIsEnhancing(true);
         try {
             const res = await enhanceDescription(formData.title, formData.amount, formData.category);
-            if (!res.isFallback) {
+            if (!res.fallback) {
                 setFormData({ ...formData, description: res.result });
                 toast.success('Description boosted!');
+            } else {
+                toast.error(res.result || 'AI enhancement failed');
             }
         } catch (err) {
             toast.error('AI enhancement failed');
@@ -160,27 +163,17 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => 
                                 />
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1">
-                                    Entity Category
-                                </label>
-                                <div className="relative group/select">
-                                    <select
-                                        value={formData.category}
-                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        className="w-full h-12 rounded-2xl border border-white/20 dark:border-gray-700/30 bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-white px-5 transition-all outline-none focus:ring-2 focus:ring-primary-500/30 appearance-none font-medium"
-                                    >
-                                        {categories.map(cat => (
-                                            <option key={cat.id} value={cat.name} className="dark:bg-gray-800">{cat.name}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-primary-500 transition-colors">
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
+                            <CustomDropdown
+                                label="Entity Category"
+                                options={categories.map(cat => ({
+                                    label: cat.name,
+                                    value: cat.name,
+                                    description: `Fiscal Category: ${cat.id}`
+                                }))}
+                                value={formData.category}
+                                onChange={(val) => setFormData({ ...formData, category: val })}
+                                className="z-[110]"
+                            />
 
                             <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/40 border-2 border-dashed border-gray-200 dark:border-gray-700 transition-all hover:border-primary-500/50 group/upload cursor-pointer relative overflow-hidden">
                                 <div className="flex items-center gap-4 relative z-10">

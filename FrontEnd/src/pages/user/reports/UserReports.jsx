@@ -16,6 +16,8 @@ import {
     ArrowDownTrayIcon,
     ClockIcon
 } from '@heroicons/react/24/outline';
+import reportService from '../../../services/reportService';
+import { toast } from 'react-hot-toast';
 
 const UserReports = () => {
     const { fetchMyStats, stats, expenses, fetchMyExpenses } = useUserExpenseStore();
@@ -24,6 +26,17 @@ const UserReports = () => {
         fetchMyStats();
         fetchMyExpenses(1, 'all');
     }, []);
+
+    const handleExcelDownload = async () => {
+        try {
+            await reportService.downloadUserExcel();
+            toast.success('Fiscal intelligence exported', {
+                style: { borderRadius: '16px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        } catch (error) {
+            toast.error('Export failed');
+        }
+    };
 
     // ── Data Processing Hub ──
     const monthlyData = [
@@ -90,8 +103,12 @@ const UserReports = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         className="flex items-center gap-4"
                     >
-                        <button className="p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-indigo-500 transition-all">
-                            <ArrowDownTrayIcon className="w-6 h-6" />
+                        <button
+                            onClick={handleExcelDownload}
+                            title="Download Fiscal Intelligence (Excel)"
+                            className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-indigo-500 transition-all active:scale-95 group hover:shadow-2xl hover:shadow-indigo-500/20"
+                        >
+                            <ArrowDownTrayIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
                         </button>
                     </motion.div>
                 </div>

@@ -91,6 +91,8 @@ public class AIResponse {
                                                 "Voice command understanding is unavailable. Please type your search instead."),
                                 java.util.Map.entry("voice-reply",
                                                 "Action completed successfully."),
+                                java.util.Map.entry("enhance-description",
+                                                "AI could not enhance the description. Using basic details."),
                                 java.util.Map.entry("vendor-roi",
                                                 "Vendor ROI analysis is temporarily unavailable. Please check the reports section."));
 

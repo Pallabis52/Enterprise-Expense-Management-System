@@ -59,7 +59,7 @@ const VoiceExpenseButton = ({ onParsed }) => {
             toast.loading('AI is parsing your voice...', { id: 'voice-parse' });
             const response = await parseVoiceExpense(text);
 
-            if (response.isFallback) {
+            if (response.fallback) {
                 toast.error('AI could not understand clearly. Please try again.', { id: 'voice-parse' });
                 return;
             }
@@ -90,8 +90,8 @@ const VoiceExpenseButton = ({ onParsed }) => {
                 onClick={toggleListening}
                 disabled={isProcessing}
                 className={`p-4 rounded-full transition-all duration-300 transform active:scale-95 ${isListening
-                        ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-indigo-200'
+                    ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-indigo-200'
                     } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title={isListening ? 'Stop Listening' : 'Click to Speak'}
             >

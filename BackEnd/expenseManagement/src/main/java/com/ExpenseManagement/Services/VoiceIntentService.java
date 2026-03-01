@@ -195,7 +195,12 @@ public class VoiceIntentService {
                 if (idObj == null)
                     yield CompletableFuture.completedFuture(
                             Map.of("error", "No expense ID found in command. Say: 'approve expense 42'"));
-                Long expenseId = Long.valueOf(idObj.toString());
+
+                Long expenseId = extractId(idObj);
+                if (expenseId == null) {
+                    yield CompletableFuture.completedFuture(
+                            Map.of("error", "Invalid expense ID format: " + idObj));
+                }
                 yield CompletableFuture.completedFuture(managerService.approveExpense(expenseId, user.getId()));
             }
 
@@ -204,7 +209,12 @@ public class VoiceIntentService {
                 if (idObj == null)
                     yield CompletableFuture.completedFuture(
                             Map.of("error", "No expense ID found in command. Say: 'reject expense 42'"));
-                Long expenseId = Long.valueOf(idObj.toString());
+
+                Long expenseId = extractId(idObj);
+                if (expenseId == null) {
+                    yield CompletableFuture.completedFuture(
+                            Map.of("error", "Invalid expense ID format: " + idObj));
+                }
                 String reason = (String) params.getOrDefault("reason", "Rejected via voice command");
                 yield CompletableFuture.completedFuture(managerService.rejectExpense(expenseId, reason));
             }
@@ -358,6 +368,31 @@ public class VoiceIntentService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Robustly extracts a Long ID from an object that might be a String, Number,
+     * or even a bracketed string like "[42]".
+     */
+    private Long extractId(Object obj) {
+        if (obj == null)
+            return null;
+        String s = obj.toString().trim();
+
+        // Remove brackets if present (AI sometimes returns "[42]" or "[42, 43]")
+        s = s.replaceAll("[\\[\\]]", "");
+
+        // If it was a list "[42, 43]", take the first one
+        if (s.contains(",")) {
+            s = s.split(",")[0].trim();
+        }
+
+        try {
+            return Long.valueOf(s);
+        } catch (NumberFormatException e) {
+            log.warn("Failed to extract numeric ID from: {}", obj);
+            return null;
+        }
+    }
 
     private Map<String, Object> parseIntentJson(String raw) {
         // Strip any AI <think>...</think> tags first

@@ -5,7 +5,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-@Slf4j
 @Service
 public class JwtUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
 
     // 512-bit (64-byte) secret key, Base64-encoded — never shorter than 256-bit for
     // HS256
@@ -36,7 +38,20 @@ public class JwtUtils {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> claims = new HashMap<>();
+        // Add single 'role' for simplicity and 'roles' list for standard compliance
+        if (!userDetails.getAuthorities().isEmpty()) {
+            String role = userDetails.getAuthorities().iterator().next().getAuthority();
+            // Store as "USER" instead of "ROLE_USER" if preferred,
+            // but consistency with SecurityConfig is key.
+            // User requested conversion: ROLE_USER -> USER
+            String cleanRole = role.startsWith("ROLE_") ? role.replace("ROLE_", "") : role;
+            claims.put("role", cleanRole);
+            claims.put("roles", userDetails.getAuthorities().stream()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .toList());
+        }
+        return generateToken(claims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

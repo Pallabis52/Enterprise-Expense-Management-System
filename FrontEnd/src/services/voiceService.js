@@ -15,9 +15,7 @@ import api from './api';
  * @returns {Promise<VoiceResponse>} - { intent, params, reply, data, fallback, processingMs }
  */
 export const sendVoiceCommand = async (text, context = '') => {
-    const response = await api.post('/voice/command', { text, context }, {
-        suppressGlobalError: true   // VoiceButton renders inline errors — no popup
-    });
+    const response = await api.post('/voice/command', { text, context }, { suppressGlobalError: true });
     return response.data;
 };
 
@@ -26,9 +24,7 @@ export const sendVoiceCommand = async (text, context = '') => {
  * POST /api/voice/manager-action
  */
 export const managerVoiceAction = async (text) => {
-    const response = await api.post('/voice/manager-action', { text }, {
-        suppressGlobalError: true
-    });
+    const response = await api.post('/voice/manager-action', { text });
     return response.data;
 };
 
@@ -37,8 +33,6 @@ export const managerVoiceAction = async (text) => {
  * @returns {Promise<{ role: string, hints: string[], tip: string }>}
  */
 export const getVoiceHints = async () => {
-    const response = await api.get('/voice/hints', {
-        suppressGlobalError: true   // hints panel fails silently
-    });
+    const response = await api.get('/voice/hints');
     return response.data;
 };

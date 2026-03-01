@@ -19,6 +19,8 @@ import Skeleton from '../../../components/ui/Skeleton';
 import CustomDropdown from '../../../components/ui/CustomDropdown';
 import { formatCurrency } from '../../../utils/helpers';
 import PageTransition from '../../../components/layout/PageTransition';
+import reportService from '../../../services/reportService';
+import { toast } from 'react-hot-toast';
 
 const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#EC4899'];
 
@@ -36,6 +38,40 @@ const ManagerReports = () => {
     useEffect(() => {
         fetchTeamStats({ range: dateRange });
     }, [dateRange]);
+
+    const handleAllExport = async () => {
+        try {
+            await reportService.exportExpensesToCsv();
+            toast.success('System report generated', {
+                style: { borderRadius: '16px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        } catch (error) {
+            toast.error('Export failed');
+        }
+    };
+
+    const handleCurrentMonthExport = async () => {
+        try {
+            const now = new Date();
+            await reportService.exportMonthlyExpensesToCsv(now.getMonth() + 1, now.getFullYear());
+            toast.success('Monthly intelligence exported', {
+                style: { borderRadius: '16px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        } catch (error) {
+            toast.error('Export failed');
+        }
+    };
+
+    const handleTeamExcelDownload = async () => {
+        try {
+            await reportService.downloadTeamExcel();
+            toast.success('Team segment exported', {
+                style: { borderRadius: '16px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        } catch (error) {
+            toast.error('Export failed');
+        }
+    };
 
     const monthlyData = stats?.monthlyData || [
         { month: 'Jan', amount: 4000 },
@@ -108,11 +144,26 @@ const ManagerReports = () => {
                         </div>
 
                         <div className="flex gap-2 self-end">
-                            <button className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-emerald-500 transition-all shadow-sm">
+                            <button
+                                onClick={handleAllExport}
+                                title="Export All Intelligence"
+                                className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-emerald-500 transition-all shadow-sm active:scale-95"
+                            >
                                 <ArrowDownTrayIcon className="w-5 h-5" />
                             </button>
-                            <button className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-emerald-500 transition-all shadow-sm">
+                            <button
+                                onClick={handleCurrentMonthExport}
+                                title="Export Monthly Segment"
+                                className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-slate-500 hover:text-emerald-500 transition-all shadow-sm active:scale-95"
+                            >
                                 <DocumentArrowDownIcon className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={handleTeamExcelDownload}
+                                title="Download Analyst Master (Excel)"
+                                className="p-4 rounded-[20px] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 text-emerald-500 hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95 group"
+                            >
+                                <TableCellsIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
                             </button>
                         </div>
                     </div>

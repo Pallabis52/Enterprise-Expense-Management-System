@@ -10,6 +10,8 @@ import { naturalSearch } from '../../services/aiService';
 import userService from '../../services/userService';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { showVoiceSearchModal } from '../../utils/VoiceModal';
+
 
 /**
  * UnifiedSearchBar - Ultra-Premium Edition
@@ -27,19 +29,11 @@ const UnifiedSearchBar = ({
     const recognitionRef = useRef(null);
     const inputRef = useRef(null);
 
-    // Initialize Web Speech API
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
+    const toggleListening = async () => {
+        try {
+            const transcript = await showVoiceSearchModal();
+            if (transcript) {
                 setQuery(transcript);
-                setIsListening(false);
                 toast.success('Voice captured!', {
                     icon: '🎙️',
                     style: {
@@ -49,28 +43,11 @@ const UnifiedSearchBar = ({
                         border: '1px solid rgba(99, 102, 241, 0.2)'
                     },
                 });
-            };
-
-            recognition.onerror = (event) => {
-                setIsListening(false);
-                toast.error(`Voice error: ${event.error}`);
-            };
-
-            recognition.onend = () => setIsListening(false);
-            recognitionRef.current = recognition;
-        }
-    }, []);
-
-    const toggleListening = () => {
-        if (!recognitionRef.current) {
-            toast.error('Voice recognition not supported in this browser.');
-            return;
-        }
-        if (isListening) {
-            recognitionRef.current.stop();
-        } else {
-            setIsListening(true);
-            recognitionRef.current.start();
+            }
+        } catch (error) {
+            if (error !== 'No speech detected' && !error.includes('aborted')) {
+                toast.error(error);
+            }
         }
     };
 
@@ -150,82 +127,7 @@ const UnifiedSearchBar = ({
                     focus-within:border-indigo-500 focus-within:shadow-indigo-500/10
                 `}
             >
-                {/* --- Ultra-Premium Listening Mode UI --- */}
-                <AnimatePresence mode="wait">
-                    {isListening && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            className="absolute inset-0 z-30 flex items-center bg-gray-950 mesh-bg rounded-2xl px-4 overflow-hidden"
-                        >
-                            {/* Glass Overlay for Depth */}
-                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-
-                            {/* Holographic Ribbons */}
-                            <div className="absolute inset-0 pointer-events-none opacity-30">
-                                {[0, 1, 2, 3, 4].map(i => (
-                                    <motion.div
-                                        key={i}
-                                        className="holographic-ribbon"
-                                        animate={{
-                                            y: [0, -10, 10, 0],
-                                            opacity: [0.1, 0.6, 0.1],
-                                            scaleX: [1, 1.2, 0.8, 1],
-                                            x: ["-100%", "100%"]
-                                        }}
-                                        transition={{
-                                            duration: 3 + i,
-                                            repeat: Infinity,
-                                            delay: i * 0.5,
-                                            ease: "easeInOut"
-                                        }}
-                                        style={{ top: `${20 + i * 15}%` }}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Center Assistant Branding */}
-                            <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-1">
-                                <motion.div
-                                    animate={{ opacity: [0.4, 1, 0.4] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="flex items-center gap-2"
-                                >
-                                    <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
-                                    <span className="text-[10px] assistant-text font-black text-white/90 uppercase tracking-[0.4em]">
-                                        Neural System Active
-                                    </span>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
-                                </motion.div>
-                                <span className="text-[9px] font-bold text-indigo-200/60 uppercase tracking-widest mt-1">
-                                    Listening to your request...
-                                </span>
-                            </div>
-
-                            {/* Interactive Holographic Orb Button */}
-                            <motion.button
-                                onClick={toggleListening}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                className="relative w-12 h-12 flex items-center justify-center group"
-                            >
-                                <div className="absolute inset-0 bg-white/20 rounded-full blur-xl animate-pulse" />
-                                <div className="absolute inset-0 border border-white/30 rounded-full animate-[spin_4s_linear_infinite]" />
-                                <div className="absolute inset-2 bg-gradient-to-tr from-white to-white/50 rounded-full neon-pulse flex items-center justify-center">
-                                    <StopIcon className="w-5 h-5 text-indigo-950" />
-                                </div>
-                            </motion.button>
-
-                            <button
-                                onClick={toggleListening}
-                                className="ml-4 p-2 text-white/40 hover:text-white transition-colors relative z-10"
-                            >
-                                <XMarkIcon className="w-5 h-5" />
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* --- Legacy Listening Mode UI Removed in favor of VoiceModal --- */}
 
                 {/* --- Standard Mode UI --- */}
                 <div className="flex items-center pl-1">

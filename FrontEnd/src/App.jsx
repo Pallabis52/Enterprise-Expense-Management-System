@@ -8,6 +8,12 @@ import Register from './pages/Auth/Register';
 import NotFound from './pages/NotFound';
 import AccessDenied from './pages/AccessDenied';
 
+import LandingPage from './pages/Public/LandingPage';
+import Features from './pages/Public/Features';
+import Intelligence from './pages/Public/Intelligence';
+import Security from './pages/Public/Security';
+import Global from './pages/Public/Global';
+
 // User Pages
 import UserDashboard from './pages/user/dashboard/UserDashboard';
 import UserExpenseList from './pages/user/expenses/UserExpenseList';
@@ -53,6 +59,22 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   return children;
+};
+
+// Intelligent Redirect based on Role
+const RoleBasedRedirect = () => {
+  const { user, isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) return <LandingPage />;
+
+  switch (user?.role) {
+    case 'ADMIN':
+      return <Navigate to="/admin" replace />;
+    case 'MANAGER':
+      return <Navigate to="/manager" replace />;
+    default:
+      return <Navigate to="/user" replace />;
+  }
 };
 
 const router = createBrowserRouter([
@@ -126,10 +148,26 @@ const router = createBrowserRouter([
       { path: 'profile', element: <UserProfile /> },
     ]
   },
-  // Default Redirect
+  // Default Redirect based on Role
   {
     path: '/',
-    element: <ProtectedRoute><Navigate to="/user/dashboard" /></ProtectedRoute> // ProtectedRoute will handle role-based redirect
+    element: <RoleBasedRedirect />
+  },
+  {
+    path: '/features',
+    element: <Features />
+  },
+  {
+    path: '/intelligence',
+    element: <Intelligence />
+  },
+  {
+    path: '/security',
+    element: <Security />
+  },
+  {
+    path: '/global',
+    element: <Global />
   },
   // 404 Route
   {

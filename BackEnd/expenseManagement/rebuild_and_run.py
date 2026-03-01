@@ -36,7 +36,7 @@ def rebuild_and_run():
         try:
             # We use Popen to run it in the background
             process = subprocess.Popen(
-                ["mvn", "spring-boot:run"], 
+                ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Xmx256m -Xms128m -Xss256k -XX:+UseSerialGC"], 
                 cwd=cwd, 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT, 

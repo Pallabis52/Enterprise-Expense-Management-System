@@ -3,6 +3,7 @@ import Table from '../../../components/ui/Table';
 import api from '../../../services/api';
 import { motion } from 'framer-motion';
 import { BanknotesIcon, LockClosedIcon, LockOpenIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 
 const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -183,25 +184,19 @@ const BudgetManagement = () => {
                     <p className="text-sm text-gray-500 mt-1">Set monthly team budgets and control expense freeze periods</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <select
-                        className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500"
+                <div className="flex items-center gap-4">
+                    <CustomDropdown
+                        options={months.slice(1).map((m, i) => ({ label: m, value: i + 1 }))}
                         value={selectedMonth}
-                        onChange={e => setSelectedMonth(Number(e.target.value))}
-                    >
-                        {months.slice(1).map((m, i) => (
-                            <option key={i + 1} value={i + 1}>{m}</option>
-                        ))}
-                    </select>
-                    <select
-                        className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500"
+                        onChange={setSelectedMonth}
+                        className="min-w-[120px]"
+                    />
+                    <CustomDropdown
+                        options={[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map(y => ({ label: String(y), value: y }))}
                         value={selectedYear}
-                        onChange={e => setSelectedYear(Number(e.target.value))}
-                    >
-                        {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
+                        onChange={setSelectedYear}
+                        className="min-w-[120px]"
+                    />
                 </div>
             </div>
 

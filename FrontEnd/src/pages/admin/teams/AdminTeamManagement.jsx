@@ -5,6 +5,7 @@ import Button from '../../../components/ui/Button';
 import Table from '../../../components/ui/Table';
 import Badge from '../../../components/ui/Badge';
 import Input from '../../../components/ui/Input';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 import {
     UsersIcon,
     UserPlusIcon,
@@ -336,18 +337,17 @@ const AdminTeamManagement = () => {
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Executive Oversight</label>
-                                            <select
-                                                className="w-full rounded-[20px] h-14 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white font-black px-5 focus:ring-2 focus:ring-indigo-500 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px_20px] bg-no-repeat bg-[right_1rem_center]"
+                                            <CustomDropdown
+                                                label="Executive Oversight"
+                                                options={managers.map(m => ({
+                                                    label: m.name,
+                                                    value: m.id,
+                                                    description: m.email
+                                                }))}
                                                 value={selectedManagerId}
-                                                onChange={(e) => setSelectedManagerId(e.target.value)}
-                                                required
-                                            >
-                                                <option value="" className="text-slate-400">Select an Executive</option>
-                                                {managers.map(m => (
-                                                    <option key={m.id} value={m.id} className="dark:bg-slate-900">{m.name}</option>
-                                                ))}
-                                            </select>
+                                                onChange={setSelectedManagerId}
+                                                className="z-[110]"
+                                            />
                                         </div>
 
                                         <div className="pt-6">

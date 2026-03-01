@@ -2,6 +2,8 @@ import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDownTrayIcon, CheckIcon, CalendarDaysIcon, ChartPieIcon } from '@heroicons/react/24/outline';
+import reportService from '../../../services/reportService';
+import { toast } from 'react-hot-toast';
 
 /* ═══════════════════════════ PORTAL DROPDOWN ═══════════════════════════ */
 const DropdownPortal = ({ anchorRef, open, options, value, onChange, onClose, colors }) => {
@@ -237,6 +239,20 @@ const ReportFilters = ({ filters, onChange }) => {
                 <motion.button
                     whileHover={{ scale: 1.05, y: -1 }}
                     whileTap={{ scale: 0.97 }}
+                    onClick={async () => {
+                        try {
+                            if (filters.month === 'all') {
+                                await reportService.exportExpensesToCsv();
+                            } else {
+                                await reportService.exportMonthlyExpensesToCsv(filters.month, filters.year);
+                            }
+                            toast.success('Intelligence Exported', {
+                                style: { borderRadius: '12px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+                            });
+                        } catch (err) {
+                            toast.error('Export failed');
+                        }
+                    }}
                     style={{
                         flexShrink: 0,
                         display: 'flex', alignItems: 'center', gap: 7,

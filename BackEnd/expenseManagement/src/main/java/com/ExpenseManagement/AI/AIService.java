@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * High-level AI facade used by all controllers.
@@ -33,14 +34,59 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class AIService {
 
+        private final AIProviderConfig aiProviderConfig;
+        private final ExternalAIClient externalAIClient;
         private final OllamaService ollamaService;
         private final ExpenseRepository expenseRepository;
+
+        public String getAiModelName() {
+                if (aiProviderConfig.isExternal()) {
+                        return aiProviderConfig.getModel();
+                }
+                return ollamaService.getModelName();
+        }
+
+        private CompletableFuture<AIResponse> ask(String prompt, String feature) {
+                if (aiProviderConfig.isExternal()) {
+                        log.info("AI-ROUTE: Using External Provider for {}", feature);
+                        return externalAIClient.ask(prompt, feature)
+                                        .thenCompose(response -> {
+                                                if (response.isFallback()) {
+                                                        log.warn("EXTERNAL-AI-FAIL: Falling back to local Ollama for {}",
+                                                                        feature);
+                                                        return ollamaService.ask(prompt, feature);
+                                                }
+                                                return CompletableFuture.completedFuture(response);
+                                        });
+                } else {
+                        log.info("AI-ROUTE: Using Local Ollama for {}", feature);
+                        return ollamaService.ask(prompt, feature);
+                }
+        }
+
+        private CompletableFuture<AIResponse> askLightweight(String prompt, String feature) {
+                if (aiProviderConfig.isExternal()) {
+                        log.info("AI-ROUTE: Using External Provider (Lightweight) for {}", feature);
+                        return externalAIClient.ask(prompt, feature)
+                                        .thenCompose(response -> {
+                                                if (response.isFallback()) {
+                                                        log.warn("EXTERNAL-AI-FAIL: Falling back to local Ollama (Lightweight) for {}",
+                                                                        feature);
+                                                        return ollamaService.askLightweight(prompt, feature);
+                                                }
+                                                return CompletableFuture.completedFuture(response);
+                                        });
+                } else {
+                        log.info("AI-ROUTE: Using Local Ollama (Lightweight) for {}", feature);
+                        return ollamaService.askLightweight(prompt, feature);
+                }
+        }
 
         // ── Feature 1: Expense Categorization ────────────────────────────────────
 
         public CompletableFuture<AIResponse> categorize(String title, String description, double amount) {
                 String prompt = PromptTemplates.categorize(title, description, amount);
-                return ollamaService.askLightweight(prompt, "categorize");
+                return askLightweight(prompt, "categorize");
         }
 
         // ── Feature 2: Rejection Explanation ─────────────────────────────────────
@@ -62,7 +108,7 @@ public class AIService {
                                 expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 comment);
-                return ollamaService.ask(prompt, "explain-rejection");
+                return ask(prompt, "explain-rejection");
         }
 
         // ── Feature 3: Personal Spending Insights ─────────────────────────────────
@@ -88,7 +134,7 @@ public class AIService {
 
                 String prompt = PromptTemplates.spendingInsights(
                                 user.getName(), totalSpent, approved, pending, topCat, all.size());
-                return ollamaService.ask(prompt, "spending-insights");
+                return ask(prompt, "spending-insights");
         }
 
         // ── Feature 4: Approval Recommendation ───────────────────────────────────
@@ -109,7 +155,7 @@ public class AIService {
                                 expense.getDescription() != null ? expense.getDescription() : "",
                                 Boolean.TRUE.equals(expense.isDuplicate()),
                                 monthlySpend);
-                return ollamaService.ask(prompt, "approve-recommend");
+                return ask(prompt, "approve-recommend");
         }
 
         // ── Feature 5: Risk Scoring ───────────────────────────────────────────────
@@ -122,7 +168,7 @@ public class AIService {
                                 expense.getTitle(), expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 Boolean.TRUE.equals(expense.isDuplicate()), avg);
-                return ollamaService.ask(prompt, "risk-score");
+                return ask(prompt, "risk-score");
         }
 
         // ── Feature 6: Team Summary ────────────────────────────────────────────────
@@ -143,7 +189,7 @@ public class AIService {
                 String prompt = PromptTemplates.teamSummary(
                                 teamName, monthlySpend, budget,
                                 (int) pendingCount, (int) approvedCount, topCat);
-                return ollamaService.ask(prompt, "team-summary");
+                return ask(prompt, "team-summary");
         }
 
         // ── Feature 7: Fraud Insights ──────────────────────────────────────────────
@@ -158,7 +204,7 @@ public class AIService {
                 sb.append("\n]");
 
                 String prompt = PromptTemplates.fraudInsights(sb.toString());
-                return ollamaService.ask(prompt, "fraud-insights");
+                return ask(prompt, "fraud-insights");
         }
 
         // ── Feature 8: Budget Prediction ──────────────────────────────────────────
@@ -170,7 +216,7 @@ public class AIService {
 
                 String prompt = PromptTemplates.budgetPrediction(
                                 teamName, budget, spent, daysElapsed, totalDays);
-                return ollamaService.ask(prompt, "budget-prediction");
+                return ask(prompt, "budget-prediction");
         }
 
         // ── Feature 9: Policy Violations ──────────────────────────────────────────
@@ -180,7 +226,7 @@ public class AIService {
                                 expense.getTitle(), expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 policyRules);
-                return ollamaService.askLightweight(prompt, "policy-violations");
+                return askLightweight(prompt, "policy-violations");
         }
 
         // ── Feature 10: Chatbot ────────────────────────────────────────────────────
@@ -188,7 +234,7 @@ public class AIService {
         public CompletableFuture<AIResponse> chat(String userRole, String userName,
                         String message, String contextSummary) {
                 String prompt = PromptTemplates.chatbot(userRole, userName, message, contextSummary);
-                return ollamaService.ask(prompt, "chatbot");
+                return ask(prompt, "chatbot");
         }
 
         // ── Feature 11: Vendor ROI Analysis ───────────────────────────────────────
@@ -213,7 +259,7 @@ public class AIService {
                 sb.append("\n]");
 
                 String prompt = PromptTemplates.vendorROI(sb.toString());
-                return ollamaService.ask(prompt, "vendor-roi");
+                return ask(prompt, "vendor-roi");
         }
 
         // ── Backward-compatible sync wrappers ─────────────────────────────────────
@@ -222,14 +268,18 @@ public class AIService {
                 String employeeName = (expense.getUser() != null && expense.getUser().getName() != null)
                                 ? expense.getUser().getName()
                                 : "Employee";
-                return ollamaService.askSync(PromptTemplates.explainRejection(
+                String prompt = PromptTemplates.explainRejection(
                                 employeeName,
                                 expense.getTitle(), expense.getAmount(),
                                 expense.getCategory() != null ? expense.getCategory() : "Uncategorized",
                                 expense.getApprovalComment() != null ? expense.getApprovalComment()
                                                 : expense.getRejectionReason() != null ? expense.getRejectionReason()
-                                                                : "No specific reason provided."),
-                                "explain-rejection");
+                                                                : "No specific reason provided.");
+                try {
+                        return ask(prompt, "explain-rejection").get(65, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                        return AIResponse.fallback("explain-rejection", 0);
+                }
         }
 
         // ── Feature 12: Description Enhancer ─────────────────────────────────────
@@ -237,7 +287,7 @@ public class AIService {
         public CompletableFuture<AIResponse> enhanceDescription(String title, double amount, String category) {
                 String prompt = PromptTemplates.enhanceDescription(title, amount,
                                 category != null ? category : "Uncategorized");
-                return ollamaService.ask(prompt, "enhance-description");
+                return ask(prompt, "enhance-description");
         }
 
         // ── Feature 13: Audit Summary ────────────────────────────────────────────
@@ -251,11 +301,12 @@ public class AIService {
                 sb.append("\n]");
 
                 String prompt = PromptTemplates.auditSummary(sb.toString());
-                return ollamaService.ask(prompt, "audit-summary");
+                return ask(prompt, "audit-summary");
         }
 
         public CompletableFuture<AIResponse> voiceParse(String text) {
                 String prompt = PromptTemplates.voiceParse(text);
-                return ollamaService.askLightweight(prompt, "voice-parse");
+                return askLightweight(prompt, "voice-parse");
         }
+
 }

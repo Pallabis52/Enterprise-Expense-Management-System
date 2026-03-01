@@ -4,6 +4,7 @@ import useAuthStore from '../../../store/authStore';
 import Card from '../../../components/ui/Card';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 import { EnvelopeIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 
 const InviteMember = () => {
@@ -54,18 +55,16 @@ const InviteMember = () => {
                     />
 
                     {user?.role === 'ADMIN' && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
-                            <select
-                                className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-primary-500 p-2.5"
-                                value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            >
-                                <option value="USER">User (Employee)</option>
-                                <option value="MANAGER">Manager</option>
-                                <option value="ADMIN">Admin</option>
-                            </select>
-                        </div>
+                        <CustomDropdown
+                            label="Role"
+                            options={[
+                                { label: 'User (Employee)', value: 'USER', description: 'Standard operative access' },
+                                { label: 'Manager', value: 'MANAGER', description: 'Executive oversight & approval' },
+                                { label: 'Admin', value: 'ADMIN', description: 'Full system architecture control' }
+                            ]}
+                            value={formData.role}
+                            onChange={(val) => setFormData({ ...formData, role: val })}
+                        />
                     )}
 
                     {/* Admin assigning user to manager - simplified for now, ideally a user select dropdown */}

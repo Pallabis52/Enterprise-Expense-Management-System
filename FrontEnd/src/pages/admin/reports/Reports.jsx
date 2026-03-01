@@ -15,8 +15,11 @@ import {
     PresentationChartLineIcon,
     GlobeAltIcon,
     CpuChipIcon,
-    ArrowDownTrayIcon
+    ArrowDownTrayIcon,
+    DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
+import reportService from '../../../services/reportService';
+import { toast } from 'react-hot-toast';
 import PageTransition from '../../../components/layout/PageTransition';
 
 const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#EC4899'];
@@ -31,6 +34,17 @@ const Reports = () => {
     useEffect(() => {
         fetchDashboardData();
     }, [filters]);
+
+    const handleAuditPdfDownload = async () => {
+        try {
+            await reportService.downloadAuditPdf();
+            toast.success('System audit generated', {
+                style: { borderRadius: '16px', background: '#0f172a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+        } catch (error) {
+            toast.error('Generation failed');
+        }
+    };
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
@@ -111,7 +125,16 @@ const Reports = () => {
                             <GlobeAltIcon className="w-10 h-10" />
                         </div>
                         <div>
-                            <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Reports</h1>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Reports</h1>
+                                <button
+                                    onClick={handleAuditPdfDownload}
+                                    title="Generate Global Audit (PDF)"
+                                    className="p-3 rounded-xl bg-indigo-500/10 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all active:scale-95 group shadow-sm"
+                                >
+                                    <DocumentChartBarIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                </button>
+                            </div>
                             <p className="text-[11px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-[0.3em] mt-4 flex items-center gap-2">
                                 <CpuChipIcon className="w-4 h-4" />
                                 System-Wide Analytics

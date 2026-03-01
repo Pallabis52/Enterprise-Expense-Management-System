@@ -24,6 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { cn } from '../../../utils/helpers';
 import Button from '../../../components/ui/Button';
+import CustomDropdown from '../../../components/ui/CustomDropdown';
 
 // ── Shared sub-components ────────────────────────────────────────────────────
 
@@ -267,17 +268,17 @@ const AdminAIDashboard = () => {
                     >
                         <form onSubmit={handleBudget} className="space-y-5">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Target Sector</label>
                                 {teams.length > 0 ? (
-                                    <select
-                                        className={inputCls}
+                                    <CustomDropdown
+                                        label="Target Sector"
+                                        options={teams.map(t => ({
+                                            label: t.name,
+                                            value: t.id,
+                                            description: `Sector Reference: ${t.id}`
+                                        }))}
                                         value={selectedTeam}
-                                        onChange={e => setSelectedTeam(e.target.value)}
-                                    >
-                                        {teams.map(t => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={setSelectedTeam}
+                                    />
                                 ) : (
                                     <input className={inputCls} type="number" placeholder="Reference ID" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)} />
                                 )}

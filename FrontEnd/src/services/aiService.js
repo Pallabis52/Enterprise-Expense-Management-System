@@ -34,18 +34,23 @@ aiApi.interceptors.request.use(
         }
 
         if (token && token !== 'null' && token !== 'undefined') {
-            const cleanToken = token.trim();
+            const cleanToken = token.trim().replace(/[\n\r]/g, '');
             const preview = cleanToken.substring(0, 10) + '...';
-            console.log(`[AI-API] Attaching token (${preview}) to ${config.method?.toUpperCase()} ${config.url}`);
 
-            // Apply to headers using standard and modern methods for bulletproof compatibility
-            if (config.headers.set) {
-                config.headers.set('Authorization', `Bearer ${cleanToken}`);
-            } else {
-                config.headers.Authorization = `Bearer ${cleanToken}`;
-            }
+            // FORCE headers to be a plain object to avoid AxiosHeaders encapsulation bugs
+            const rawHeaders = { ...config.headers };
+            rawHeaders['Authorization'] = `Bearer ${cleanToken}`;
+            rawHeaders['authorization'] = `Bearer ${cleanToken}`; // Redundancy
+
+            config.headers = rawHeaders;
+
+            console.log(`🚀 [AI-API] Request Sent: ${config.method?.toUpperCase()} ${config.url}`);
+            console.log(`🔑 [AI-API] Token Attached: (${preview})`);
         } else {
-            console.warn(`[AI-API] MISSION CRITICAL: No token found for ${config.method?.toUpperCase()} ${config.url}`);
+            // Optional: Only warn for non-auth endpoints to avoid noise during login
+            if (!config.url.includes('/auth/') && !config.url.includes('/public/')) {
+                console.warn(`[AI-API] CRITICAL FAILURE: No token found for ${config.method?.toUpperCase()} ${config.url}`);
+            }
         }
 
         return config;
@@ -60,11 +65,27 @@ aiApi.interceptors.request.use(
 aiApi.interceptors.response.use(
     (res) => res,
     (error) => {
-        if (error.response?.status === 401) {
-            console.error("🔒 Unauthorized — redirecting to login");
-            localStorage.removeItem("token");
-            window.location.href = "/login";
+        const status = error.response?.status;
+        const url = error.config?.url;
+
+        if (status === 401) {
+            const serverMessage = error.response?.data?.message || "Session expired or token invalid.";
+            console.error(`🔒 [AI-API] 401 Unauthorized for ${url}. Server: ${serverMessage}`);
+
+            // Skip suppressGlobalError check for 401s — always force re-login
+            import('../utils/premiumAlerts').then(({ premiumWarning }) => {
+                premiumWarning('AI Session Security', 'Your session has expired. Please log in again.', null).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("auth-storage");
+                        window.location.href = "/login";
+                    }
+                });
+            });
+        } else if (status === 403) {
+            console.error(`🚫 [AI-API] 403 Forbidden for ${url}. check user roles.`);
         }
+
         return Promise.reject(error);
     }
 );
@@ -150,6 +171,14 @@ export const getAuditSummary = () =>
 // 🔟 Vendor ROI
 export const getVendorROI = () =>
     withRetry(() => aiApi.get("/ai/vendor-roi"));
+
+// 10.1️⃣ Policy violations
+export const getPolicyViolations = (expenseId) =>
+    withRetry(() => aiApi.get(`/ai/policy-violations/${expenseId}`));
+
+// 10.2️⃣ Budget prediction
+export const getBudgetPrediction = (teamId) =>
+    withRetry(() => aiApi.get(`/ai/budget-prediction/${teamId}`));
 
 /* COMMON FEATURES */
 

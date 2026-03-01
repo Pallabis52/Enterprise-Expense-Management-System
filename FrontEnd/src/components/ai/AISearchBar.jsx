@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MagnifyingGlassIcon, SparklesIcon, XMarkIcon, MicrophoneIcon, StopIcon } from '@heroicons/react/24/outline';
 import { naturalSearch } from '../../services/aiService';
 import toast from 'react-hot-toast';
+import { showVoiceSearchModal } from '../../utils/VoiceModal';
 
 /**
  * AISearchBar - Natural language search for expenses.
@@ -19,42 +20,18 @@ const AISearchBar = ({ onFilterChange }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const recognitionRef = useRef(null);
 
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'en-IN';
-
-            recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                setIsListening(false);
+    const toggleListening = async () => {
+        try {
+            const transcript = await showVoiceSearchModal();
+            if (transcript) {
                 setQuery(transcript);
                 handleSearch(transcript);
-            };
-
-            recognitionRef.current.onerror = (event) => {
-                setIsListening(false);
-                toast.error(`Voice error: ${event.error}`);
-            };
-
-            recognitionRef.current.onend = () => setIsListening(false);
-        }
-    }, []);
-
-    const toggleListening = () => {
-        if (!recognitionRef.current) {
-            toast.error('Voice recognition not supported.');
-            return;
-        }
-        if (isListening) {
-            recognitionRef.current.stop();
-        } else {
-            setIsListening(true);
-            recognitionRef.current.start();
+            }
+        } catch (error) {
+            if (error !== 'No speech detected' && !error.includes('aborted')) {
+                toast.error(error);
+            }
         }
     };
 
@@ -69,7 +46,7 @@ const AISearchBar = ({ onFilterChange }) => {
         try {
             const response = await naturalSearch(searchQuery);
 
-            if (response.isFallback) {
+            if (response.fallback) {
                 toast.error('AI Search unavailable — using manual search.');
                 onFilterChange({ title: searchQuery });
                 return;
@@ -143,8 +120,8 @@ const AISearchBar = ({ onFilterChange }) => {
                             type="button"
                             onClick={toggleListening}
                             className={`p-1.5 rounded-full transition-all duration-300 ${isListening
-                                    ? 'bg-red-500 text-white animate-pulse'
-                                    : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+                                ? 'bg-red-500 text-white animate-pulse'
+                                : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
                                 }`}
                             title="Voice Search"
                         >

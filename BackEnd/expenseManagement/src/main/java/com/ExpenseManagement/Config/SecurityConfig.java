@@ -5,6 +5,8 @@ import com.expensemanagement.security.JwtUtils;
 import com.expensemanagement.security.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +38,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
@@ -55,11 +59,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter)
             throws Exception {
         http.authorizeHttpRequests(auth -> auth
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll() // Fix for 401 on async
+                                                                                          // re-dispatch
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/ws/**", "/ws").permitAll()
+                .requestMatchers("/api/ai/status").permitAll()
                 .requestMatchers("/api/ai/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/manager/**").hasRole("MANAGER")
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/categories/**").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/expenses/**").hasAnyRole("USER", "MANAGER", "ADMIN")
@@ -72,6 +79,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/policies/**").hasAnyRole("MANAGER", "ADMIN")
                 .requestMatchers("/api/freeze/**").hasRole("ADMIN")
                 .requestMatchers("/api/budgets/**").hasAnyRole("MANAGER", "ADMIN")
+                .requestMatchers("/api/reports/download/user/excel").hasAnyRole("USER", "MANAGER", "ADMIN")
                 .requestMatchers("/api/reports/**").hasAnyRole("MANAGER", "ADMIN")
                 .requestMatchers("/api/audit-logs/**").hasRole("ADMIN")
                 .requestMatchers("/api/debug/**").hasRole("ADMIN")
@@ -88,10 +96,14 @@ public class SecurityConfig {
                             String message = (authError != null) ? authError
                                     : "Invalid or missing authentication token.";
 
+                            log.warn("SECURITY-DENIED: 401 Unauthorized at URI: {}. Reason: {}",
+                                    request.getRequestURI(), message);
+
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write(
-                                    String.format("{\"error\":\"Unauthorized\",\"message\":\"%s\"}", message));
+                                    String.format("{\"error\":\"Unauthorized\",\"message\":\"%s\",\"uri\":\"%s\"}",
+                                            message, request.getRequestURI()));
                         })
                         // Valid token but wrong role → 403 Forbidden
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
@@ -128,8 +140,9 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(
                 Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin",
-                "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(
+                List.of("Authorization", "authorization", "Content-Type", "X-Requested-With", "Accept", "Origin",
+                        "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

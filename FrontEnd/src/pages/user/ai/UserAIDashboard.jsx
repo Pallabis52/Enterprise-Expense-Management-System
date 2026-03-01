@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     getSpendingInsights,
     categorizeExpense,
-    explainRejection
+    explainRejection,
+    getAIStatus
 } from '../../../services/aiService';
 import PageTransition from '../../../components/layout/PageTransition';
 import {
@@ -131,9 +132,18 @@ const UserAIDashboard = () => {
         setInsightsLoading(true);
         setInsightsResult(null);
         try {
+            // DIAGNOSTIC STEP: Check what headers the server sees
+            try {
+                const statusData = await getAIStatus();
+                console.log("🔍 [AI-DIAGNOSTIC] Server Status & Headers Seen:", statusData);
+            } catch (err) {
+                console.error("🔍 [AI-DIAGNOSTIC] Failed to reach /ai/status:", err.message);
+            }
+
             const data = await getSpendingInsights();
             setInsightsResult(data);
-        } catch {
+        } catch (err) {
+            console.error("❌ [UserAIDashboard] Insights Error:", err);
             setInsightsResult({ result: 'AI is currently unavailable. Please try again later.', fallback: true });
         } finally {
             setInsightsLoading(false);
