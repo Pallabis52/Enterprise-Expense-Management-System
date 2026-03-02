@@ -37,4 +37,7 @@ public class User {
     @OneToOne(mappedBy = "manager")
     @JsonIgnoreProperties({ "members", "manager" })
     private Team managedTeam;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean terminated = false;
 }

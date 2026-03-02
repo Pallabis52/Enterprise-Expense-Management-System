@@ -15,19 +15,13 @@ const useAuthStore = create(
                 set({ isLoading: true, error: null });
                 try {
                     const response = await api.post('/auth/login', { email, password });
-                    // Backend returns: { token, name, email, role }
-                    const data = response.data;
+                    // Backend returns: { token, user: { id, name, email, role } }
+                    const { token, user } = response.data;
 
                     // Store token for axios interceptors and persistence
-                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('token', token);
 
-                    const user = {
-                        name: data.name,
-                        email: data.email,
-                        role: data.role
-                    };
-
-                    set({ user, token: data.token, isAuthenticated: true, isLoading: false });
+                    set({ user, token, isAuthenticated: true, isLoading: false });
                     return user;
                 } catch (error) {
                     const msg = error.response?.data?.message || 'Login failed';
@@ -40,13 +34,21 @@ const useAuthStore = create(
                 set({ isLoading: true, error: null });
                 try {
                     const response = await api.post('/auth/register', userData);
-                    set({ isLoading: false });
+                    // Backend returns: { token, user: { id, name, email, role } }
+                    const { token, user } = response.data;
+
+                    // Store token for auto-login
+                    localStorage.setItem('token', token);
+
+                    set({ user, token, isAuthenticated: true, isLoading: false });
                     return response.data;
                 } catch (error) {
-                    set({ error: error.message || 'Registration failed', isLoading: false });
+                    const msg = error.response?.data?.message || 'Registration failed';
+                    set({ error: msg, isLoading: false });
                     throw error;
                 }
             },
+
 
             logout: async () => {
                 set({ isLoading: true });

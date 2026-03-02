@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Zap, Cpu, Rocket, ArrowRight, Activity, Database, Fingerprint, Lock, Globe } from 'lucide-react';
 import PageTransition from '../../components/layout/PageTransition';
 import PublicNavbar from './PublicNavbar';
+import Footer from '../../components/layout/Footer';
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -11,6 +12,10 @@ const LandingPage = () => {
 
     // Parallax and scroll effects
     const backgroundY = useTransform(scrollY, [0, 500], [0, 30]);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     return (
         <PageTransition className="bg-[#05070a] min-h-screen text-white font-sans overflow-x-hidden selection:bg-indigo-500/30">
@@ -280,30 +285,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Ultra-Minimal Tech Footer */}
-            <footer className="py-20 border-t border-white/5 bg-[#05070a]">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                            <Shield className="w-5 h-5 text-indigo-500" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-white font-black text-lg tracking-tighter">ANTIGRAVITY</span>
-                            <span className="text-[8px] font-black text-white/20 tracking-[4px] uppercase whitespace-nowrap">Intelligence Suite</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-10">
-                        {['Docs', 'Nodes', 'Privacy'].map((item) => (
-                            <a key={item} href="#" className="text-[9px] uppercase font-black tracking-[4px] text-white/20 hover:text-white transition-all">{item}</a>
-                        ))}
-                    </div>
-
-                    <div className="text-[9px] font-black tracking-[4px] text-white/10 uppercase italic">
-                        © 2026. Secured by Antigravity Lattice.
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </PageTransition>
     );
 };

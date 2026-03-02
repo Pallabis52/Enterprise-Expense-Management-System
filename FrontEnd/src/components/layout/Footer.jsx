@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     CpuChipIcon,
@@ -78,10 +79,13 @@ const Footer = () => {
                             <ul className="space-y-4">
                                 {section.links.map((link, lIdx) => (
                                     <li key={lIdx}>
-                                        <a href="#" className="text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center group/link">
+                                        <Link
+                                            to={`/protocol/${link.toLowerCase().replace(/\s+/g, '-')}`}
+                                            className="text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center group/link"
+                                        >
                                             <span className="w-0 group-hover/link:w-2 h-[2px] bg-indigo-500 mr-0 group-hover/link:mr-2 transition-all duration-300" />
                                             {link}
-                                        </a>
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

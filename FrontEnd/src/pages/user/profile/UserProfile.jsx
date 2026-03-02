@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
     UserIcon,
     EnvelopeIcon,
@@ -16,12 +17,13 @@ import userService from '../../../services/userService';
 import Card3D from '../../../components/ui/Card3D';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
-import { premiumSuccess, premiumError } from '../../../utils/premiumAlerts';
+import { premiumSuccess, premiumError, premiumWarning, premiumConfirm } from '../../../utils/premiumAlerts';
 import PageTransition from '../../../components/layout/PageTransition';
 import { cn } from '../../../utils/helpers';
 
 const UserProfile = () => {
-    const { user, login } = useAuthStore();
+    const navigate = useNavigate();
+    const { user, logout } = useAuthStore();
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -53,15 +55,37 @@ const UserProfile = () => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const updated = await userService.updateProfile({ name: formData.name });
-            // Sync with store if necessary - assuming login updates the store user
-            // If the service returns the updated user, we can refresh the store state
+            await userService.updateProfile({ name: formData.name });
             premiumSuccess('Identity Updated', 'Your profile has been successfully synchronized.');
             setIsEditing(false);
         } catch (err) {
             premiumError('Error', 'Failed to update identity');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleTerminateAccount = async () => {
+        const result = await premiumConfirm(
+            'DECOMMISSION ENTITY?',
+            'This will permanently remove your profile from the operational grid. This action is IRREVERSIBLE.',
+            'EXECUTE TERMINATION'
+        );
+
+        if (result.isConfirmed) {
+            setIsLoading(true);
+            try {
+                await userService.terminateAccount();
+                premiumSuccess('Termination Complete', 'Entity has been removed from the grid.', 3000);
+                setTimeout(() => {
+                    logout();
+                    navigate('/login');
+                }, 2000);
+            } catch (err) {
+                premiumError('Termination Failed', 'Secure override unsuccessful. Please contact an Administrator.');
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -411,6 +435,8 @@ const UserProfile = () => {
                         </div>
                         <Button
                             variant="danger"
+                            onClick={handleTerminateAccount}
+                            isLoading={isLoading}
                             className="px-12 py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.25em] shadow-[0_20px_40px_-10px_rgba(244,63,94,0.3)] hover:scale-105 active:scale-95 transition-all duration-500 relative z-10"
                         >
                             Execute Termination

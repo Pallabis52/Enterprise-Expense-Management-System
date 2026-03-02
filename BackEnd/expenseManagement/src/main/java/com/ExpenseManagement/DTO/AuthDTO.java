@@ -1,6 +1,7 @@
 package com.expensemanagement.dto;
 
 import com.expensemanagement.entities.Role;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 public class AuthDTO {
@@ -20,17 +21,19 @@ public class AuthDTO {
     }
 
     @Data
+    @AllArgsConstructor
     public static class AuthResponse {
         private String token;
-        private String name;
-        private String email;
-        private Role role;
+        private UserInfo user;
 
-        public AuthResponse(String token, String name, String email, Role role) {
-            this.token = token;
-            this.name = name;
-            this.role = role;
-            this.email = email;
+        @Data
+        @AllArgsConstructor
+        public static class UserInfo {
+            private Long id;
+            private String name;
+            private String email;
+            private Role role;
         }
     }
+
 }

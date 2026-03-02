@@ -37,12 +37,18 @@ const Register = () => {
         }
 
         try {
-            await register({ name: formData.name, email: formData.email, password: formData.password, role: formData.role });
+            const response = await register({ name: formData.name, email: formData.email, password: formData.password, role: formData.role });
+            const user = response.user;
 
-            premiumSuccess('Registration Successful!', 'Your account has been created.', null).then(() => {
-                navigate('/login');
+            premiumSuccess('Registration Successful!', 'Your account has been created.', 1500).then(() => {
+                if (user.role === 'ADMIN') {
+                    navigate('/admin/dashboard');
+                } else if (user.role === 'MANAGER') {
+                    navigate('/manager/dashboard');
+                } else {
+                    navigate('/user/dashboard');
+                }
             });
-
         } catch (err) {
             const msg = err.response?.data?.message || 'Something went wrong during registration. Please try again.';
             premiumError('Registration Failed', msg);

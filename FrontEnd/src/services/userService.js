@@ -81,6 +81,10 @@ const userService = {
         const contentType = response.headers['content-type'];
         const blob = new Blob([response.data], { type: contentType });
         return URL.createObjectURL(blob);
+    },
+
+    terminateAccount: async () => {
+        await api.delete('/user/terminate');
     }
 };
 

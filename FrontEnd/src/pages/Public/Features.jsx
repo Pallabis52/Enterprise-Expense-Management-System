@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Zap, Cpu, BarChart3, Database, Lock, Globe, Activity, Terminal, LayoutGrid } from 'lucide-react';
 import PageTransition from '../../components/layout/PageTransition';
 import PublicNavbar from './PublicNavbar';
+import Footer from '../../components/layout/Footer';
 
 const Features = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
     return (
         <PageTransition className="bg-[#05070a] min-h-screen text-white font-sans overflow-x-hidden selection:bg-indigo-500/30">
             <PublicNavbar />
@@ -132,12 +136,7 @@ const Features = () => {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="py-20 border-t border-white/5 opacity-50 bg-[#05070a]">
-                <div className="max-w-7xl mx-auto px-6 text-center text-[10px] font-black tracking-[4px] text-white/20 uppercase">
-                    © 2026 ANTIGRAVITY SYSTEMS. ALL CORE MODULES VERIFIED.
-                </div>
-            </footer>
+            <Footer />
         </PageTransition>
     );
 };

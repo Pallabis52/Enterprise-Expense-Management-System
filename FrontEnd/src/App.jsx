@@ -1,12 +1,14 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './components/layout/MainLayout';
+import StandardPublicPage from './components/StandardPublicPage';
 
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import NotFound from './pages/NotFound';
 import AccessDenied from './pages/AccessDenied';
+import ErrorPage from './pages/ErrorPage';
 
 import LandingPage from './pages/Public/LandingPage';
 import Features from './pages/Public/Features';
@@ -40,6 +42,9 @@ import ManagerReports from './pages/manager/reports/ManagerReports';
 import ManagerProfile from './pages/manager/profile/ManagerProfile';
 import ManagerAIDashboard from './pages/manager/ai/ManagerAIDashboard';
 
+// Complaint Management
+import ComplaintManagementPage from './pages/complaints/ComplaintManagementPage';
+
 // Shared Pages
 import Chatbot from './pages/ai/Chatbot';
 import VoiceAssistantPage from './pages/ai/VoiceAssistantPage';
@@ -50,6 +55,11 @@ import useAuthStore from './store/authStore';
 // Protected Route with Role Check
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useAuthStore();
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
@@ -81,10 +91,12 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+    errorElement: <ErrorPage />,
   },
   {
     path: '/register',
     element: <Register />,
+    errorElement: <ErrorPage />,
   },
   // Admin Routes
   {
@@ -94,6 +106,7 @@ const router = createBrowserRouter([
         <MainLayout />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> }, // Default to dashboard
       { path: 'dashboard', element: <AdminDashboard /> },
@@ -107,6 +120,7 @@ const router = createBrowserRouter([
       { path: 'chatbot', element: <Chatbot /> },
       { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <AdminProfile /> },
+      { path: 'complaints', element: <ComplaintManagementPage /> },
     ]
   },
   // Manager Routes
@@ -117,6 +131,7 @@ const router = createBrowserRouter([
         <MainLayout />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Navigate to="/manager/dashboard" replace /> },
       { path: 'dashboard', element: <ManagerDashboard /> },
@@ -127,6 +142,7 @@ const router = createBrowserRouter([
       { path: 'chatbot', element: <Chatbot /> },
       { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <ManagerProfile /> },
+      { path: 'complaints', element: <ComplaintManagementPage /> },
     ]
   },
   // User Routes
@@ -137,6 +153,7 @@ const router = createBrowserRouter([
         <MainLayout />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Navigate to="/user/dashboard" replace /> },
       { path: 'dashboard', element: <UserDashboard /> },
@@ -146,28 +163,44 @@ const router = createBrowserRouter([
       { path: 'chatbot', element: <Chatbot /> },
       { path: 'voice', element: <VoiceAssistantPage /> },
       { path: 'profile', element: <UserProfile /> },
+      { path: 'complaints', element: <ComplaintManagementPage /> },
     ]
+  },
+  {
+    path: '/dashboard',
+    element: <RoleBasedRedirect />,
+    errorElement: <ErrorPage />
   },
   // Default Redirect based on Role
   {
     path: '/',
-    element: <RoleBasedRedirect />
+    element: <RoleBasedRedirect />,
+    errorElement: <ErrorPage />
   },
   {
     path: '/features',
-    element: <Features />
+    element: <Features />,
+    errorElement: <ErrorPage />
   },
   {
     path: '/intelligence',
-    element: <Intelligence />
+    element: <Intelligence />,
+    errorElement: <ErrorPage />
   },
   {
     path: '/security',
-    element: <Security />
+    element: <Security />,
+    errorElement: <ErrorPage />
   },
   {
     path: '/global',
-    element: <Global />
+    element: <Global />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/protocol/:id',
+    element: <StandardPublicPage />,
+    errorElement: <ErrorPage />
   },
   // 404 Route
   {

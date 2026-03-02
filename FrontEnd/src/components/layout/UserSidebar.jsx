@@ -9,7 +9,8 @@ import {
     SparklesIcon,
     MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
-    Squares2X2Icon
+    Squares2X2Icon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../store/authStore';
 import { cn } from '../../utils/helpers';
@@ -29,6 +30,7 @@ const UserSidebar = ({ isOpen, toggleSidebar }) => {
         { name: 'Reports', href: '/user/reports', icon: ChartBarIcon },
         { name: 'AI Tools', href: '/user/ai', icon: SparklesIcon },
         { name: 'Voice Assistant', href: '/user/voice', icon: MicrophoneIcon },
+        { name: 'Complaints', href: '/user/complaints', icon: ExclamationTriangleIcon },
         { name: 'Profile', href: '/user/profile', icon: UserIcon },
     ];
 

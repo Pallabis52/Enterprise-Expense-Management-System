@@ -46,7 +46,12 @@ const Login = () => {
             }
         } catch (err) {
             const msg = useAuthStore.getState().error || 'Invalid credentials';
-            premiumError('Login Failed', msg);
+            setError(msg);
+            if (msg.includes('terminated')) {
+                premiumWarning('Account Deactivated', msg);
+            } else {
+                premiumError('Login Failed', msg);
+            }
         }
     };
 

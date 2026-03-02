@@ -22,46 +22,65 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final JwtUtils jwtUtils;
+        private final AuthenticationManager authenticationManager;
 
-    public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+        public AuthResponse register(RegisterRequest request) {
+                if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+                        throw new RuntimeException("Email already exists");
+                }
+
+                User user = new User();
+                user.setName(request.getName());
+                user.setEmail(request.getEmail());
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                // Default to USER if role is null
+                user.setRole(request.getRole() != null ? request.getRole() : Role.USER);
+
+                user = userRepository.save(user);
+
+                // Authenticate immediately after registration
+                Authentication authentication = authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+                // Create UserDetails for token generation
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+                String token = jwtUtils.generateToken(userDetails);
+
+                AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
+                                user.getId(),
+                                user.getName(),
+                                user.getEmail(),
+                                user.getRole());
+
+                return new AuthResponse(token, userInfo);
         }
 
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        // Default to USER if role is null
-        user.setRole(request.getRole() != null ? request.getRole() : Role.USER);
+        public AuthResponse login(LoginRequest request) {
+                Authentication authentication = authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-        userRepository.save(user);
+                User user = userRepository.findByEmail(request.getEmail())
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Create UserDetails for token generation
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
+                if (user.isTerminated()) {
+                        throw new RuntimeException("Your account has been terminated and is permanently deactivated.");
+                }
 
-        String token = jwtUtils.generateToken(userDetails);
-        return new AuthResponse(token, user.getName(), user.getEmail(), user.getRole());
-    }
+                // We can use the principal from authentication as it is UserDetails
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-    public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                String token = jwtUtils.generateToken(userDetails);
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
+                                user.getId(),
+                                user.getName(),
+                                user.getEmail(),
+                                user.getRole());
 
-        // We can use the principal from authentication as it is UserDetails
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-        String token = jwtUtils.generateToken(userDetails);
-        return new AuthResponse(token, user.getName(), user.getEmail(), user.getRole());
-    }
+                return new AuthResponse(token, userInfo);
+        }
 }

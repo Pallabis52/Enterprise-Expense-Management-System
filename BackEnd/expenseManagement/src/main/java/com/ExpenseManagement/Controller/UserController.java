@@ -227,4 +227,16 @@ public class UserController {
         // Simple keyword-based suggestion; returns top matches
         return ResponseEntity.ok(java.util.List.of("Travel", "Food", "Accommodation", "Office Supplies", "Other"));
     }
+
+    /**
+     * DELETE /api/user/terminate
+     * Permanently deletes the user account and all associated data.
+     */
+    @DeleteMapping("/terminate")
+    public ResponseEntity<Void> terminateAccount(Authentication auth) {
+        User user = getCurrentUser(auth);
+        log.info("Terminating account for user: {}", user.getEmail());
+        userService.terminateUser(user);
+        return ResponseEntity.noContent().build();
+    }
 }

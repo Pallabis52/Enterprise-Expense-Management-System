@@ -140,10 +140,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                         @Param("year") int year);
 
         @Query("SELECT e FROM Expense e WHERE (e.user IN :users OR e.user = :manager) AND " +
-
                         "(LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
                         "LOWER(e.category) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
                         "LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
         List<Expense> searchByKeywordAndUsers(@Param("query") String query, @Param("users") List<User> users,
                         @Param("manager") User manager);
+
+        void deleteByUser(User user);
 }

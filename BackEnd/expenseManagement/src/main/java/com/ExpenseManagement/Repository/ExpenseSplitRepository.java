@@ -1,5 +1,6 @@
 package com.expensemanagement.repository;
 
+import com.expensemanagement.entities.Expense;
 import com.expensemanagement.entities.ExpenseSplit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,4 +14,8 @@ public interface ExpenseSplitRepository extends JpaRepository<ExpenseSplit, Long
     List<ExpenseSplit> findBySplitWithUserId(Long userId);
 
     List<ExpenseSplit> findByExpenseIdAndStatus(Long expenseId, String status);
+
+    void deleteBySplitWithUserId(Long userId);
+
+    void deleteByExpenseIn(List<Expense> expenses);
 }

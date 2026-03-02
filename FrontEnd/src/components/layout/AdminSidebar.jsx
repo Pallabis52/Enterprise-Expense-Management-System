@@ -12,7 +12,9 @@ import {
     MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
     CpuChipIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    FlagIcon,
+    Squares2X2Icon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../utils/helpers';
 import useAuthStore from '../../store/authStore';
@@ -22,11 +24,12 @@ const navigation = [
     { name: 'Teams', href: '/admin/teams', icon: UsersIcon },
     { name: 'Expenses', href: '/admin/expenses', icon: BanknotesIcon },
     { name: 'Vendors', href: '/admin/vendors', icon: CpuChipIcon },
-    { name: 'Fraud Flags', href: '/admin/fraud-flags', icon: ExclamationTriangleIcon },
+    { name: 'Fraud Flags', href: '/admin/fraud-flags', icon: FlagIcon },
     { name: 'Categories', href: '/admin/categories', icon: TagIcon },
     { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
     { name: 'AI Tools', href: '/admin/ai', icon: SparklesIcon },
     { name: 'Voice Assistant', href: '/admin/voice', icon: MicrophoneIcon },
+    { name: 'Complaints', href: '/admin/complaints', icon: ExclamationTriangleIcon },
     { name: 'Profile', href: '/admin/profile', icon: UserCircleIcon },
 ];
 

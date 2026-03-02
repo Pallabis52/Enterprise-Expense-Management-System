@@ -10,7 +10,8 @@ import {
     SparklesIcon,
     MicrophoneIcon,
     ArrowLeftOnRectangleIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../store/authStore';
 import { cn } from '../../utils/helpers';
@@ -22,6 +23,7 @@ const navigation = [
     { name: 'Reports', href: '/manager/reports', icon: ChartPieIcon },
     { name: 'AI Tools', href: '/manager/ai', icon: SparklesIcon },
     { name: 'Voice Assistant', href: '/manager/voice', icon: MicrophoneIcon },
+    { name: 'Complaints', href: '/manager/complaints', icon: ExclamationTriangleIcon },
     { name: 'Profile', href: '/manager/profile', icon: UserCircleIcon },
 ];
 
