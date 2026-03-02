@@ -1,6 +1,6 @@
 package com.expensemanagement.dto;
 
-import com.expensemanagement.entities.ComplaintStatus;
+import com.expensemanagement.entities.Complaint_Status;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,7 +10,7 @@ public class ComplaintDTO {
     private Long id;
     private String title;
     private String description;
-    private ComplaintStatus status;
+    private Complaint_Status status;
     private String response;
     private String createdBy;
     private String assignedTo;

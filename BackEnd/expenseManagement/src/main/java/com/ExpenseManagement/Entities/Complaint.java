@@ -9,6 +9,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a formal complaint within the system.
+ */
 @Entity
 @Data
 @NoArgsConstructor
@@ -27,7 +30,8 @@ public class Complaint {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    private ComplaintStatus status = ComplaintStatus.OPEN;
+    @Column(nullable = false)
+    private Complaint_Status status = Complaint_Status.OPEN;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_id", nullable = false)

@@ -2,7 +2,7 @@ package com.expensemanagement.controller;
 
 import com.expensemanagement.dto.ComplaintDTO;
 import com.expensemanagement.entities.Complaint;
-import com.expensemanagement.entities.ComplaintStatus;
+import com.expensemanagement.entities.Complaint_Status;
 import com.expensemanagement.entities.User;
 import com.expensemanagement.services.ComplaintService;
 import com.expensemanagement.services.UserService;

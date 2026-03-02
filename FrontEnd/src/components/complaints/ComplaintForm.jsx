@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, AlertCircle, ShieldQuestion } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -81,8 +81,8 @@ const ComplaintForm = ({ isOpen, onClose, onSuccess }) => {
                             type="submit"
                             disabled={loading}
                             className={`w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-[4px] flex items-center justify-center gap-3 transition-all ${loading
-                                    ? 'bg-white/5 text-white/20'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-500/20 active:scale-[0.98]'
+                                ? 'bg-white/5 text-white/20'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-500/20 active:scale-[0.98]'
                                 }`}
                         >
                             {loading ? 'Transmitting...' : (

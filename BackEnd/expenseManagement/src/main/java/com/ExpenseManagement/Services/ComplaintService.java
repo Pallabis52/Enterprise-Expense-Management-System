@@ -1,7 +1,7 @@
 package com.expensemanagement.services;
 
 import com.expensemanagement.entities.Complaint;
-import com.expensemanagement.entities.ComplaintStatus;
+import com.expensemanagement.entities.Complaint_Status;
 import com.expensemanagement.entities.User;
 import com.expensemanagement.repository.ComplaintRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class ComplaintService {
     public Complaint createComplaint(User user, Complaint complaint) {
         complaint.setCreatedBy(user);
         complaint.setRoleLevel(user.getRole().toString());
-        complaint.setStatus(ComplaintStatus.OPEN);
+        complaint.setStatus(Complaint_Status.OPEN);
         return complaintRepository.save(complaint);
     }
 
@@ -43,7 +43,7 @@ public class ComplaintService {
                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
 
         complaint.setResponse(response);
-        complaint.setStatus(ComplaintStatus.IN_PROGRESS);
+        complaint.setStatus(Complaint_Status.IN_PROGRESS);
         complaint.setAssignedTo(responder);
         return complaintRepository.save(complaint);
     }
@@ -53,7 +53,7 @@ public class ComplaintService {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
 
-        complaint.setStatus(ComplaintStatus.CLOSED);
+        complaint.setStatus(Complaint_Status.CLOSED);
         return complaintRepository.save(complaint);
     }
 }
