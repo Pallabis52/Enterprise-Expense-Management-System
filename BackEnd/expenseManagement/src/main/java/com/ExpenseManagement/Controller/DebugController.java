@@ -1,42 +1,42 @@
 package com.expensemanagement.controller;
 
-import com.expensemanagement.repository.ExpenseRepository;
-import com.expensemanagement.repository.UserRepository;
-import com.expensemanagement.services.FreezePeriodService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
-/**
- * Developer/debug utilities — ADMIN only.
- * Useful for health-checks and sanity testing.
- * GET /api/debug/*
- */
 @RestController
 @RequestMapping("/api/debug")
 @RequiredArgsConstructor
 public class DebugController {
 
-    private final ExpenseRepository expenseRepository;
-    private final UserRepository userRepository;
-    private final FreezePeriodService freezePeriodService;
+    private final JdbcTemplate jdbcTemplate;
 
-    /** GET /api/debug/stats — quick DB row counts */
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> stats() {
-        return ResponseEntity.ok(Map.of(
-                "expenses", expenseRepository.count(),
-                "users", userRepository.count(),
-                "frozen", freezePeriodService.isCurrentMonthFrozen()));
-    }
+    @GetMapping("/db-check")
+    public Map<String, Object> checkDb() {
+        try {
+            List<String> tables = jdbcTemplate.queryForList(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", String.class);
 
-    /** GET /api/debug/freeze-status */
-    @GetMapping("/freeze-status")
-    public ResponseEntity<Map<String, Object>> freezeStatus() {
-        return ResponseEntity.ok(Map.of(
-                "isCurrentMonthFrozen", freezePeriodService.isCurrentMonthFrozen(),
-                "allPeriods", freezePeriodService.getAllFreezePeriods()));
+            boolean complaintsExist = tables.contains("complaints");
+
+            Object tableStructure = null;
+            if (complaintsExist) {
+                tableStructure = jdbcTemplate.queryForList(
+                        "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'complaints'");
+            }
+
+            return Map.of(
+                    "status", "CONNECTED",
+                    "tables", tables,
+                    "complaints_table_exists", complaintsExist,
+                    "complaints_structure", tableStructure != null ? tableStructure : "NOT_FOUND");
+        } catch (Exception e) {
+            return Map.of("status", "ERROR", "message", e.getMessage());
+        }
     }
 }

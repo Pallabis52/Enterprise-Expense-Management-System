@@ -1,5 +1,6 @@
 package com.expensemanagement.services;
 
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class VoiceParsingService {
 
-    private final OllamaService ollamaService;
+    private final AIService aiService;
     private final ObjectMapper objectMapper;
 
     public CompletableFuture<AIDTOs.VoiceParseResult> parseVoice(String text) {
@@ -25,7 +26,7 @@ public class VoiceParsingService {
                         "Example: {\"amount\": 500.0, \"category\": \"travel\", \"description\": \"Taxi to airport\"}",
                 text);
 
-        return ollamaService.ask(prompt, "voice-parsing")
+        return aiService.ask(prompt, "voice-parsing")
                 .thenApply(aiResponse -> {
                     if (aiResponse.isFallback()) {
                         return AIDTOs.VoiceParseResult.builder()

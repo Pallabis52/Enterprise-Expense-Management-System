@@ -31,7 +31,27 @@ public class Complaint {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Complaint_Status status = Complaint_Status.OPEN;
+    private Complaint_Status status = Complaint_Status.SUBMITTED;
+
+    @Enumerated(EnumType.STRING)
+    private Complaint_Category category;
+
+    @Enumerated(EnumType.STRING)
+    private Complaint_Priority priority = Complaint_Priority.MEDIUM;
+
+    @Enumerated(EnumType.STRING)
+    private Complaint_Sentiment sentiment = Complaint_Sentiment.NEUTRAL;
+
+    @Enumerated(EnumType.STRING)
+    private Complaint_Department assignedDepartment;
+
+    private Long expenseId;
+
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int riskScore = 0; // 0-100
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean isDuplicate = false;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_id", nullable = false)
@@ -41,7 +61,7 @@ public class Complaint {
     @JoinColumn(name = "assigned_to_id")
     private User assignedTo;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'USER'")
     private String roleLevel; // USER | MANAGER
 
     @Column(columnDefinition = "TEXT")

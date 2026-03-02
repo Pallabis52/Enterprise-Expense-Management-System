@@ -1,6 +1,7 @@
 package com.expensemanagement.services;
 
 import com.expensemanagement.AI.AIResponse;
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.Expense;
@@ -19,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class NaturalSearchService {
 
-    private final OllamaService ollamaService;
+    private final AIService aiService;
     private final ExpenseRepository expenseRepository;
     private final ObjectMapper objectMapper;
 
@@ -32,7 +33,7 @@ public class NaturalSearchService {
                         "Example: {\"status\": \"REJECTED\", \"category\": \"travel\", \"minAmount\": null, \"month\": \"January\"}",
                 query);
 
-        return ollamaService.ask(prompt, "natural-search")
+        return aiService.ask(prompt, "natural-search")
                 .thenApply(aiResponse -> {
                     if (aiResponse.isFallback()) {
                         log.warn("AI search fallback – performing keyword match on description");

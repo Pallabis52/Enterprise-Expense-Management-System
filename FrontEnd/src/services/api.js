@@ -92,8 +92,8 @@ api.interceptors.response.use(
                 premiumError('Access Denied', 'You do not have permission to perform this action.');
             }
         } else if (status >= 500) {
-            // Server Error
-            premiumError('Server Error', 'A server error occurred. Please try again later.');
+            // Server Error - Show the detailed message if available
+            premiumError('Server Error', message || 'A server error occurred. Please try again later.');
         } else if (!error.response && error.message === 'Network Error') {
             // Network Error (Server down, CORS, or Crash)
             premiumError('Network Error', 'Unable to connect to the server. Please check your connection or try again later.');

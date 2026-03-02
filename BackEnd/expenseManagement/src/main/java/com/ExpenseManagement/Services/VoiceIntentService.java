@@ -61,7 +61,7 @@ public class VoiceIntentService {
         // Step 1: detect intent via AI assistant
         String intentPrompt = buildIntentPrompt(role, transcript);
 
-        return ollamaService.ask(intentPrompt, "voice-intent")
+        return aiService.ask(intentPrompt, "voice-intent")
                 .thenCompose(intentResponse -> {
                     if (intentResponse.isFallback()) {
                         // ── AI offline → keyword fallback ─────────────────────
@@ -105,7 +105,7 @@ public class VoiceIntentService {
                                 String replyPrompt = VoicePromptTemplates.voiceReply(intent, dataSummary,
                                         user.getName());
 
-                                return ollamaService.ask(replyPrompt, "voice-reply")
+                                return aiService.ask(replyPrompt, "voice-reply")
                                         .thenApply(replyResponse -> {
                                             String reply = replyResponse.isFallback()
                                                     ? buildFallbackReply(intent, data)

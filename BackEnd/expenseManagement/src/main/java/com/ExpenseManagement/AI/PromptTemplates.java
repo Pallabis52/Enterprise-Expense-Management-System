@@ -239,4 +239,74 @@ public final class PromptTemplates {
                                 Output: Reply with ONLY the valid JSON object. No other text.
                                 """.formatted(transcript);
         }
+
+        // ── Complaint AI Upgrades ────────────────────────────────────────────────
+
+        public static String classifyComplaintDepartment(String title, String description) {
+                return """
+                                Instruction: Classify this complaint and assign the responsible department (MANAGER, ADMIN, FINANCE).
+                                Complaint Title: %s
+                                Complaint Description: %s
+
+                                Guidance:
+                                - MANAGER: Expense issues, team conflicts, local rejections.
+                                - ADMIN: Policy violations, fraud, system access, high-level disputes.
+                                - FINANCE: Reimbursement delays, tax issues, payment failures.
+
+                                Output: Reply with ONLY the department name. No other text.
+                                """
+                                .formatted(title, description);
+        }
+
+        public static String detectComplaintPriority(String title, String description) {
+                return """
+                                Instruction: Determine the priority level (LOW, MEDIUM, HIGH, CRITICAL) for this complaint.
+                                Complaint Title: %s
+                                Complaint Description: %s
+
+                                Output: Reply with ONLY the priority level. No other text.
+                                """
+                                .formatted(title, description);
+        }
+
+        public static String detectComplaintSentiment(String title, String description) {
+                return """
+                                Instruction: Detect the sentiment (ANGRY, NEUTRAL, POSITIVE) of this complaint.
+                                Complaint Title: %s
+                                Complaint Description: %s
+
+                                Output: Reply with ONLY the sentiment. No other text.
+                                """.formatted(title, description);
+        }
+
+        public static String detectFraudRisk(String title, String description) {
+                return """
+                                Instruction: Evaluate the fraud risk for this complaint. Provide a score from 0 to 100.
+                                Complaint Title: %s
+                                Complaint Description: %s
+
+                                Output: Reply with ONLY the numeric score (e.g. 75). No other text.
+                                """.formatted(title, description);
+        }
+
+        public static String suggestComplaintResponse(String title, String description) {
+                return """
+                                Instruction: Suggest a professional and empathetic response for this complaint.
+                                Complaint Title: %s
+                                Complaint Description: %s
+
+                                Tone: Professional, helpful, and concise (max 3 sentences).
+                                Output: Reply with ONLY the suggested text.
+                                """.formatted(title, description);
+        }
+
+        public static String suggestComplaintSolutions(String text) {
+                return """
+                                Instruction: Based on the following partial complaint, suggest 3 immediate solutions or steps for the user.
+                                Text: "%s"
+
+                                Output: 3 short bullet points. Max 40 words total.
+                                """
+                                .formatted(text);
+        }
 }

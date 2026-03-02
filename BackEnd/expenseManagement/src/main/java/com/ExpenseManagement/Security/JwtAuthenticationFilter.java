@@ -60,8 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("AUTH-DIAGNOSTIC: No valid Bearer token found for URI: {}. Method: {}. Headers logged above.",
-                    request.getRequestURI(), request.getMethod());
+            // Silently skip log warning for WebSocket handshakes as they are expected to
+            // not have Bearer in some modes
+            if (!request.getRequestURI().startsWith("/ws")) {
+                log.warn("AUTH-DIAGNOSTIC: No valid Bearer token found for URI: {}. Method: {}. Headers logged above.",
+                        request.getRequestURI(), request.getMethod());
+            }
             request.setAttribute("authError", "Missing or invalid Authorization header format.");
             filterChain.doFilter(request, response);
             return;

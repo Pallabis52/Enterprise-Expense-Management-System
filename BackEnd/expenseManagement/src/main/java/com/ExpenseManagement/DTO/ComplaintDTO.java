@@ -1,6 +1,6 @@
 package com.expensemanagement.dto;
 
-import com.expensemanagement.entities.Complaint_Status;
+import com.expensemanagement.entities.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,6 +11,13 @@ public class ComplaintDTO {
     private String title;
     private String description;
     private Complaint_Status status;
+    private Complaint_Category category;
+    private Complaint_Priority priority;
+    private Complaint_Sentiment sentiment;
+    private Complaint_Department assignedDepartment;
+    private Long expenseId;
+    private int riskScore;
+    private boolean isDuplicate;
     private String response;
     private String createdBy;
     private String assignedTo;
@@ -21,6 +28,8 @@ public class ComplaintDTO {
     public static class Request {
         private String title;
         private String description;
+        private Complaint_Category category;
+        private Long expenseId;
     }
 
     @Data

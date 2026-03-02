@@ -9,8 +9,12 @@ import com.expensemanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.expensemanagement.dto.TeamDTO;
+import com.expensemanagement.dto.MemberInfo;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -92,8 +96,36 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
-    public List<Team> getAllTeams() {
-        return teamRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<TeamDTO> getAllTeams() {
+        return teamRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private TeamDTO convertToDTO(Team team) {
+        TeamDTO dto = new TeamDTO();
+        dto.setId(team.getId());
+        dto.setName(team.getName());
+
+        if (team.getManager() != null) {
+            dto.setManagerName(team.getManager().getName());
+            dto.setManagerEmail(team.getManager().getEmail());
+        }
+
+        if (team.getMembers() != null) {
+            dto.setMembers(team.getMembers().stream().map(member -> {
+                MemberInfo info = new MemberInfo();
+                info.setId(member.getId());
+                info.setName(member.getName());
+                info.setEmail(member.getEmail());
+                return info;
+            }).collect(Collectors.toList()));
+        } else {
+            dto.setMembers(Collections.emptyList());
+        }
+
+        return dto;
     }
 
     @Override

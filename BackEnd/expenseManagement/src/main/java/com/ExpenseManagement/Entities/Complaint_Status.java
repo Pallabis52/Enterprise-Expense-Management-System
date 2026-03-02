@@ -4,8 +4,10 @@ package com.expensemanagement.entities;
  * Enum representing the status of a complaint in the system.
  */
 public enum Complaint_Status {
-    OPEN,
+    SUBMITTED,
     IN_PROGRESS,
+    UNDER_REVIEW,
     RESOLVED,
-    CLOSED
+    REJECTED,
+    ESCALATED
 }

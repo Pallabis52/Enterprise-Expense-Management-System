@@ -146,5 +146,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
         List<Expense> searchByKeywordAndUsers(@Param("query") String query, @Param("users") List<User> users,
                         @Param("manager") User manager);
 
+        // --- Fraud Analytics ---
+        /** Fetch expenses with low AI confidence scores (e.g. < 50%) */
+        List<Expense> findByConfidenceScoreLessThanEqual(Double threshold);
+
         void deleteByUser(User user);
 }

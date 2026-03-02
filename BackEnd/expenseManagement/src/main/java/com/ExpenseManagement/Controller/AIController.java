@@ -2,6 +2,7 @@ package com.expensemanagement.controller;
 
 import com.expensemanagement.AI.AIResponse;
 import com.expensemanagement.AI.AIService;
+import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.Expense;
 import com.expensemanagement.entities.Team;
@@ -28,6 +29,7 @@ public class AIController {
     private static final Logger log = LoggerFactory.getLogger(AIController.class);
 
     private final AIService aiService;
+    private final OllamaService ollamaService;
     private final ExpenseService expenseService;
     private final UserService userService;
     private final NaturalSearchService naturalSearchService;
@@ -51,10 +53,16 @@ public class AIController {
             receivedHeaders.put(name, request.getHeader(name));
         }
 
+        boolean ollamaOnline = ollamaService.isOnline();
+        String activeEngine = aiService.getAiModelName().contains("phi3") || !aiService.getAiModelName().contains("/")
+                ? "Local Ollama"
+                : "OpenRouter";
+
         return Map.of(
-                "engine", "OpenRouter",
+                "activeEngine", activeEngine,
                 "model", aiService.getAiModelName(),
-                "status", "AI Engine Ready",
+                "status", ollamaOnline || activeEngine.equals("OpenRouter") ? "AI Engine Ready" : "Local AI Offline",
+                "ollamaOnline", ollamaOnline,
                 "receivedHeaders", receivedHeaders);
     }
 

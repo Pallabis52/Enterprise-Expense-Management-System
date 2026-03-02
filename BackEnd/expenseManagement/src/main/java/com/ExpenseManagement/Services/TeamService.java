@@ -2,6 +2,7 @@ package com.expensemanagement.services;
 
 import com.expensemanagement.entities.Team;
 import com.expensemanagement.entities.User;
+import com.expensemanagement.dto.TeamDTO;
 import java.util.List;
 
 public interface TeamService {
@@ -13,7 +14,7 @@ public interface TeamService {
 
     Team removeMember(Long teamId, Long userId);
 
-    List<Team> getAllTeams();
+    List<TeamDTO> getAllTeams();
 
     Team getTeamByManager(User manager);
 

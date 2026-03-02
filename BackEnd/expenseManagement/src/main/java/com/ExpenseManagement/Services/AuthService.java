@@ -60,14 +60,23 @@ public class AuthService {
         }
 
         public AuthResponse login(LoginRequest request) {
-                Authentication authentication = authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-
+                // 1. Check if user exists by email
                 User user = userRepository.findByEmail(request.getEmail())
-                                .orElseThrow(() -> new RuntimeException("User not found"));
+                                .orElseThrow(() -> new RuntimeException("your email not exist"));
 
+                // 2. Terminated account check
                 if (user.isTerminated()) {
                         throw new RuntimeException("Your account has been terminated and is permanently deactivated.");
+                }
+
+                // 3. Authenticate password
+                Authentication authentication;
+                try {
+                        authentication = authenticationManager.authenticate(
+                                        new UsernamePasswordAuthenticationToken(request.getEmail(),
+                                                        request.getPassword()));
+                } catch (org.springframework.security.core.AuthenticationException e) {
+                        throw new RuntimeException("your password is miss match");
                 }
 
                 // We can use the principal from authentication as it is UserDetails

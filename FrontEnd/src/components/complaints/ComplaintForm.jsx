@@ -1,13 +1,72 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, AlertCircle, ShieldQuestion } from 'lucide-react';
+import { X, Send, AlertCircle, ShieldQuestion, Mic, MicOff, Cpu, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { useEffect, useRef } from 'react';
 
 const ComplaintForm = ({ isOpen, onClose, onSuccess }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('OTHER');
+    const [expenseId, setExpenseId] = useState('');
     const [loading, setLoading] = useState(false);
+    const [suggestions, setSuggestions] = useState('');
+    const [isListening, setIsListening] = useState(false);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+
+    const suggestionTimer = useRef(null);
+
+    const categories = ['FOOD', 'TRAVEL', 'REIMBURSEMENT', 'POLICY', 'FRAUD', 'OTHER'];
+
+    useEffect(() => {
+        if (description.length > 20) {
+            if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+            suggestionTimer.current = setTimeout(fetchSuggestions, 1000);
+        } else {
+            setSuggestions('');
+        }
+    }, [description]);
+
+    const fetchSuggestions = async () => {
+        setIsAiLoading(true);
+        try {
+            const res = await api.get(`/complaints/suggest?text=${encodeURIComponent(description)}`);
+            setSuggestions(res.data);
+        } catch (err) {
+            console.error('AI Suggestion fail');
+        } finally {
+            setIsAiLoading(false);
+        }
+    };
+
+    const handleVoice = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return toast.error('Speech recognition not supported in this browser');
+
+        const recognition = new SpeechRecognition();
+        recognition.onstart = () => {
+            setIsListening(true);
+            toast('AI Listening...', { icon: '🎙️' });
+        };
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            setIsListening(false);
+            setLoading(true);
+            try {
+                await api.post('/complaints/voice', { transcript });
+                toast.success('Voice complaint processed by AI');
+                onSuccess();
+                onClose();
+            } catch (err) {
+                toast.error('Voice processing failed');
+            } finally {
+                setLoading(false);
+            }
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.start();
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -15,7 +74,12 @@ const ComplaintForm = ({ isOpen, onClose, onSuccess }) => {
 
         setLoading(true);
         try {
-            await api.post('/api/complaints', { title, description });
+            await api.post('/complaints', {
+                title,
+                description,
+                category,
+                expenseId: expenseId ? parseInt(expenseId) : null
+            });
             toast.success('Complaint transmission successful');
             setTitle('');
             setDescription('');
@@ -65,16 +129,68 @@ const ComplaintForm = ({ isOpen, onClose, onSuccess }) => {
                         />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black tracking-[4px] text-white/30 ml-1">Classification</label>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium appearance-none"
+                            >
+                                {categories.map(cat => <option key={cat} value={cat} className="bg-[#0a0c10]">{cat}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase font-black tracking-[4px] text-white/30 ml-1">Expense Link</label>
+                            <input
+                                type="number"
+                                value={expenseId}
+                                onChange={(e) => setExpenseId(e.target.value)}
+                                placeholder="ID (Optional)"
+                                className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/10 focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
+                            />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
-                        <label className="text-[10px] uppercase font-black tracking-[4px] text-white/30 ml-1">Narrative Detail</label>
+                        <div className="flex items-center justify-between ml-1">
+                            <label className="text-[10px] uppercase font-black tracking-[4px] text-white/30">Narrative Detail</label>
+                            <button
+                                type="button"
+                                onClick={handleVoice}
+                                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-white/5 text-white/40 hover:text-white'}`}
+                            >
+                                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            </button>
+                        </div>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe the operational anomaly..."
-                            rows={4}
+                            rows={3}
                             className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/10 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
                         />
                     </div>
+
+                    <AnimatePresence>
+                        {(suggestions || isAiLoading) && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4 overflow-hidden"
+                            >
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Cpu className="w-3 h-3 text-indigo-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-tighter text-indigo-400">AI suggested solutions</span>
+                                    {isAiLoading && <Loader2 className="w-3 h-3 text-indigo-400 animate-spin ml-auto" />}
+                                </div>
+                                <div className="text-[11px] text-white/60 leading-relaxed italic">
+                                    {suggestions || 'Analyzing neural patterns...'}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="pt-4">
                         <button

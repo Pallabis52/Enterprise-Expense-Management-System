@@ -1,5 +1,6 @@
 package com.expensemanagement.services;
 
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.Expense;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DuplicateDetectionService {
 
-        private final OllamaService ollamaService;
+        private final AIService aiService;
         private final ExpenseRepository expenseRepository;
         private final ObjectMapper objectMapper;
 
@@ -64,7 +65,7 @@ public class DuplicateDetectionService {
                                 newExpense.getCategory(),
                                 recentText);
 
-                return ollamaService.ask(prompt, "duplicate-detection").thenApply(aiResponse -> {
+                return aiService.ask(prompt, "duplicate-detection").thenApply(aiResponse -> {
                         if (aiResponse.isFallback()) {
                                 return AIDTOs.DuplicateDetectionResult.builder()
                                                 .duplicate("no")

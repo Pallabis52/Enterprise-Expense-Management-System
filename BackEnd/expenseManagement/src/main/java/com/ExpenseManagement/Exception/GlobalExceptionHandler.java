@@ -4,6 +4,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -71,10 +72,30 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        // Only log stack trace for non-type-mismatch runtime exceptions to reduce noise
+        errorLogger().error("RuntimeException caught in GlobalExceptionHandler: {}", ex.getMessage(), ex);
+
         Map<String, String> response = new HashMap<>();
         response.put("error", "Application Error");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid Parameter Type");
+
+        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
+        String message = String.format("The parameter '%s' should be of type '%s'. Received value: '%s'",
+                ex.getName(), requiredType, ex.getValue());
+
+        response.put("message", message);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    private static org.slf4j.Logger errorLogger() {
+        return org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
     }
 
     @ExceptionHandler(Exception.class)

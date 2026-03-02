@@ -31,8 +31,8 @@ const adminExpenseService = {
         return response.data;
     },
 
-    getFraudFlags: async (expenseId) => {
-        const response = await api.get(`/admin/fraud-flags/${expenseId}`);
+    getFraudFlags: async () => {
+        const response = await api.get('/admin/fraud-flags/all');
         return response.data;
     },
 

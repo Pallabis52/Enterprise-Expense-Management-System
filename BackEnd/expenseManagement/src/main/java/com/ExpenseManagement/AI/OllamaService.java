@@ -131,9 +131,8 @@ public class OllamaService {
             try {
                 ObjectNode body = objectMapper.createObjectNode()
                         .put("model", model)
-                        .put("prompt", "Hi")
-                        .put("stream", false)
-                        .put("keep_alive", "5m");
+                        .put("prompt", "hi")
+                        .put("stream", false);
 
                 webClient.post()
                         .uri("/api/generate")

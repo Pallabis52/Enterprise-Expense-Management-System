@@ -87,14 +87,16 @@ public class AIResponse {
                                                 "Policy violation scan unavailable. Please review expenses manually."),
                                 java.util.Map.entry("chatbot",
                                                 "I'm temporarily offline. Please check back shortly or contact your administrator."),
-                                java.util.Map.entry("voice-intent",
+                                java.util.Map.entry("voice-parse",
                                                 "Voice command understanding is unavailable. Please type your search instead."),
                                 java.util.Map.entry("voice-reply",
                                                 "Action completed successfully."),
                                 java.util.Map.entry("enhance-description",
                                                 "AI could not enhance the description. Using basic details."),
                                 java.util.Map.entry("vendor-roi",
-                                                "Vendor ROI analysis is temporarily unavailable. Please check the reports section."));
+                                                "Vendor ROI analysis is temporarily unavailable. Please check the reports section."),
+                                java.util.Map.entry("audit-summary",
+                                                "Audit summary generation is temporarily unavailable. Manual review recommended."));
 
                 static String get(String feature) {
                         return MAP.getOrDefault(feature,

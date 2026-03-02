@@ -1,5 +1,6 @@
 package com.expensemanagement.services;
 
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.Expense;
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class ApprovalAIService {
 
-    private final OllamaService ollamaService;
+    private final AIService aiService;
     private final ObjectMapper objectMapper;
 
     public CompletableFuture<AIDTOs.ApprovalRecommendation> getRecommendation(Expense expense) {
@@ -26,7 +27,7 @@ public class ApprovalAIService {
                         "Example: {\"decision\": \"APPROVE\", \"reason\": \"Within monthly travel budget and policy limits.\"}",
                 expense.getTitle(), expense.getAmount(), expense.getDate(), expense.getCategory());
 
-        return ollamaService.ask(prompt, "approve-recommend")
+        return aiService.ask(prompt, "approve-recommend")
                 .thenApply(aiResponse -> {
                     if (aiResponse.isFallback()) {
                         return AIDTOs.ApprovalRecommendation.builder()

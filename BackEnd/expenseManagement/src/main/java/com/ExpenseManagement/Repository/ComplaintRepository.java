@@ -17,5 +17,5 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     List<Complaint> findByRoleLevel(String roleLevel);
 
-    List<Complaint> findAll();
+    List<Complaint> findTop10ByCreatedByOrderByCreatedAtDesc(User user);
 }

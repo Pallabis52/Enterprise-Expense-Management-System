@@ -1,6 +1,7 @@
 package com.expensemanagement.services;
 
 import com.expensemanagement.AI.AIResponse;
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.User;
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class ChatAssistantService {
 
-    private final OllamaService ollamaService;
+    private final AIService aiService;
 
     public CompletableFuture<AIResponse> getChatResponse(String message, User user) {
         String role = user.getRole() != null ? user.getRole().name() : "USER";
@@ -27,6 +28,6 @@ public class ChatAssistantService {
                         "Provide a concise, helpful answer relevant to their role.",
                 user.getName(), role, message);
 
-        return ollamaService.ask(prompt, "chatbot");
+        return aiService.ask(prompt, "chatbot");
     }
 }

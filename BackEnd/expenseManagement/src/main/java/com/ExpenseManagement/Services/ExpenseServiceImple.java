@@ -42,6 +42,7 @@ public class ExpenseServiceImple implements ExpenseService {
     private final PolicyService policyService;
     private final VendorAnalyticsService vendorAnalyticsService;
     private final ConfidenceScoreService confidenceScoreService;
+    private final VendorService userVendorService;
 
     // ── basic reads ───────────────────────────────────────────────────────────
 
@@ -173,8 +174,11 @@ public class ExpenseServiceImple implements ExpenseService {
             log.info("Expense #{} escalated to ADMIN due to policy breach", saved.getId());
         }
 
-        // Feature 11: Vendor Analytics
+        // Feature 11: Vendor Analytics (Global)
         vendorAnalyticsService.updateVendorStats(saved);
+
+        // User-Specific Vendor Tracking
+        userVendorService.trackVendor(saved.getVendorName(), saved.getAmount(), saved.getUser());
 
         // Feature 16: Confidence Score
         saved.setConfidenceScore((double) confidenceScoreService.calculateScore(saved).getScore());

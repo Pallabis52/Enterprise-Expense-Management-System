@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, Plus, RefreshCcw, MessageSquare, CheckCircle, X } from 'lucide-react';
+import { ShieldAlert, Plus, RefreshCcw, MessageSquare, CheckCircle, X, Sparkles, ArrowUpCircle, Dna } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -16,13 +16,14 @@ const ComplaintManagementPage = () => {
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [response, setResponse] = useState('');
     const [isResponding, setIsResponding] = useState(false);
+    const [isAiDrafting, setIsAiDrafting] = useState(false);
 
     const fetchComplaints = async () => {
         setLoading(true);
         try {
-            let endpoint = '/api/complaints/my';
-            if (user?.role === 'ADMIN') endpoint = '/api/complaints/all';
-            else if (user?.role === 'MANAGER') endpoint = '/api/complaints/team';
+            let endpoint = '/complaints/my';
+            if (user?.role === 'ADMIN') endpoint = '/complaints/all';
+            else if (user?.role === 'MANAGER') endpoint = '/complaints/team';
 
             const res = await api.get(endpoint);
             setComplaints(res.data);
@@ -43,7 +44,7 @@ const ComplaintManagementPage = () => {
 
         setIsResponding(true);
         try {
-            await api.post(`/api/complaints/respond/${selectedComplaint.id}`, { response });
+            await api.post(`/complaints/respond/${selectedComplaint.id}`, { response });
             toast.success('Intelligence broadcast successful');
             setResponse('');
             setSelectedComplaint(null);
@@ -57,11 +58,35 @@ const ComplaintManagementPage = () => {
 
     const handleClose = async (id) => {
         try {
-            await api.post(`/api/complaints/close/${id}`);
+            await api.post(`/complaints/close/${id}`);
             toast.success('Complaint vector neutralized');
             fetchComplaints();
         } catch (error) {
             toast.error('Neutralization failed');
+        }
+    };
+
+    const handleEscalate = async (id) => {
+        try {
+            await api.post(`/complaints/escalate/${id}`);
+            toast.success('Priority shifted to CRITICAL');
+            fetchComplaints();
+        } catch (error) {
+            toast.error('Escalation failed');
+        }
+    };
+
+    const fetchAiReply = async () => {
+        if (!selectedComplaint) return;
+        setIsAiDrafting(true);
+        try {
+            const res = await api.get(`/complaints/${selectedComplaint.id}/ai-reply`);
+            setResponse(res.data);
+            toast.success('AI Draft generated');
+        } catch (err) {
+            toast.error('AI Draft engine offline');
+        } finally {
+            setIsAiDrafting(false);
         }
     };
 
@@ -129,9 +154,9 @@ const ComplaintManagementPage = () => {
                         <div className="space-y-6">
                             {[
                                 { label: 'Total Vectors', count: complaints.length, color: 'text-white' },
-                                { label: 'Active (Open)', count: complaints.filter(c => c.status === 'OPEN').length, color: 'text-blue-400' },
-                                { label: 'In Analysis', count: complaints.filter(c => c.status === 'IN_PROGRESS').length, color: 'text-amber-400' },
-                                { label: 'Neutralized', count: complaints.filter(c => c.status === 'CLOSED').length, color: 'text-white/20' }
+                                { label: 'Submitted', count: complaints.filter(c => c.status === 'SUBMITTED').length, color: 'text-blue-400' },
+                                { label: 'In Review', count: complaints.filter(c => c.status === 'UNDER_REVIEW').length, color: 'text-amber-400' },
+                                { label: 'Escalated', count: complaints.filter(c => c.status === 'ESCALATED').length, color: 'text-purple-400' }
                             ].map((stat) => (
                                 <div key={stat.label} className="flex items-end justify-between border-b border-white/5 pb-4 last:border-0">
                                     <span className="text-[10px] font-black text-white/40 uppercase tracking-[3px]">{stat.label}</span>
@@ -183,17 +208,31 @@ const ComplaintManagementPage = () => {
 
                             <form onSubmit={handleRespond} className="p-10 space-y-8">
                                 <div className="p-8 bg-white/[0.02] border border-white/10 rounded-[32px] space-y-4">
-                                    <div className="text-[9px] font-black text-white/20 uppercase tracking-[4px]">Original Complaint Intel</div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-[9px] font-black text-white/20 uppercase tracking-[4px]">Original Complaint Intel</div>
+                                        {selectedComplaint.category && <span className="text-[8px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">{selectedComplaint.category}</span>}
+                                    </div>
                                     <p className="text-white/60 text-sm leading-relaxed italic font-medium">"{selectedComplaint.description}"</p>
                                 </div>
 
                                 <div className="space-y-3">
-                                    <label className="text-[10px] uppercase font-black tracking-[5px] text-white/20 ml-1">Response Intelligence</label>
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-[10px] uppercase font-black tracking-[5px] text-white/20">Response Intelligence</label>
+                                        <button
+                                            type="button"
+                                            onClick={fetchAiReply}
+                                            disabled={isAiDrafting}
+                                            className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-tighter hover:text-indigo-300 transition-colors disabled:opacity-50"
+                                        >
+                                            <Sparkles className={`w-3 h-3 ${isAiDrafting ? 'animate-spin' : ''}`} />
+                                            {isAiDrafting ? 'Drafting...' : 'Draft with AI'}
+                                        </button>
+                                    </div>
                                     <textarea
                                         value={response}
                                         onChange={(e) => setResponse(e.target.value)}
                                         placeholder="Formulate strategic response..."
-                                        rows={5}
+                                        rows={4}
                                         className="w-full bg-white/[0.02] border border-white/10 rounded-[32px] px-8 py-6 text-white placeholder:text-white/10 focus:outline-none focus:border-indigo-500/50 transition-all font-medium resize-none"
                                     />
                                 </div>
@@ -206,6 +245,21 @@ const ComplaintManagementPage = () => {
                                     >
                                         {isResponding ? 'Transmitting...' : 'Broadcast Intelligence'}
                                     </button>
+
+                                    {(user?.role === 'MANAGER' || user?.role === 'ADMIN') && selectedComplaint.status !== 'ESCALATED' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                handleEscalate(selectedComplaint.id);
+                                                setSelectedComplaint(null);
+                                            }}
+                                            className="px-8 py-5 border border-purple-500/30 bg-purple-500/5 text-purple-400 font-black uppercase text-[10px] tracking-[4px] rounded-2xl hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <ArrowUpCircle className="w-4 h-4" />
+                                            Tactical Escalation
+                                        </button>
+                                    )}
+
                                     {user?.role === 'ADMIN' && (
                                         <button
                                             type="button"

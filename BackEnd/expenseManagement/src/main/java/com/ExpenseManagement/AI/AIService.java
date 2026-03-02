@@ -46,7 +46,7 @@ public class AIService {
                 return ollamaService.getModelName();
         }
 
-        private CompletableFuture<AIResponse> ask(String prompt, String feature) {
+        public CompletableFuture<AIResponse> ask(String prompt, String feature) {
                 if (aiProviderConfig.isExternal()) {
                         log.info("AI-ROUTE: Using External Provider for {}", feature);
                         return externalAIClient.ask(prompt, feature)
@@ -64,7 +64,7 @@ public class AIService {
                 }
         }
 
-        private CompletableFuture<AIResponse> askLightweight(String prompt, String feature) {
+        public CompletableFuture<AIResponse> askLightweight(String prompt, String feature) {
                 if (aiProviderConfig.isExternal()) {
                         log.info("AI-ROUTE: Using External Provider (Lightweight) for {}", feature);
                         return externalAIClient.ask(prompt, feature)

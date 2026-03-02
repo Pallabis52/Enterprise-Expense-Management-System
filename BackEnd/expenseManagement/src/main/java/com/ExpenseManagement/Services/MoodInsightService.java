@@ -1,5 +1,6 @@
 package com.expensemanagement.services;
 
+import com.expensemanagement.AI.AIService;
 import com.expensemanagement.AI.OllamaService;
 import com.expensemanagement.dto.AIDTOs;
 import com.expensemanagement.entities.Expense;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MoodInsightService {
 
-    private final OllamaService ollamaService;
+    private final AIService aiService;
     private final ExpenseRepository expenseRepository;
     private final ObjectMapper objectMapper;
 
@@ -54,7 +55,7 @@ public class MoodInsightService {
                     expense.getDate(),
                     recentSummary);
 
-            return ollamaService.ask(prompt, "mood-insight").thenApply(aiResponse -> {
+            return aiService.ask(prompt, "mood-insight").thenApply(aiResponse -> {
                 if (aiResponse.isFallback()) {
                     return getFallback();
                 }

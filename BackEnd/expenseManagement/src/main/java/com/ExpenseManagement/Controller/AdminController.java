@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import com.expensemanagement.dto.TeamDTO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -116,7 +117,7 @@ public class AdminController {
      * GET /api/admin/teams
      */
     @GetMapping("/teams")
-    public ResponseEntity<List<Team>> getAllTeams() {
+    public ResponseEntity<List<TeamDTO>> getAllTeams() {
         return ResponseEntity.ok(teamService.getAllTeams());
     }
 
@@ -267,5 +268,15 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         List<String> flags = fraudDetectionService.detectFraud(expense);
         return ResponseEntity.ok(Map.of("expenseId", expenseId, "flags", flags));
+    }
+
+    /**
+     * GET /api/admin/fraud-flags/all
+     * Returns all expenses that have a high risk (low confidence score)
+     */
+    @GetMapping("/fraud-flags/all")
+    public ResponseEntity<List<Expense>> getFlaggedExpenses() {
+        // Fetching expenses with low confidence score (e.g., <= 50)
+        return ResponseEntity.ok(expenseRepository.findByConfidenceScoreLessThanEqual(50.0));
     }
 }
